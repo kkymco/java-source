@@ -150,4 +150,12 @@ debug-mocclean: $(MAKEFILE).Debug
 	$(MAKE) -f $(MAKEFILE).Debug mocclean
 mocclean: release-mocclean debug-mocclean
 
-release-mocables: $(MAKEFILE).Rel
+release-mocables: $(MAKEFILE).Release
+	$(MAKE) -f $(MAKEFILE).Release mocables
+debug-mocables: $(MAKEFILE).Debug
+	$(MAKE) -f $(MAKEFILE).Debug mocables
+mocables: release-mocables debug-mocables
+FORCE:
+
+$(MAKEFILE).Release: Makefile
+$(MAKEFILE).Debug: Makefile
