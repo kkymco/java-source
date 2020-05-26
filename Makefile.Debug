@@ -272,4 +272,42 @@ OBJECTS       = build/txdb-leveldb.o \
 		build/qrc_bitcoin.o
 DIST          = 
 QMAKE_TARGET  = SuperCoin-qt
-DESTDIR        = 
+DESTDIR        = debug\ #avoid trailing-slash linebreak
+TARGET         = SuperCoin-qt.exe
+DESTDIR_TARGET = debug\SuperCoin-qt.exe
+
+####### Implicit rules
+
+.SUFFIXES: .cpp .cc .cxx .c
+
+.cpp.o:
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
+
+.cc.o:
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
+
+.cxx.o:
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
+
+.c.o:
+	$(CC) -c $(CFLAGS) $(INCPATH) -o $@ $<
+
+####### Build rules
+
+first: all
+all: Makefile.Debug  $(DESTDIR_TARGET)
+
+$(DESTDIR_TARGET): c:/SuperCoin/src/leveldb/libleveldb.a build/ui_coincontroldialog.h build/ui_sendcoinsdialog.h build/ui_addressbookpage.h build/ui_signverifymessagedialog.h build/ui_aboutdialog.h build/ui_editaddressdialog.h build/ui_transactiondescdialog.h build/ui_overviewpage.h build/ui_sendcoinsentry.h build/ui_askpassphrasedialog.h build/ui_rpcconsole.h build/ui_optionsdialog.h $(OBJECTS) build/bitcoin-qt_res.o
+	$(LINK) $(LFLAGS) -o $(DESTDIR_TARGET) object_script.SuperCoin-qt.Debug  $(LIBS)
+
+build/bitcoin-qt_res.o: src\qt\res\bitcoin-qt.rc
+	windres -i src\qt\res\bitcoin-qt.rc -o build\bitcoin-qt_res.o --include-dir=./src/qt/res $(DEFINES)
+
+qmake:  FORCE
+	@$(QMAKE) -spec ..\Qt\4.8.6\mkspecs\win32-g++-4.6 -o Makefile.Debug SuperCoin-qt.pro
+
+dist:
+	$(ZIP) SuperCoin-qt.zip $(SOURCES) $(DIST) SuperCoin-qt.pro ..\Qt\4.8.6\mkspecs\features\device_config.prf ..\Qt\4.8.6\mkspecs\qconfig.pri ..\Qt\4.8.6\mkspecs\features\qt_functions.prf ..\Qt\4.8.6\mkspecs\features\qt_config.prf ..\Qt\4.8.6\mkspecs\win32-g++\qmake.conf ..\Qt\4.8.6\mkspecs\features\exclusive_builds.prf ..\Qt\4.8.6\mkspecs\features\default_pre.prf ..\Qt\4.8.6\mkspecs\features\win32\default_pre.prf ..\Qt\4.8.6\mkspecs\features\debug.prf ..\Qt\4.8.6\mkspecs\features\debug_and_release.prf ..\Qt\4.8.6\mkspecs\features\default_post.prf ..\Qt\4.8.6\mkspecs\features\win32\default_post.prf ..\Qt\4.8.6\mkspecs\features\build_pass.prf ..\Qt\4.8.6\mkspecs\features\static.prf ..\Qt\4.8.6\mkspecs\features\win32\thread.prf ..\Qt\4.8.6\mkspecs\features\win32\rtti.prf ..\Qt\4.8.6\mkspecs\features\win32\exceptions.prf ..\Qt\4.8.6\mkspecs\features\win32\stl.prf ..\Qt\4.8.6\mkspecs\features\warn_on.prf ..\Qt\4.8.6\mkspecs\features\qt.prf ..\Qt\4.8.6\mkspecs\features\moc.prf ..\Qt\4.8.6\mkspecs\features\win32\windows.prf ..\Qt\4.8.6\mkspecs\features\resources.prf ..\Qt\4.8.6\mkspecs\features\uic.prf ..\Qt\4.8.6\mkspecs\features\yacc.prf ..\Qt\4.8.6\mkspecs\features\lex.prf c:\Qt\4.8.6\lib\qtmaind.prl c:\Qt\4.8.6\lib\QtGuid.prl c:\Qt\4.8.6\lib\QtNetworkd.prl c:\Qt\4.8.6\lib\QtCored.prl src\qt\locale\bitcoin_en.ts src\qt\locale\bitcoin_fr.ts src\qt\locale\bitcoin_ru.ts src\qt\locale\bitcoin_zh_CN.ts src\qt\locale\bitcoin_en.ts src\qt\locale\bitcoin_fr.ts src\qt\locale\bitcoin_ru.ts src\qt\locale\bitcoin_zh_CN.ts TRANSLATIONS HEADERS RESOURCES IMAGES SOURCES OBJECTIVE_SOURCES FORMS YACCSOURCES YACCSOURCES LEXSOURCES 
+
+clean: compiler_clean 
+	-$(DEL_FILE) build\txdb-leveldb.o build\bloom.o build\hash.o build\blake.o build\bmw.o build\cubehash.o build\echo.o build\groestl.o build\jh.o b
