@@ -329,4 +329,24 @@ mocables: compiler_moc_header_make_all compiler_moc_source_make_all
 
 compiler_TSQM_make_all: src/qt/locale/bitcoin_en.qm src/qt/locale/bitcoin_fr.qm src/qt/locale/bitcoin_ru.qm src/qt/locale/bitcoin_zh_CN.qm
 compiler_TSQM_clean:
-	-$(DEL_FILE) src\qt\locale\bitcoin_en
+	-$(DEL_FILE) src\qt\locale\bitcoin_en.qm src\qt\locale\bitcoin_fr.qm src\qt\locale\bitcoin_ru.qm src\qt\locale\bitcoin_zh_CN.qm
+src/qt/locale/bitcoin_en.qm: src/qt/locale/bitcoin_en.ts
+	c:\Qt\4.8.6\bin\lrelease.exe src\qt\locale\bitcoin_en.ts -qm src\qt\locale\bitcoin_en.qm
+
+src/qt/locale/bitcoin_fr.qm: src/qt/locale/bitcoin_fr.ts
+	c:\Qt\4.8.6\bin\lrelease.exe src\qt\locale\bitcoin_fr.ts -qm src\qt\locale\bitcoin_fr.qm
+
+src/qt/locale/bitcoin_ru.qm: src/qt/locale/bitcoin_ru.ts
+	c:\Qt\4.8.6\bin\lrelease.exe src\qt\locale\bitcoin_ru.ts -qm src\qt\locale\bitcoin_ru.qm
+
+src/qt/locale/bitcoin_zh_CN.qm: src/qt/locale/bitcoin_zh_CN.ts
+	c:\Qt\4.8.6\bin\lrelease.exe src\qt\locale\bitcoin_zh_CN.ts -qm src\qt\locale\bitcoin_zh_CN.qm
+
+compiler_moc_header_make_all: build/moc_bitcoingui.cpp build/moc_transactiontablemodel.cpp build/moc_addresstablemodel.cpp build/moc_optionsdialog.cpp build/moc_coincontroldialog.cpp build/moc_coincontroltreewidget.cpp build/moc_sendcoinsdialog.cpp build/moc_addressbookpage.cpp build/moc_signverifymessagedialog.cpp build/moc_aboutdialog.cpp build/moc_editaddressdialog.cpp build/moc_bitcoinaddressvalidator.cpp build/moc_clientmodel.cpp build/moc_guiutil.cpp build/moc_optionsmodel.cpp build/moc_monitoreddatamapper.cpp build/moc_transactiondesc.cpp build/moc_transactiondescdialog.cpp build/moc_bitcoinamountfield.cpp build/moc_transactionfilterproxy.cpp build/moc_transactionview.cpp build/moc_walletmodel.cpp build/moc_overviewpage.cpp build/moc_csvmodelwriter.cpp build/moc_sendcoinsentry.cpp build/moc_qvalidatedlineedit.cpp build/moc_qvaluecombobox.cpp build/moc_askpassphrasedialog.cpp build/moc_notificator.cpp build/moc_rpcconsole.cpp
+compiler_moc_header_clean:
+	-$(DEL_FILE) build\moc_bitcoingui.cpp build\moc_transactiontablemodel.cpp build\moc_addresstablemodel.cpp build\moc_optionsdialog.cpp build\moc_coincontroldialog.cpp build\moc_coincontroltreewidget.cpp build\moc_sendcoinsdialog.cpp build\moc_addressbookpage.cpp build\moc_signverifymessagedialog.cpp build\moc_aboutdialog.cpp build\moc_editaddressdialog.cpp build\moc_bitcoinaddressvalidator.cpp build\moc_clientmodel.cpp build\moc_guiutil.cpp build\moc_optionsmodel.cpp build\moc_monitoreddatamapper.cpp build\moc_transactiondesc.cpp build\moc_transactiondescdialog.cpp build\moc_bitcoinamountfield.cpp build\moc_transactionfilterproxy.cpp build\moc_transactionview.cpp build\moc_walletmodel.cpp build\moc_overviewpage.cpp build\moc_csvmodelwriter.cpp build\moc_sendcoinsentry.cpp build\moc_qvalidatedlineedit.cpp build\moc_qvaluecombobox.cpp build\moc_askpassphrasedialog.cpp build\moc_notificator.cpp build\moc_rpcconsole.cpp
+build/moc_bitcoingui.cpp: src/qt/bitcoingui.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\bitcoingui.h -o build\moc_bitcoingui.cpp
+
+build/moc_transactiontablemodel.cpp: src/qt/transactiontablemodel.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\transactiontablemodel.h -o build\moc_transactiontablemodel.cp
