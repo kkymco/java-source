@@ -349,4 +349,54 @@ build/moc_bitcoingui.cpp: src/qt/bitcoingui.h
 	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\bitcoingui.h -o build\moc_bitcoingui.cpp
 
 build/moc_transactiontablemodel.cpp: src/qt/transactiontablemodel.h
-	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\transactiontablemodel.h -o build\moc_transactiontablemodel.cp
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\transactiontablemodel.h -o build\moc_transactiontablemodel.cpp
+
+build/moc_addresstablemodel.cpp: src/qt/addresstablemodel.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\addresstablemodel.h -o build\moc_addresstablemodel.cpp
+
+build/moc_optionsdialog.cpp: src/qt/optionsdialog.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\optionsdialog.h -o build\moc_optionsdialog.cpp
+
+build/moc_coincontroldialog.cpp: src/qt/coincontroldialog.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\coincontroldialog.h -o build\moc_coincontroldialog.cpp
+
+build/moc_coincontroltreewidget.cpp: src/qt/coincontroltreewidget.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\coincontroltreewidget.h -o build\moc_coincontroltreewidget.cpp
+
+build/moc_sendcoinsdialog.cpp: src/qt/sendcoinsdialog.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\sendcoinsdialog.h -o build\moc_sendcoinsdialog.cpp
+
+build/moc_addressbookpage.cpp: src/qt/addressbookpage.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\addressbookpage.h -o build\moc_addressbookpage.cpp
+
+build/moc_signverifymessagedialog.cpp: src/qt/signverifymessagedialog.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\signverifymessagedialog.h -o build\moc_signverifymessagedialog.cpp
+
+build/moc_aboutdialog.cpp: src/qt/aboutdialog.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\aboutdialog.h -o build\moc_aboutdialog.cpp
+
+build/moc_editaddressdialog.cpp: src/qt/editaddressdialog.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\editaddressdialog.h -o build\moc_editaddressdialog.cpp
+
+build/moc_bitcoinaddressvalidator.cpp: src/qt/bitcoinaddressvalidator.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\bitcoinaddressvalidator.h -o build\moc_bitcoinaddressvalidator.cpp
+
+build/moc_clientmodel.cpp: src/qt/clientmodel.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\clientmodel.h -o build\moc_clientmodel.cpp
+
+build/moc_guiutil.cpp: src/qt/guiutil.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\guiutil.h -o build\moc_guiutil.cpp
+
+build/moc_optionsmodel.cpp: src/qt/optionsmodel.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\optionsmodel.h -o build\moc_optionsmodel.cpp
+
+build/moc_monitoreddatamapper.cpp: src/qt/monitoreddatamapper.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\monitoreddatamapper.h -o build\moc_monitoreddatamapper.cpp
+
+build/moc_transactiondesc.cpp: src/qt/transactiondesc.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\transactiondesc.h -o build\moc_transactiondesc.cpp
+
+build/moc_transactiondescdialog.cpp: src/qt/transactiondescdialog.h
+	C:\Qt\4.8.6\bin\moc.exe $(DEFINES) $(INCPATH) -D__GNUC__ -DWIN32 src\qt\transactiondescdialog.h -o build\moc_transactiondescdialog.cpp
+
+build/mo
