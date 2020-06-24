@@ -624,4 +624,131 @@ build/ui_optionsdialog.h: src/qt/forms/optionsdialog.ui \
 		src/qt/qvalidatedlineedit.h \
 		src/qt/bitcoinamountfield.h \
 		src/qt/qvaluecombobox.h
-	c:\Qt\4.8.6\bin\uic.exe
+	c:\Qt\4.8.6\bin\uic.exe src\qt\forms\optionsdialog.ui -o build\ui_optionsdialog.h
+
+compiler_yacc_decl_make_all:
+compiler_yacc_decl_clean:
+compiler_yacc_impl_make_all:
+compiler_yacc_impl_clean:
+compiler_lex_make_all:
+compiler_lex_clean:
+compiler_clean: compiler_TSQM_clean compiler_moc_header_clean compiler_rcc_clean compiler_moc_source_clean compiler_uic_clean 
+
+
+
+####### Compile
+
+build/txdb-leveldb.o: src/txdb-leveldb.cpp src/kernel.h \
+		src/main.h \
+		src/bignum.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/uint256.h \
+		src/sync.h \
+		src/net.h \
+		src/mruset.h \
+		src/netbase.h \
+		src/compat.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/util.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h \
+		src/key.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/checkpoints.h \
+		src/txdb.h \
+		src/txdb-leveldb.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\txdb-leveldb.o src\txdb-leveldb.cpp
+
+build/bloom.o: src/bloom.cpp src/bloom.h \
+		src/uint256.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/main.h \
+		src/bignum.h \
+		src/sync.h \
+		src/net.h \
+		src/mruset.h \
+		src/netbase.h \
+		src/compat.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/util.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h \
+		src/key.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/hash.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\bloom.o src\bloom.cpp
+
+build/hash.o: src/hash.cpp src/hash.h \
+		src/uint256.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\hash.o src\hash.cpp
+
+build/blake.o: src/blake.c src/sph_blake.h \
+		src/sph_types.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o build\blake.o src\blake.c
+
+build/bmw.o: src/bmw.c src/sph_bmw.h \
+		src/sph_types.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o build\bmw.o src\bmw.c
+
+build/cubehash.o: src/cubehash.c src/sph_cubehash.h \
+		src/sph_types.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o build\cubehash.o src\cubehash.c
+
+build/echo.o: src/echo.c src/sph_echo.h \
+		src/sph_types.h \
+		src/aes_helper.c
+	$(CC) -c $(CFLAGS) $(INCPATH) -o build\echo.o src\echo.c
+
+build/groestl.o: src/groestl.c src/sph_groestl.h \
+		src/sph_types.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o build\groestl.o src\groestl.c
+
+build/jh.o: src/jh.c src/sph_jh.h \
+		src/sph_types.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o build\jh.o src\jh.c
+
+build/keccak.o: src/keccak.c src/sph_keccak.h \
+		src/sph_types.h
+	$(CC) -c $(CFLAGS) $(INCPATH) -o build\keccak.o src\keccak.c
+
+build/luff
