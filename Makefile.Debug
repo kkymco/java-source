@@ -881,3 +881,141 @@ build/bitcoingui.o: src/qt/bitcoingui.cpp src/qt/bitcoingui.h \
 		src/qt/rpcconsole.h \
 		src/wallet.h \
 		src/main.h \
+		src/bignum.h \
+		src/serialize.h \
+		src/version.h \
+		src/clientversion.h \
+		src/uint256.h \
+		src/sync.h \
+		src/net.h \
+		src/mruset.h \
+		src/netbase.h \
+		src/compat.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/util.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h \
+		src/key.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/ui_interface.h \
+		src/walletdb.h \
+		src/db.h \
+		src/base58.h \
+		src/qt/macdockiconhandler.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\bitcoingui.o src\qt\bitcoingui.cpp
+
+build/transactiontablemodel.o: src/qt/transactiontablemodel.cpp src/qt/transactiontablemodel.h \
+		src/qt/guiutil.h \
+		src/qt/transactionrecord.h \
+		src/uint256.h \
+		src/qt/guiconstants.h \
+		src/qt/transactiondesc.h \
+		src/qt/walletmodel.h \
+		src/allocators.h \
+		src/qt/optionsmodel.h \
+		src/qt/addresstablemodel.h \
+		src/qt/bitcoinunits.h \
+		src/donation.h \
+		src/serialize.h \
+		src/version.h \
+		src/clientversion.h \
+		src/db.h \
+		src/main.h \
+		src/bignum.h \
+		src/sync.h \
+		src/net.h \
+		src/mruset.h \
+		src/netbase.h \
+		src/compat.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/util.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h \
+		src/key.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/wallet.h \
+		src/ui_interface.h \
+		src/walletdb.h \
+		src/base58.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\transactiontablemodel.o src\qt\transactiontablemodel.cpp
+
+build/addresstablemodel.o: src/qt/addresstablemodel.cpp src/qt/addresstablemodel.h \
+		src/qt/guiutil.h \
+		src/qt/walletmodel.h \
+		src/allocators.h \
+		src/wallet.h \
+		src/main.h \
+		src/bignum.h \
+		src/serialize.h \
+		src/version.h \
+		src/clientversion.h \
+		src/uint256.h \
+		src/sync.h \
+		src/net.h \
+		src/mruset.h \
+		src/netbase.h \
+		src/compat.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/util.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h \
+		src/key.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/ui_interface.h \
+		src/walletdb.h \
+		src/db.h \
+		src/base58.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\addresstablemodel.o src\qt\addresstablemodel.cpp
+
+build/optionsdialog.o: src/qt/optionsdialog.cpp src/qt/optionsdialog.h \
+		build/ui_optionsdialog.h \
+		src/qt/bitcoinamountfield.h \
+		src/qt/qvalidatedlineedit.h \
+		src/qt/qvaluecombobox.h \
+		src/qt/bitcoinunits.h \
+		sr
