@@ -1142,4 +1142,117 @@ build/addressbookpage.o: src/qt/addressbookpage.cpp src/qt/addressbookpage.h \
 		src/qt/editaddressdialog.h \
 		src/qt/csvmodelwriter.h \
 		src/qt/guiutil.h \
-		src/qt/qrcod
+		src/qt/qrcodedialog.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\addressbookpage.o src\qt\addressbookpage.cpp
+
+build/signverifymessagedialog.o: src/qt/signverifymessagedialog.cpp src/qt/signverifymessagedialog.h \
+		build/ui_signverifymessagedialog.h \
+		src/qt/qvalidatedlineedit.h \
+		src/qt/addressbookpage.h \
+		src/base58.h \
+		src/bignum.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/uint256.h \
+		src/key.h \
+		src/util.h \
+		src/netbase.h \
+		src/compat.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h \
+		src/sync.h \
+		src/qt/guiutil.h \
+		src/init.h \
+		src/wallet.h \
+		src/main.h \
+		src/net.h \
+		src/mruset.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/ui_interface.h \
+		src/walletdb.h \
+		src/db.h \
+		src/qt/optionsmodel.h \
+		src/qt/walletmodel.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\signverifymessagedialog.o src\qt\signverifymessagedialog.cpp
+
+build/aboutdialog.o: src/qt/aboutdialog.cpp src/qt/aboutdialog.h \
+		build/ui_aboutdialog.h \
+		src/qt/clientmodel.h \
+		src/version.h \
+		src/clientversion.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\aboutdialog.o src\qt\aboutdialog.cpp
+
+build/editaddressdialog.o: src/qt/editaddressdialog.cpp src/qt/editaddressdialog.h \
+		build/ui_editaddressdialog.h \
+		src/qt/addresstablemodel.h \
+		src/qt/guiutil.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\editaddressdialog.o src\qt\editaddressdialog.cpp
+
+build/bitcoinaddressvalidator.o: src/qt/bitcoinaddressvalidator.cpp src/qt/bitcoinaddressvalidator.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\bitcoinaddressvalidator.o src\qt\bitcoinaddressvalidator.cpp
+
+build/alert.o: src/alert.cpp src/alert.h \
+		src/uint256.h \
+		src/util.h \
+		src/netbase.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/compat.h \
+		src/key.h \
+		src/net.h \
+		src/mruset.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/sync.h \
+		src/ui_interface.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\alert.o src\alert.cpp
+
+build/version.o: src/version.cpp src/version.h \
+		src/clientversion.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\version.o src\version.cpp
+
+build/sync.o: src/sync.cpp src/sync.h \
+		src/util.h \
+		src/uint256.h \
+		src/netbase.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/compat.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\sync.o src\sync.cpp
+
+build/util.o: src/util.cpp src/util.h \
+		src/uint256.h \
+		src/netbase.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/compat.h \
+		src/sync.h \
+		src/strlcpy.h \
+		src/ui_interface.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\util.o src\util.cpp
+
+build
