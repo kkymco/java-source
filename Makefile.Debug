@@ -1404,4 +1404,155 @@ build/miner.o: src/miner.cpp src/txdb.h \
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\miner.o src\miner.cpp
 
 build/init.o: src/init.cpp src/txdb.h \
-		src/txdb-leve
+		src/txdb-leveldb.h \
+		src/main.h \
+		src/bignum.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/uint256.h \
+		src/sync.h \
+		src/net.h \
+		src/mruset.h \
+		src/netbase.h \
+		src/compat.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/util.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h \
+		src/key.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/walletdb.h \
+		src/db.h \
+		src/base58.h \
+		src/bitcoinrpc.h \
+		src/json/json_spirit_reader_template.h \
+		src/json/json_spirit_value.h \
+		src/json/json_spirit_error_position.h \
+		src/json/json_spirit_writer_template.h \
+		src/json/json_spirit_utils.h \
+		src/checkpoints.h \
+		src/init.h \
+		src/wallet.h \
+		src/ui_interface.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\init.o src\init.cpp
+
+build/net.o: src/net.cpp src/irc.h \
+		src/db.h \
+		src/main.h \
+		src/bignum.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/uint256.h \
+		src/sync.h \
+		src/net.h \
+		src/mruset.h \
+		src/netbase.h \
+		src/compat.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/util.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h \
+		src/key.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/init.h \
+		src/wallet.h \
+		src/ui_interface.h \
+		src/walletdb.h \
+		src/base58.h \
+		src/strlcpy.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\net.o src\net.cpp
+
+build/irc.o: src/irc.cpp src/irc.h \
+		src/net.h \
+		src/mruset.h \
+		src/netbase.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/compat.h \
+		src/protocol.h \
+		src/uint256.h \
+		src/addrman.h \
+		src/util.h \
+		src/sync.h \
+		src/strlcpy.h \
+		src/base58.h \
+		src/bignum.h \
+		src/key.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\irc.o src\irc.cpp
+
+build/checkpoints.o: src/checkpoints.cpp src/checkpoints.h \
+		src/net.h \
+		src/mruset.h \
+		src/netbase.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/compat.h \
+		src/protocol.h \
+		src/uint256.h \
+		src/addrman.h \
+		src/util.h \
+		src/sync.h \
+		src/txdb.h \
+		src/txdb-leveldb.h \
+		src/main.h \
+		src/bignum.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h \
+		src/key.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\ch
