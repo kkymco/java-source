@@ -1842,4 +1842,118 @@ build/transactiondesc.o: src/qt/transactiondesc.cpp src/qt/transactiondesc.h \
 		src/util.h \
 		src/script.h \
 		src/keystore.h \
-		sr
+		src/crypter.h \
+		src/key.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/wallet.h \
+		src/ui_interface.h \
+		src/walletdb.h \
+		src/db.h \
+		src/base58.h \
+		src/txdb.h \
+		src/txdb-leveldb.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\transactiondesc.o src\qt\transactiondesc.cpp
+
+build/transactiondescdialog.o: src/qt/transactiondescdialog.cpp src/qt/transactiondescdialog.h \
+		build/ui_transactiondescdialog.h \
+		src/qt/transactiontablemodel.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\transactiondescdialog.o src\qt\transactiondescdialog.cpp
+
+build/bitcoinstrings.o: src/qt/bitcoinstrings.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\bitcoinstrings.o src\qt\bitcoinstrings.cpp
+
+build/bitcoinamountfield.o: src/qt/bitcoinamountfield.cpp src/qt/bitcoinamountfield.h \
+		src/qt/qvaluecombobox.h \
+		src/qt/bitcoinunits.h \
+		src/qt/guiconstants.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\bitcoinamountfield.o src\qt\bitcoinamountfield.cpp
+
+build/wallet.o: src/wallet.cpp src/txdb.h \
+		src/txdb-leveldb.h \
+		src/main.h \
+		src/bignum.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/uint256.h \
+		src/sync.h \
+		src/net.h \
+		src/mruset.h \
+		src/netbase.h \
+		src/compat.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/util.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h \
+		src/key.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/wallet.h \
+		src/ui_interface.h \
+		src/walletdb.h \
+		src/db.h \
+		src/base58.h \
+		src/kernel.h \
+		src/coincontrol.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\wallet.o src\wallet.cpp
+
+build/keystore.o: src/keystore.cpp src/keystore.h \
+		src/crypter.h \
+		src/allocators.h \
+		src/key.h \
+		src/serialize.h \
+		src/version.h \
+		src/clientversion.h \
+		src/uint256.h \
+		src/util.h \
+		src/netbase.h \
+		src/compat.h \
+		src/sync.h \
+		src/script.h \
+		src/bignum.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\keystore.o src\keystore.cpp
+
+build/transactionfilterproxy.o: src/qt/transactionfilterproxy.cpp src/qt/transactionfilterproxy.h \
+		src/qt/transactiontablemodel.h \
+		src/qt/transactionrecord.h \
+		src/uint256.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\transactionfilterproxy.o src\qt\transactionfilterproxy.cpp
+
+build/transactionview.o: src/qt/transactionview.cpp src/qt/transactionview.h \
+		src/qt/transactionfilterproxy.h \
+		src/qt/transactionrecord.h \
+		src/uint256.h \
+		src/qt/walletmodel.h \
+		src/allocators.h \
+		src/qt/addresstablemodel.h \
+		src/qt/transactiontablemodel.h \
+		src/qt/bitcoinunits.h \
+		src/
