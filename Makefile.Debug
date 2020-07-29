@@ -2232,4 +2232,129 @@ build/rpcwallet.o: src/rpcwallet.cpp src/wallet.h \
 		src/sph_groestl.h \
 		src/sph_jh.h \
 		src/sph_keccak.h \
-		src/sp
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/ui_interface.h \
+		src/walletdb.h \
+		src/db.h \
+		src/base58.h \
+		src/bitcoinrpc.h \
+		src/json/json_spirit_reader_template.h \
+		src/json/json_spirit_value.h \
+		src/json/json_spirit_error_position.h \
+		src/json/json_spirit_writer_template.h \
+		src/json/json_spirit_utils.h \
+		src/checkpoints.h \
+		src/init.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\rpcwallet.o src\rpcwallet.cpp
+
+build/rpcblockchain.o: src/rpcblockchain.cpp src/main.h \
+		src/bignum.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/uint256.h \
+		src/sync.h \
+		src/net.h \
+		src/mruset.h \
+		src/netbase.h \
+		src/compat.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/util.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h \
+		src/key.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/bitcoinrpc.h \
+		src/json/json_spirit_reader_template.h \
+		src/json/json_spirit_value.h \
+		src/json/json_spirit_error_position.h \
+		src/json/json_spirit_writer_template.h \
+		src/json/json_spirit_utils.h \
+		src/checkpoints.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\rpcblockchain.o src\rpcblockchain.cpp
+
+build/rpcrawtransaction.o: src/rpcrawtransaction.cpp src/base58.h \
+		src/bignum.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/uint256.h \
+		src/key.h \
+		src/util.h \
+		src/netbase.h \
+		src/compat.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h \
+		src/sync.h \
+		src/bitcoinrpc.h \
+		src/json/json_spirit_reader_template.h \
+		src/json/json_spirit_value.h \
+		src/json/json_spirit_error_position.h \
+		src/json/json_spirit_writer_template.h \
+		src/json/json_spirit_utils.h \
+		src/checkpoints.h \
+		src/net.h \
+		src/mruset.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/txdb.h \
+		src/txdb-leveldb.h \
+		src/main.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/init.h \
+		src/wallet.h \
+		src/ui_interface.h \
+		src/walletdb.h \
+		src/db.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\rpcrawtransaction.o src\rpcrawtransaction.cpp
+
+build/overviewpage.o: src/qt/overviewpage.cpp src/qt/overviewpage.h \
+		build/ui_overviewpage.h \
+		src/qt/clientmodel.h \
+		src/qt/walletmodel.h \
+		src/allocators.h \
+		src/qt/bitcoinunits.h \
+		src/qt/optionsmodel.h \
+		src/qt/transactiontablemodel.h \
+		src/qt/transactionfilterproxy.h \
+		src/qt/guiutil.h \
+		src/qt/guiconstants.h \
+		src/donation.h \
+		src/serialize.h \
+		src/ver
