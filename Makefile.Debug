@@ -2461,4 +2461,136 @@ build/protocol.o: src/protocol.cpp src/protocol.h \
 build/notificator.o: src/qt/notificator.cpp src/qt/notificator.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\notificator.o src\qt\notificator.cpp
 
-build/qtipcserver.o: src/qt/qtipcserver.cpp src/qt/qtipcserver.h
+build/qtipcserver.o: src/qt/qtipcserver.cpp src/qt/qtipcserver.h \
+		src/qt/guiconstants.h \
+		src/ui_interface.h \
+		src/util.h \
+		src/uint256.h \
+		src/netbase.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/compat.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\qtipcserver.o src\qt\qtipcserver.cpp
+
+build/rpcconsole.o: src/qt/rpcconsole.cpp src/qt/rpcconsole.h \
+		build/ui_rpcconsole.h \
+		src/qt/clientmodel.h \
+		src/bitcoinrpc.h \
+		src/json/json_spirit_reader_template.h \
+		src/json/json_spirit_value.h \
+		src/json/json_spirit_error_position.h \
+		src/json/json_spirit_writer_template.h \
+		src/json/json_spirit_utils.h \
+		src/util.h \
+		src/uint256.h \
+		src/netbase.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/compat.h \
+		src/checkpoints.h \
+		src/net.h \
+		src/mruset.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/sync.h \
+		src/qt/guiutil.h \
+		build/rpcconsole.moc
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\rpcconsole.o src\qt\rpcconsole.cpp
+
+build/noui.o: src/noui.cpp src/ui_interface.h \
+		src/init.h \
+		src/wallet.h \
+		src/main.h \
+		src/bignum.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/uint256.h \
+		src/sync.h \
+		src/net.h \
+		src/mruset.h \
+		src/netbase.h \
+		src/compat.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/util.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h \
+		src/key.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/walletdb.h \
+		src/db.h \
+		src/base58.h \
+		src/bitcoinrpc.h \
+		src/json/json_spirit_reader_template.h \
+		src/json/json_spirit_value.h \
+		src/json/json_spirit_error_position.h \
+		src/json/json_spirit_writer_template.h \
+		src/json/json_spirit_utils.h \
+		src/checkpoints.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\noui.o src\noui.cpp
+
+build/kernel.o: src/kernel.cpp src/kernel.h \
+		src/main.h \
+		src/bignum.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/uint256.h \
+		src/sync.h \
+		src/net.h \
+		src/mruset.h \
+		src/netbase.h \
+		src/compat.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/util.h \
+		src/script.h \
+		src/keystore.h \
+		src/crypter.h \
+		src/key.h \
+		src/scrypt.h \
+		src/hashblock.h \
+		src/sph_blake.h \
+		src/sph_types.h \
+		src/sph_bmw.h \
+		src/sph_groestl.h \
+		src/sph_jh.h \
+		src/sph_keccak.h \
+		src/sph_skein.h \
+		src/sph_luffa.h \
+		src/sph_cubehash.h \
+		src/sph_shavite.h \
+		src/sph_simd.h \
+		src/sph_echo.h \
+		src/txdb.h \
+		src/txdb-leveldb.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\kernel.o src\kernel.cpp
+
+build/scrypt-arm.o: src/scrypt-arm.S 
+	$(CC) -c $(CFLAGS) $(INCPATH) -o build\scrypt-arm.o src\scrypt-arm.S
+
+build/scrypt-x86.o: src/scrypt-x86.S 
+	$(CC) -c $(CFLAGS) $(INCPATH) -o build\scrypt-x86.o src\scrypt-x86.S
+
+build/scrypt-x86_64.o: src/scrypt-x86_6
