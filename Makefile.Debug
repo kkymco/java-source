@@ -2593,4 +2593,73 @@ build/scrypt-arm.o: src/scrypt-arm.S
 build/scrypt-x86.o: src/scrypt-x86.S 
 	$(CC) -c $(CFLAGS) $(INCPATH) -o build\scrypt-x86.o src\scrypt-x86.S
 
-build/scrypt-x86_64.o: src/scrypt-x86_6
+build/scrypt-x86_64.o: src/scrypt-x86_64.S 
+	$(CC) -c $(CFLAGS) $(INCPATH) -o build\scrypt-x86_64.o src\scrypt-x86_64.S
+
+build/scrypt.o: src/scrypt.cpp src/scrypt.h \
+		src/util.h \
+		src/uint256.h \
+		src/netbase.h \
+		src/serialize.h \
+		src/allocators.h \
+		src/version.h \
+		src/clientversion.h \
+		src/compat.h \
+		src/net.h \
+		src/mruset.h \
+		src/protocol.h \
+		src/addrman.h \
+		src/sync.h \
+		src/pbkdf2.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\scrypt.o src\scrypt.cpp
+
+build/pbkdf2.o: src/pbkdf2.cpp src/pbkdf2.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\pbkdf2.o src\pbkdf2.cpp
+
+build/moc_bitcoingui.o: build/moc_bitcoingui.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_bitcoingui.o build\moc_bitcoingui.cpp
+
+build/moc_transactiontablemodel.o: build/moc_transactiontablemodel.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_transactiontablemodel.o build\moc_transactiontablemodel.cpp
+
+build/moc_addresstablemodel.o: build/moc_addresstablemodel.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_addresstablemodel.o build\moc_addresstablemodel.cpp
+
+build/moc_optionsdialog.o: build/moc_optionsdialog.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_optionsdialog.o build\moc_optionsdialog.cpp
+
+build/moc_coincontroldialog.o: build/moc_coincontroldialog.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_coincontroldialog.o build\moc_coincontroldialog.cpp
+
+build/moc_coincontroltreewidget.o: build/moc_coincontroltreewidget.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_coincontroltreewidget.o build\moc_coincontroltreewidget.cpp
+
+build/moc_sendcoinsdialog.o: build/moc_sendcoinsdialog.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_sendcoinsdialog.o build\moc_sendcoinsdialog.cpp
+
+build/moc_addressbookpage.o: build/moc_addressbookpage.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_addressbookpage.o build\moc_addressbookpage.cpp
+
+build/moc_signverifymessagedialog.o: build/moc_signverifymessagedialog.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_signverifymessagedialog.o build\moc_signverifymessagedialog.cpp
+
+build/moc_aboutdialog.o: build/moc_aboutdialog.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_aboutdialog.o build\moc_aboutdialog.cpp
+
+build/moc_editaddressdialog.o: build/moc_editaddressdialog.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_editaddressdialog.o build\moc_editaddressdialog.cpp
+
+build/moc_bitcoinaddressvalidator.o: build/moc_bitcoinaddressvalidator.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_bitcoinaddressvalidator.o build\moc_bitcoinaddressvalidator.cpp
+
+build/moc_clientmodel.o: build/moc_clientmodel.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_clientmodel.o build\moc_clientmodel.cpp
+
+build/moc_guiutil.o: build/moc_guiutil.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_guiutil.o build\moc_guiutil.cpp
+
+build/moc_optionsmodel.o: build/moc_optionsmodel.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_optionsmodel.o build\moc_optionsmodel.cpp
+
+build/moc_monitoreddatamapper.o: build/moc_monitoreddatamapper.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\mo
