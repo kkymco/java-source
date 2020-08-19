@@ -2662,4 +2662,58 @@ build/moc_optionsmodel.o: build/moc_optionsmodel.cpp
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_optionsmodel.o build\moc_optionsmodel.cpp
 
 build/moc_monitoreddatamapper.o: build/moc_monitoreddatamapper.cpp 
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\mo
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_monitoreddatamapper.o build\moc_monitoreddatamapper.cpp
+
+build/moc_transactiondesc.o: build/moc_transactiondesc.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_transactiondesc.o build\moc_transactiondesc.cpp
+
+build/moc_transactiondescdialog.o: build/moc_transactiondescdialog.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_transactiondescdialog.o build\moc_transactiondescdialog.cpp
+
+build/moc_bitcoinamountfield.o: build/moc_bitcoinamountfield.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_bitcoinamountfield.o build\moc_bitcoinamountfield.cpp
+
+build/moc_transactionfilterproxy.o: build/moc_transactionfilterproxy.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_transactionfilterproxy.o build\moc_transactionfilterproxy.cpp
+
+build/moc_transactionview.o: build/moc_transactionview.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_transactionview.o build\moc_transactionview.cpp
+
+build/moc_walletmodel.o: build/moc_walletmodel.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_walletmodel.o build\moc_walletmodel.cpp
+
+build/moc_overviewpage.o: build/moc_overviewpage.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_overviewpage.o build\moc_overviewpage.cpp
+
+build/moc_csvmodelwriter.o: build/moc_csvmodelwriter.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_csvmodelwriter.o build\moc_csvmodelwriter.cpp
+
+build/moc_sendcoinsentry.o: build/moc_sendcoinsentry.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_sendcoinsentry.o build\moc_sendcoinsentry.cpp
+
+build/moc_qvalidatedlineedit.o: build/moc_qvalidatedlineedit.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_qvalidatedlineedit.o build\moc_qvalidatedlineedit.cpp
+
+build/moc_qvaluecombobox.o: build/moc_qvaluecombobox.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_qvaluecombobox.o build\moc_qvaluecombobox.cpp
+
+build/moc_askpassphrasedialog.o: build/moc_askpassphrasedialog.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_askpassphrasedialog.o build\moc_askpassphrasedialog.cpp
+
+build/moc_notificator.o: build/moc_notificator.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_notificator.o build\moc_notificator.cpp
+
+build/moc_rpcconsole.o: build/moc_rpcconsole.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\moc_rpcconsole.o build\moc_rpcconsole.cpp
+
+build/qrc_bitcoin.o: debug/qrc_bitcoin.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build\qrc_bitcoin.o debug\qrc_bitcoin.cpp
+
+####### Install
+
+install:   FORCE
+
+uninstall:   FORCE
+
+FORCE:
+
