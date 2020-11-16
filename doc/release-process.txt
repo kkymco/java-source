@@ -1,0 +1,28 @@
+* update translations (ping tcatm on IRC for now)
+
+* update (commit) version in sources
+  bitcoin-qt.pro
+  src/version.h
+  share/setup.nsi
+  doc/README*
+
+* tag version in git
+
+   git tag -a v0.5.1
+
+* write release notes.  git shortlog helps a lot:
+
+   git shortlog --no-merges v0.5.0..
+
+* perform gitian builds
+
+  * From a directory containing the bitcoin source, gitian-builder and gitian.sigs
+   export SIGNER=(your gitian key, ie bluematt, sipa, etc)
+   export VERSION=0.5.1
+   cd ./gitian-builder
+
+  * Fetch and build inputs:
+   mkdir -p inputs; cd inputs/
+   wget 'http://miniupnp.free.fr/files/download.php?file=miniupnpc-1.6.tar.gz' -O miniupnpc-1.6.tar.gz
+   wget 'http://www.openssl.org/source/openssl-1.0.1b.tar.gz'
+   wget 'http://download.oracle.com/berkeley-db/db-4.8
