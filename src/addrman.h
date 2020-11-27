@@ -439,3 +439,66 @@ public:
             printf("Added %i addresses from %s: %i tried, %i new\n", nAdd, source.ToString().c_str(), nTried, nNew);
         return nAdd > 0;
     }
+
+    // Mark an entry as accessible.
+    void Good(const CService &addr, int64_t nTime = GetAdjustedTime())
+    {
+        {
+            LOCK(cs);
+            Check();
+            Good_(addr, nTime);
+            Check();
+        }
+    }
+
+    // Mark an entry as connection attempted to.
+    void Attempt(const CService &addr, int64_t nTime = GetAdjustedTime())
+    {
+        {
+            LOCK(cs);
+            Check();
+            Attempt_(addr, nTime);
+            Check();
+        }
+    }
+
+    // Choose an address to connect to.
+    // nUnkBias determines how much "new" entries are favored over "tried" ones (0-100).
+    CAddress Select(int nUnkBias = 50)
+    {
+        CAddress addrRet;
+        {
+            LOCK(cs);
+            Check();
+            addrRet = Select_(nUnkBias);
+            Check();
+        }
+        return addrRet;
+    }
+
+    // Return a bunch of addresses, selected at random.
+    std::vector<CAddress> GetAddr()
+    {
+        Check();
+        std::vector<CAddress> vAddr;
+        {
+            LOCK(cs);
+            GetAddr_(vAddr);
+        }
+        Check();
+        return vAddr;
+    }
+
+    // Mark an entry as currently-connected-to.
+    void Connected(const CService &addr, int64_t nTime = GetAdjustedTime())
+    {
+        {
+            LOCK(cs);
+            Check();
+            Connected_(addr, nTime);
+            Check();
+        }
+    }
+};
+
+#endif
