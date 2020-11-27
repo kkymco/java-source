@@ -86,4 +86,17 @@ public:
     bool IsNull() const;
     uint256 GetHash() const;
     bool IsInEffect() const;
-    bool Cancels(con
+    bool Cancels(const CAlert& alert) const;
+    bool AppliesTo(int nVersion, std::string strSubVerIn) const;
+    bool AppliesToMe() const;
+    bool RelayTo(CNode* pnode) const;
+    bool CheckSignature() const;
+    bool ProcessAlert(bool fThread = true);
+
+    /*
+     * Get copy of (active) alert object by hash. Returns a null alert if it is not found.
+     */
+    static CAlert getAlertByHash(const uint256 &hash);
+};
+
+#endif
