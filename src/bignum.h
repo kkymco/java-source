@@ -84,4 +84,91 @@ public:
         BN_clear_free(this);
     }
 
-    //CBigNum(char n) is not portable.  Use
+    //CBigNum(char n) is not portable.  Use 'signed char' or 'unsigned char'.
+    CBigNum(signed char n)        { BN_init(this); if (n >= 0) setulong(n); else setint64(n); }
+    CBigNum(short n)              { BN_init(this); if (n >= 0) setulong(n); else setint64(n); }
+    CBigNum(int n)                { BN_init(this); if (n >= 0) setulong(n); else setint64(n); }
+    CBigNum(long n)               { BN_init(this); if (n >= 0) setulong(n); else setint64(n); }
+    CBigNum(long long n)          { BN_init(this); setint64(n); }
+    CBigNum(unsigned char n)      { BN_init(this); setulong(n); }
+    CBigNum(unsigned short n)     { BN_init(this); setulong(n); }
+    CBigNum(unsigned int n)       { BN_init(this); setulong(n); }
+    CBigNum(unsigned long n)      { BN_init(this); setulong(n); }
+    CBigNum(unsigned long long n) { BN_init(this); setuint64(n); }
+    explicit CBigNum(uint256 n)   { BN_init(this); setuint256(n); }
+
+    explicit CBigNum(const std::vector<unsigned char>& vch)
+    {
+        BN_init(this);
+        setvch(vch);
+    }
+
+    /** Generates a cryptographically secure random number between zero and range exclusive
+    * i.e. 0 < returned number < range
+    * @param range The upper bound on the number.
+    * @return
+    */
+    static CBigNum  randBignum(const CBigNum& range) {
+        CBigNum ret;
+        if(!BN_rand_range(&ret, &range)){
+            throw bignum_error("CBigNum:rand element : BN_rand_range failed");
+        }
+        return ret;
+    }
+
+    /** Generates a cryptographically secure random k-bit number
+    * @param k The bit length of the number.
+    * @return
+    */
+    static CBigNum RandKBitBigum(const uint32_t k){
+        CBigNum ret;
+        if(!BN_rand(&ret, k, -1, 0)){
+            throw bignum_error("CBigNum:rand element : BN_rand failed");
+        }
+        return ret;
+    }
+
+    /**Returns the size in bits of the underlying bignum.
+     *
+     * @return the size
+     */
+    int bitSize() const{
+        return  BN_num_bits(this);
+    }
+
+
+    void setulong(unsigned long n)
+    {
+        if (!BN_set_word(this, n))
+            throw bignum_error("CBigNum conversion from unsigned long : BN_set_word failed");
+    }
+
+    unsigned long getulong() const
+    {
+        return BN_get_word(this);
+    }
+
+    unsigned int getuint() const
+    {
+        return BN_get_word(this);
+    }
+
+    int getint() const
+    {
+        unsigned long n = BN_get_word(this);
+        if (!BN_is_negative(this))
+            return (n > (unsigned long)std::numeric_limits<int>::max() ? std::numeric_limits<int>::max() : n);
+        else
+            return (n > (unsigned long)std::numeric_limits<int>::max() ? std::numeric_limits<int>::min() : -(int)n);
+    }
+
+    void setint64(int64_t sn)
+    {
+        unsigned char pch[sizeof(sn) + 6];
+        unsigned char* p = pch + 4;
+        bool fNegative;
+        uint64_t n;
+
+        if (sn < (int64_t)0)
+        {
+            // Since the minimum signed integer cannot be represented as positive so long as its type is signed, and it's not well-defined what happens if you make it unsigned before negating it, we 
