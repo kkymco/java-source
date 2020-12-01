@@ -171,4 +171,105 @@ public:
 
         if (sn < (int64_t)0)
         {
-            // Since the minimum signed integer cannot be represented as positive so long as its type is signed, and it's not well-defined what happens if you make it unsigned before negating it, we 
+            // Since the minimum signed integer cannot be represented as positive so long as its type is signed, and it's not well-defined what happens if you make it unsigned before negating it, we instead increment the negative integer by 1, convert it, then increment the (now positive) unsigned integer by 1 to compensate
+            n = -(sn + 1);
+            ++n;
+            fNegative = true;
+        } else {
+            n = sn;
+            fNegative = false;
+        }
+
+        bool fLeadingZeroes = true;
+        for (int i = 0; i < 8; i++)
+        {
+            unsigned char c = (n >> 56) & 0xff;
+            n <<= 8;
+            if (fLeadingZeroes)
+            {
+                if (c == 0)
+                    continue;
+                if (c & 0x80)
+                    *p++ = (fNegative ? 0x80 : 0);
+                else if (fNegative)
+                    c |= 0x80;
+                fLeadingZeroes = false;
+            }
+            *p++ = c;
+        }
+        unsigned int nSize = p - (pch + 4);
+        pch[0] = (nSize >> 24) & 0xff;
+        pch[1] = (nSize >> 16) & 0xff;
+        pch[2] = (nSize >> 8) & 0xff;
+        pch[3] = (nSize) & 0xff;
+        BN_mpi2bn(pch, p - pch, this);
+    }
+
+    uint64_t getuint64()
+    {
+        unsigned int nSize = BN_bn2mpi(this, NULL);
+        if (nSize < 4)
+            return 0;
+        std::vector<unsigned char> vch(nSize);
+        BN_bn2mpi(this, &vch[0]);
+        if (vch.size() > 4)
+            vch[4] &= 0x7f;
+        uint64_t n = 0;
+        for (unsigned int i = 0, j = vch.size()-1; i < sizeof(n) && j >= 4; i++, j--)
+            ((unsigned char*)&n)[i] = vch[j];
+        return n;
+    }
+
+    void setuint64(uint64_t n)
+    {
+        unsigned char pch[sizeof(n) + 6];
+        unsigned char* p = pch + 4;
+        bool fLeadingZeroes = true;
+        for (int i = 0; i < 8; i++)
+        {
+            unsigned char c = (n >> 56) & 0xff;
+            n <<= 8;
+            if (fLeadingZeroes)
+            {
+                if (c == 0)
+                    continue;
+                if (c & 0x80)
+                    *p++ = 0;
+                fLeadingZeroes = false;
+            }
+            *p++ = c;
+        }
+        unsigned int nSize = p - (pch + 4);
+        pch[0] = (nSize >> 24) & 0xff;
+        pch[1] = (nSize >> 16) & 0xff;
+        pch[2] = (nSize >> 8) & 0xff;
+        pch[3] = (nSize) & 0xff;
+        BN_mpi2bn(pch, p - pch, this);
+    }
+
+    void setuint256(uint256 n)
+    {
+        unsigned char pch[sizeof(n) + 6];
+        unsigned char* p = pch + 4;
+        bool fLeadingZeroes = true;
+        unsigned char* pbegin = (unsigned char*)&n;
+        unsigned char* psrc = pbegin + sizeof(n);
+        while (psrc != pbegin)
+        {
+            unsigned char c = *(--psrc);
+            if (fLeadingZeroes)
+            {
+                if (c == 0)
+                    continue;
+                if (c & 0x80)
+                    *p++ = 0;
+                fLeadingZeroes = false;
+            }
+            *p++ = c;
+        }
+        unsigned int nSize = p - (pch + 4);
+        pch[0] = (nSize >> 24) & 0xff;
+        pch[1] = (nSize >> 16) & 0xff;
+        pch[2] = (nSize >> 8) & 0xff;
+        pch[3] = (nSize >> 0) & 0xff;
+        B
