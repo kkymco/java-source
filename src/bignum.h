@@ -361,4 +361,118 @@ public:
             psz++;
 
         // hex string to bignum
-        static const signed char phexdigit[256] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,1,2,3,4,5,6,7,8,9,0,0,0,0,0,0, 0,0xa,0xb,0xc,0xd,0xe,0xf,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0xa,0xb,0xc,0xd,0xe,0xf,0,0,0
+        static const signed char phexdigit[256] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,1,2,3,4,5,6,7,8,9,0,0,0,0,0,0, 0,0xa,0xb,0xc,0xd,0xe,0xf,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0xa,0xb,0xc,0xd,0xe,0xf,0,0,0,0,0,0,0,0,0 };
+        *this = 0;
+        while (isxdigit(*psz))
+        {
+            *this <<= 4;
+            int n = phexdigit[(unsigned char)*psz++];
+            *this += n;
+        }
+        if (fNegative)
+            *this = 0 - *this;
+    }
+
+    std::string ToString(int nBase=10) const
+    {
+        CAutoBN_CTX pctx;
+        CBigNum bnBase = nBase;
+        CBigNum bn0 = 0;
+        std::string str;
+        CBigNum bn = *this;
+        BN_set_negative(&bn, false);
+        CBigNum dv;
+        CBigNum rem;
+        if (BN_cmp(&bn, &bn0) == 0)
+            return "0";
+        while (BN_cmp(&bn, &bn0) > 0)
+        {
+            if (!BN_div(&dv, &rem, &bn, &bnBase, pctx))
+                throw bignum_error("CBigNum::ToString() : BN_div failed");
+            bn = dv;
+            unsigned int c = rem.getulong();
+            str += "0123456789abcdef"[c];
+        }
+        if (BN_is_negative(this))
+            str += "-";
+        reverse(str.begin(), str.end());
+        return str;
+    }
+
+    std::string GetHex() const
+    {
+        return ToString(16);
+    }
+
+    unsigned int GetSerializeSize(int nType=0, int nVersion=PROTOCOL_VERSION) const
+    {
+        return ::GetSerializeSize(getvch(), nType, nVersion);
+    }
+
+    template<typename Stream>
+    void Serialize(Stream& s, int nType=0, int nVersion=PROTOCOL_VERSION) const
+    {
+        ::Serialize(s, getvch(), nType, nVersion);
+    }
+
+    template<typename Stream>
+    void Unserialize(Stream& s, int nType=0, int nVersion=PROTOCOL_VERSION)
+    {
+        std::vector<unsigned char> vch;
+        ::Unserialize(s, vch, nType, nVersion);
+        setvch(vch);
+    }
+
+    /**
+    * exponentiation with an int. this^e
+    * @param e the exponent as an int
+    * @return
+    */
+    CBigNum pow(const int e) const {
+        return this->pow(CBigNum(e));
+    }
+
+    /**
+     * exponentiation this^e
+     * @param e the exponent
+     * @return
+     */
+    CBigNum pow(const CBigNum& e) const {
+        CAutoBN_CTX pctx;
+        CBigNum ret;
+        if (!BN_exp(&ret, this, &e, pctx))
+            throw bignum_error("CBigNum::pow : BN_exp failed");
+        return ret;
+    }
+
+    /**
+     * modular multiplication: (this * b) mod m
+     * @param b operand
+     * @param m modulus
+     */
+    CBigNum mul_mod(const CBigNum& b, const CBigNum& m) const {
+        CAutoBN_CTX pctx;
+        CBigNum ret;
+        if (!BN_mod_mul(&ret, this, &b, &m, pctx))
+            throw bignum_error("CBigNum::mul_mod : BN_mod_mul failed");
+        
+        return ret;
+    }
+
+    /**
+     * modular exponentiation: this^e mod n
+     * @param e exponent
+     * @param m modulus
+     */
+    CBigNum pow_mod(const CBigNum& e, const CBigNum& m) const {
+        CAutoBN_CTX pctx;
+        CBigNum ret;
+        if( e < 0){
+            // g^-x = (g^-1)^x
+            CBigNum inv = this->inverse(m);
+            CBigNum posE = e * -1;
+            if (!BN_mod_exp(&ret, &inv, &posE, &m, pctx))
+                throw bignum_error("CBigNum::pow_mod: BN_mod_exp failed on negative exponent");
+        }else
+            if (!BN_mod_exp(&ret, this, &e, &m, pctx))
+                throw bignum_error("CBigNum::pow_mod : BN_mod_e
