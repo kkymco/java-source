@@ -85,4 +85,107 @@ void RPCTypeCheck(const Object& o,
         if (!fAllowNull && v.type() == null_type)
             throw JSONRPCError(RPC_TYPE_ERROR, strprintf("Missing %s", t.first.c_str()));
 
-        if (!((v.type() == t.second) || (fAllowNull && 
+        if (!((v.type() == t.second) || (fAllowNull && (v.type() == null_type))))
+        {
+            string err = strprintf("Expected type %s for %s, got %s",
+                                   Value_type_name[t.second], t.first.c_str(), Value_type_name[v.type()]);
+            throw JSONRPCError(RPC_TYPE_ERROR, err);
+        }
+    }
+}
+
+int64_t AmountFromValue(const Value& value)
+{
+    double dAmount = value.get_real();
+    if (dAmount <= 0.0 || dAmount > 50000000.0)
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount");
+    int64_t nAmount = roundint64(dAmount * COIN);
+    if (!MoneyRange(nAmount))
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount");
+    return nAmount;
+}
+
+Value ValueFromAmount(int64_t amount)
+{
+    return (double)amount / (double)COIN;
+}
+
+std::string HexBits(unsigned int nBits)
+{
+    union {
+        int32_t nBits;
+        char cBits[4];
+    } uBits;
+    uBits.nBits = htonl((int32_t)nBits);
+    return HexStr(BEGIN(uBits.cBits), END(uBits.cBits));
+}
+
+
+//
+// Utilities: convert hex-encoded Values
+// (throws error if not hex).
+//
+uint256 ParseHashV(const Value& v, string strName)
+{
+    string strHex;
+    if (v.type() == str_type)
+        strHex = v.get_str();
+    if (!IsHex(strHex)) // Note: IsHex("") is false
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strName+" must be hexadecimal string (not '"+strHex+"')");
+    uint256 result;
+    result.SetHex(strHex);
+    return result;
+}
+
+uint256 ParseHashO(const Object& o, string strKey)
+{
+    return ParseHashV(find_value(o, strKey), strKey);
+}
+
+vector<unsigned char> ParseHexV(const Value& v, string strName)
+{
+    string strHex;
+    if (v.type() == str_type)
+        strHex = v.get_str();
+    if (!IsHex(strHex))
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strName+" must be hexadecimal string (not '"+strHex+"')");
+    return ParseHex(strHex);
+}
+
+vector<unsigned char> ParseHexO(const Object& o, string strKey)
+{
+    return ParseHexV(find_value(o, strKey), strKey);
+}
+
+
+///
+/// Note: This interface may still be subject to change.
+///
+
+string CRPCTable::help(string strCommand) const
+{
+    string strRet;
+    set<rpcfn_type> setDone;
+    for (map<string, const CRPCCommand*>::const_iterator mi = mapCommands.begin(); mi != mapCommands.end(); ++mi)
+    {
+        const CRPCCommand *pcmd = mi->second;
+        string strMethod = mi->first;
+        // We already filter duplicates, but these deprecated screw up the sort order
+        if (strMethod.find("label") != string::npos)
+            continue;
+        if (strCommand != "" && strMethod != strCommand)
+            continue;
+        try
+        {
+            Array params;
+            rpcfn_type pfn = pcmd->actor;
+            if (setDone.insert(pfn).second)
+                (*pfn)(params, true);
+        }
+        catch (std::exception& e)
+        {
+            // Help text is returned in an exception
+            string strHelp = string(e.what());
+            if (strCommand == "")
+                if (strHelp.find('\n') != string::npos)
+                    strHelp = strHe
