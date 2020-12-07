@@ -300,3 +300,84 @@ static const CRPCCommand vRPCCommands[] =
     { "decoderawtransaction",   &decoderawtransaction,   false,  false },
     { "decodescript",           &decodescript,           false,  false },
     { "signrawtransaction",     &signrawtransaction,     false,  false },
+    { "sendrawtransaction",     &sendrawtransaction,     false,  false },
+    { "getcheckpoint",          &getcheckpoint,          true,   false },
+    { "reservebalance",         &reservebalance,         false,  true},
+    { "checkwallet",            &checkwallet,            false,  true},
+    { "repairwallet",           &repairwallet,           false,  true},
+    { "resendtx",               &resendtx,               false,  true},
+    { "makekeypair",            &makekeypair,            false,  true},
+    { "sendalert",              &sendalert,              false,  false},
+    { "getlastanontxinfo",      &getlastanontxinfo,      true,   false},
+    { "listservicenodes",       &listservicenodes,       true,   false},
+};
+
+CRPCTable::CRPCTable()
+{
+    unsigned int vcidx;
+    for (vcidx = 0; vcidx < (sizeof(vRPCCommands) / sizeof(vRPCCommands[0])); vcidx++)
+    {
+        const CRPCCommand *pcmd;
+
+        pcmd = &vRPCCommands[vcidx];
+        mapCommands[pcmd->name] = pcmd;
+    }
+}
+
+const CRPCCommand *CRPCTable::operator[](string name) const
+{
+    map<string, const CRPCCommand*>::const_iterator it = mapCommands.find(name);
+    if (it == mapCommands.end())
+        return NULL;
+    return (*it).second;
+}
+
+//
+// HTTP protocol
+//
+// This ain't Apache.  We're just using HTTP header for the length field
+// and to be compatible with other JSON-RPC implementations.
+//
+
+string HTTPPost(const string& strMsg, const map<string,string>& mapRequestHeaders)
+{
+    ostringstream s;
+    s << "POST / HTTP/1.1\r\n"
+      << "User-Agent: SuperCoin-json-rpc/" << FormatFullVersion() << "\r\n"
+      << "Host: 127.0.0.1\r\n"
+      << "Content-Type: application/json\r\n"
+      << "Content-Length: " << strMsg.size() << "\r\n"
+      << "Connection: close\r\n"
+      << "Accept: application/json\r\n";
+    BOOST_FOREACH(const PAIRTYPE(string, string)& item, mapRequestHeaders)
+        s << item.first << ": " << item.second << "\r\n";
+    s << "\r\n" << strMsg;
+
+    return s.str();
+}
+
+string rfc1123Time()
+{
+    char buffer[64];
+    time_t now;
+    time(&now);
+    struct tm* now_gmt = gmtime(&now);
+    string locale(setlocale(LC_TIME, NULL));
+    setlocale(LC_TIME, "C"); // we want POSIX (aka "C") weekday/month strings
+    strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S +0000", now_gmt);
+    setlocale(LC_TIME, locale.c_str());
+    return string(buffer);
+}
+
+static string HTTPReply(int nStatus, const string& strMsg, bool keepalive)
+{
+    if (nStatus == HTTP_UNAUTHORIZED)
+        return strprintf("HTTP/1.0 401 Authorization Required\r\n"
+            "Date: %s\r\n"
+            "Server: SuperCoin-json-rpc/%s\r\n"
+            "WWW-Authenticate: Basic realm=\"jsonrpc\"\r\n"
+            "Content-Type: text/html\r\n"
+            "Content-Length: 296\r\n"
+            "\r\n"
+            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"\r\n"
+            "\"http://www.w3.org/TR/1999/REC-html401-19991
