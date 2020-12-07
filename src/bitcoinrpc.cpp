@@ -188,4 +188,75 @@ string CRPCTable::help(string strCommand) const
             string strHelp = string(e.what());
             if (strCommand == "")
                 if (strHelp.find('\n') != string::npos)
-                    strHelp = strHe
+                    strHelp = strHelp.substr(0, strHelp.find('\n'));
+            strRet += strHelp + "\n";
+        }
+    }
+    if (strRet == "")
+        strRet = strprintf("help: unknown command: %s\n", strCommand.c_str());
+    strRet = strRet.substr(0,strRet.size()-1);
+    return strRet;
+}
+
+Value help(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "help [command]\n"
+            "List commands, or get help for a command.");
+
+    string strCommand;
+    if (params.size() > 0)
+        strCommand = params[0].get_str();
+
+    return tableRPC.help(strCommand);
+}
+
+
+Value stop(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "stop <detach>\n"
+            "<detach> is true or false to detach the database or not for this stop only\n"
+            "Stop SuperCoin server (and possibly override the detachdb config value).");
+    // Shutdown will take long enough that the response should get back
+    if (params.size() > 0)
+        bitdb.SetDetach(params[0].get_bool());
+    StartShutdown();
+    return "SuperCoin server stopping";
+}
+
+
+
+//
+// Call Table
+//
+
+
+static const CRPCCommand vRPCCommands[] =
+{ //  name                      function                 safemd  unlocked
+  //  ------------------------  -----------------------  ------  --------
+    { "help",                   &help,                   true,   true },
+    { "stop",                   &stop,                   true,   true },
+    { "getbestblockhash",       &getbestblockhash,       true,   false },
+    { "getblockcount",          &getblockcount,          true,   false },
+    { "getconnectioncount",     &getconnectioncount,     true,   false },
+    { "getpeerinfo",            &getpeerinfo,            true,   false },
+    { "getdifficulty",          &getdifficulty,          true,   false },
+    { "getinfo",                &getinfo,                true,   false },
+    { "getsubsidy",             &getsubsidy,             true,   false },
+    { "getmininginfo",          &getmininginfo,          true,   false },
+    { "getstakinginfo",         &getstakinginfo,         true,   false },
+    { "getnewaddress",          &getnewaddress,          true,   false },
+    { "getnewpubkey",           &getnewpubkey,           true,   false },
+    { "getaccountaddress",      &getaccountaddress,      true,   false },
+    { "setaccount",             &setaccount,             true,   false },
+    { "getaccount",             &getaccount,             false,  false },
+    { "getaddressesbyaccount",  &getaddressesbyaccount,  true,   false },
+    { "sendtoaddress",          &sendtoaddress,          false,  false },
+    { "getreceivedbyaddress",   &getreceivedbyaddress,   false,  false },
+    { "getreceivedbyaccount",   &getreceivedbyaccount,   false,  false },
+    { "listreceivedbyaddress",  &listreceivedbyaddress,  false,  false },
+    { "listreceivedbyaccount",  &listreceivedbyaccount,  false,  false },
+    { "backupwallet",           &bac
