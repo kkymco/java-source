@@ -473,4 +473,89 @@ int ReadHTTP(std::basic_istream<char>& stream, map<string, string>& mapHeadersRe
         vector<char> vch(nLen);
         stream.read(&vch[0], nLen);
         strMessageRet = string(vch.begin(), vch.end());
-   
+    }
+
+    string sConHdr = mapHeadersRet["connection"];
+
+    if ((sConHdr != "close") && (sConHdr != "keep-alive"))
+    {
+        if (nProto >= 1)
+            mapHeadersRet["connection"] = "keep-alive";
+        else
+            mapHeadersRet["connection"] = "close";
+    }
+
+    return nStatus;
+}
+
+bool HTTPAuthorized(map<string, string>& mapHeaders)
+{
+    string strAuth = mapHeaders["authorization"];
+    if (strAuth.substr(0,6) != "Basic ")
+        return false;
+    string strUserPass64 = strAuth.substr(6); boost::trim(strUserPass64);
+    string strUserPass = DecodeBase64(strUserPass64);
+    return TimingResistantEqual(strUserPass, strRPCUserColonPass);
+}
+
+//
+// JSON-RPC protocol.  Bitcoin speaks version 1.0 for maximum compatibility,
+// but uses JSON-RPC 1.1/2.0 standards for parts of the 1.0 standard that were
+// unspecified (HTTP errors and contents of 'error').
+//
+// 1.0 spec: http://json-rpc.org/wiki/specification
+// 1.2 spec: http://groups.google.com/group/json-rpc/web/json-rpc-over-http
+// http://www.codeproject.com/KB/recipes/JSON_Spirit.aspx
+//
+
+string JSONRPCRequest(const string& strMethod, const Array& params, const Value& id)
+{
+    Object request;
+    request.push_back(Pair("method", strMethod));
+    request.push_back(Pair("params", params));
+    request.push_back(Pair("id", id));
+    return write_string(Value(request), false) + "\n";
+}
+
+Object JSONRPCReplyObj(const Value& result, const Value& error, const Value& id)
+{
+    Object reply;
+    if (error.type() != null_type)
+        reply.push_back(Pair("result", Value::null));
+    else
+        reply.push_back(Pair("result", result));
+    reply.push_back(Pair("error", error));
+    reply.push_back(Pair("id", id));
+    return reply;
+}
+
+string JSONRPCReply(const Value& result, const Value& error, const Value& id)
+{
+    Object reply = JSONRPCReplyObj(result, error, id);
+    return write_string(Value(reply), false) + "\n";
+}
+
+void ErrorReply(std::ostream& stream, const Object& objError, const Value& id)
+{
+    // Send error reply from json-rpc error object
+    int nStatus = HTTP_INTERNAL_SERVER_ERROR;
+    int code = find_value(objError, "code").get_int();
+    if (code == RPC_INVALID_REQUEST) nStatus = HTTP_BAD_REQUEST;
+    else if (code == RPC_METHOD_NOT_FOUND) nStatus = HTTP_NOT_FOUND;
+    string strReply = JSONRPCReply(Value::null, objError, id);
+    stream << HTTPReply(nStatus, strReply, false) << std::flush;
+}
+
+bool ClientAllowed(const boost::asio::ip::address& address)
+{
+    // Make sure that IPv4-compatible and IPv4-mapped IPv6 addresses are treated as IPv4 addresses
+    if (address.is_v6()
+     && (address.to_v6().is_v4_compatible()
+      || address.to_v6().is_v4_mapped()))
+        return ClientAllowed(address.to_v6().to_v4());
+
+    if (address == asio::ip::address_v4::loopback()
+     || address == asio::ip::address_v6::loopback()
+     || (address.is_v4()
+         // Check whether IPv4 addresses match 127.0.0.0/8 (loopback subnet)
+      && (address.to_v4().to_ulong() & 0xff000000) =
