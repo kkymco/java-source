@@ -664,4 +664,86 @@ public:
     typename Protocol::endpoint peer;
     asio::ssl::stream<typename Protocol::socket> sslStream;
 
-pri
+private:
+    SSLIOStreamDevice<Protocol> _d;
+    iostreams::stream< SSLIOStreamDevice<Protocol> > _stream;
+};
+
+void ThreadRPCServer(void* parg)
+{
+    // Make this thread recognisable as the RPC listener
+    RenameThread("SuperCoin-rpclist");
+
+    try
+    {
+        vnThreadsRunning[THREAD_RPCLISTENER]++;
+        ThreadRPCServer2(parg);
+        vnThreadsRunning[THREAD_RPCLISTENER]--;
+    }
+    catch (std::exception& e) {
+        vnThreadsRunning[THREAD_RPCLISTENER]--;
+        PrintException(&e, "ThreadRPCServer()");
+    } catch (...) {
+        vnThreadsRunning[THREAD_RPCLISTENER]--;
+        PrintException(NULL, "ThreadRPCServer()");
+    }
+    printf("ThreadRPCServer exited\n");
+}
+
+// Forward declaration required for RPCListen
+template <typename Protocol, typename SocketAcceptorService>
+static void RPCAcceptHandler(boost::shared_ptr< basic_socket_acceptor<Protocol, SocketAcceptorService> > acceptor,
+                             ssl::context& context,
+                             bool fUseSSL,
+                             AcceptedConnection* conn,
+                             const boost::system::error_code& error);
+
+/**
+ * Sets up I/O resources to accept and handle a new connection.
+ */
+template <typename Protocol, typename SocketAcceptorService>
+static void RPCListen(boost::shared_ptr< basic_socket_acceptor<Protocol, SocketAcceptorService> > acceptor,
+                   ssl::context& context,
+                   const bool fUseSSL)
+{
+    // Accept connection
+    AcceptedConnectionImpl<Protocol>* conn = new AcceptedConnectionImpl<Protocol>(acceptor->get_io_service(), context, fUseSSL);
+
+    acceptor->async_accept(
+            conn->sslStream.lowest_layer(),
+            conn->peer,
+            boost::bind(&RPCAcceptHandler<Protocol, SocketAcceptorService>,
+                acceptor,
+                boost::ref(context),
+                fUseSSL,
+                conn,
+                boost::asio::placeholders::error));
+}
+
+/**
+ * Accept and handle incoming connection.
+ */
+template <typename Protocol, typename SocketAcceptorService>
+static void RPCAcceptHandler(boost::shared_ptr< basic_socket_acceptor<Protocol, SocketAcceptorService> > acceptor,
+                             ssl::context& context,
+                             const bool fUseSSL,
+                             AcceptedConnection* conn,
+                             const boost::system::error_code& error)
+{
+    vnThreadsRunning[THREAD_RPCLISTENER]++;
+
+    // Immediately start accepting new connections, except when we're cancelled or our socket is closed.
+    if (error != asio::error::operation_aborted
+     && acceptor->is_open())
+        RPCListen(acceptor, context, fUseSSL);
+
+    AcceptedConnectionImpl<ip::tcp>* tcp_conn = dynamic_cast< AcceptedConnectionImpl<ip::tcp>* >(conn);
+
+    // TODO: Actually handle errors
+    if (error)
+    {
+        delete conn;
+    }
+
+    // Restrict callers by IP.  It is important to
+    // do this bef
