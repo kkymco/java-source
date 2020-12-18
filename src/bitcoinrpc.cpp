@@ -814,4 +814,64 @@ void ThreadRPCServer2(void* parg)
         else printf("ThreadRPCServer ERROR: missing server certificate file %s\n", pathCertFile.string().c_str());
 
         filesystem::path pathPKFile(GetArg("-rpcsslprivatekeyfile", "server.pem"));
-        if (!pathPKFile.is_complete()) pathPKFile = filesystem::path(
+        if (!pathPKFile.is_complete()) pathPKFile = filesystem::path(GetDataDir()) / pathPKFile;
+        if (filesystem::exists(pathPKFile)) context.use_private_key_file(pathPKFile.string(), ssl::context::pem);
+        else printf("ThreadRPCServer ERROR: missing server private key file %s\n", pathPKFile.string().c_str());
+
+        string strCiphers = GetArg("-rpcsslciphers", "TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH");
+        SSL_CTX_set_cipher_list(context.impl(), strCiphers.c_str());
+    }
+
+    // Try a dual IPv6/IPv4 socket, falling back to separate IPv4 and IPv6 sockets
+    const bool loopback = !mapArgs.count("-rpcallowip");
+    asio::ip::address bindAddress = loopback ? asio::ip::address_v6::loopback() : asio::ip::address_v6::any();
+    ip::tcp::endpoint endpoint(bindAddress, GetArg("-rpcport", GetDefaultRPCPort()));
+    boost::system::error_code v6_only_error;
+    boost::shared_ptr<ip::tcp::acceptor> acceptor(new ip::tcp::acceptor(io_service));
+
+    boost::signals2::signal<void ()> StopRequests;
+
+    bool fListening = false;
+    std::string strerr;
+    try
+    {
+        acceptor->open(endpoint.protocol());
+        acceptor->set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+
+        // Try making the socket dual IPv6/IPv4 (if listening on the "any" address)
+        acceptor->set_option(boost::asio::ip::v6_only(loopback), v6_only_error);
+
+        acceptor->bind(endpoint);
+        acceptor->listen(socket_base::max_connections);
+
+        RPCListen(acceptor, context, fUseSSL);
+        // Cancel outstanding listen-requests for this acceptor when shutting down
+        StopRequests.connect(signals2::slot<void ()>(
+                    static_cast<void (ip::tcp::acceptor::*)()>(&ip::tcp::acceptor::close), acceptor.get())
+                .track(acceptor));
+
+        fListening = true;
+    }
+    catch(boost::system::system_error &e)
+    {
+        strerr = strprintf(_("An error occurred while setting up the RPC port %u for listening on IPv6, falling back to IPv4: %s"), endpoint.port(), e.what());
+    }
+
+    try {
+        // If dual IPv6/IPv4 failed (or we're opening loopback interfaces only), open IPv4 separately
+        if (!fListening || loopback || v6_only_error)
+        {
+            bindAddress = loopback ? asio::ip::address_v4::loopback() : asio::ip::address_v4::any();
+            endpoint.address(bindAddress);
+
+            acceptor.reset(new ip::tcp::acceptor(io_service));
+            acceptor->open(endpoint.protocol());
+            acceptor->set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+            acceptor->bind(endpoint);
+            acceptor->listen(socket_base::max_connections);
+
+            RPCListen(acceptor, context, fUseSSL);
+            // Cancel outstanding listen-requests for this acceptor when shutting down
+            StopRequests.connect(signals2::slot<void ()>(
+                        static_cast<void (ip::tcp::acceptor::*)()>(&ip::tcp::acceptor::close), acceptor.get())
+                    .track(ac
