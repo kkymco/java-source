@@ -874,4 +874,111 @@ void ThreadRPCServer2(void* parg)
             // Cancel outstanding listen-requests for this acceptor when shutting down
             StopRequests.connect(signals2::slot<void ()>(
                         static_cast<void (ip::tcp::acceptor::*)()>(&ip::tcp::acceptor::close), acceptor.get())
-                    .track(ac
+                    .track(acceptor));
+
+            fListening = true;
+        }
+    }
+    catch(boost::system::system_error &e)
+    {
+        strerr = strprintf(_("An error occurred while setting up the RPC port %u for listening on IPv4: %s"), endpoint.port(), e.what());
+    }
+
+    if (!fListening) {
+        uiInterface.ThreadSafeMessageBox(strerr, _("Error"), CClientUIInterface::OK | CClientUIInterface::MODAL);
+        StartShutdown();
+        return;
+    }
+
+    vnThreadsRunning[THREAD_RPCLISTENER]--;
+    while (!fShutdown)
+        io_service.run_one();
+    vnThreadsRunning[THREAD_RPCLISTENER]++;
+    StopRequests();
+}
+
+class JSONRequest
+{
+public:
+    Value id;
+    string strMethod;
+    Array params;
+
+    JSONRequest() { id = Value::null; }
+    void parse(const Value& valRequest);
+};
+
+void JSONRequest::parse(const Value& valRequest)
+{
+    // Parse request
+    if (valRequest.type() != obj_type)
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Invalid Request object");
+    const Object& request = valRequest.get_obj();
+
+    // Parse id now so errors from here on will have the id
+    id = find_value(request, "id");
+
+    // Parse method
+    Value valMethod = find_value(request, "method");
+    if (valMethod.type() == null_type)
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Missing method");
+    if (valMethod.type() != str_type)
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Method must be a string");
+    strMethod = valMethod.get_str();
+    if (strMethod != "getwork" && strMethod != "getblocktemplate")
+        printf("ThreadRPCServer method=%s\n", strMethod.c_str());
+
+    // Parse params
+    Value valParams = find_value(request, "params");
+    if (valParams.type() == array_type)
+        params = valParams.get_array();
+    else if (valParams.type() == null_type)
+        params = Array();
+    else
+        throw JSONRPCError(RPC_INVALID_REQUEST, "Params must be an array");
+}
+
+static Object JSONRPCExecOne(const Value& req)
+{
+    Object rpc_result;
+
+    JSONRequest jreq;
+    try {
+        jreq.parse(req);
+
+        Value result = tableRPC.execute(jreq.strMethod, jreq.params);
+        rpc_result = JSONRPCReplyObj(result, Value::null, jreq.id);
+    }
+    catch (Object& objError)
+    {
+        rpc_result = JSONRPCReplyObj(Value::null, objError, jreq.id);
+    }
+    catch (std::exception& e)
+    {
+        rpc_result = JSONRPCReplyObj(Value::null,
+                                     JSONRPCError(RPC_PARSE_ERROR, e.what()), jreq.id);
+    }
+
+    return rpc_result;
+}
+
+static string JSONRPCExecBatch(const Array& vReq)
+{
+    Array ret;
+    for (unsigned int reqIdx = 0; reqIdx < vReq.size(); reqIdx++)
+        ret.push_back(JSONRPCExecOne(vReq[reqIdx]));
+
+    return write_string(Value(ret), false) + "\n";
+}
+
+static CCriticalSection cs_THREAD_RPCHANDLER;
+
+void ThreadRPCServer3(void* parg)
+{
+    // Make this thread recognisable as the RPC handler
+    RenameThread("SuperCoin-rpchand");
+
+    {
+        LOCK(cs_THREAD_RPCHANDLER);
+        vnThreadsRunning[THREAD_RPCHANDLER]++;
+    
