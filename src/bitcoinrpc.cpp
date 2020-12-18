@@ -981,4 +981,100 @@ void ThreadRPCServer3(void* parg)
     {
         LOCK(cs_THREAD_RPCHANDLER);
         vnThreadsRunning[THREAD_RPCHANDLER]++;
-    
+    }
+    AcceptedConnection *conn = (AcceptedConnection *) parg;
+
+    bool fRun = true;
+    while (true)
+    {
+        if (fShutdown || !fRun)
+        {
+            conn->close();
+            delete conn;
+            {
+                LOCK(cs_THREAD_RPCHANDLER);
+                --vnThreadsRunning[THREAD_RPCHANDLER];
+            }
+            return;
+        }
+        map<string, string> mapHeaders;
+        string strRequest;
+
+        ReadHTTP(conn->stream(), mapHeaders, strRequest);
+
+        // Check authorization
+        if (mapHeaders.count("authorization") == 0)
+        {
+            conn->stream() << HTTPReply(HTTP_UNAUTHORIZED, "", false) << std::flush;
+            break;
+        }
+        if (!HTTPAuthorized(mapHeaders))
+        {
+            printf("ThreadRPCServer incorrect password attempt from %s\n", conn->peer_address_to_string().c_str());
+            /* Deter brute-forcing short passwords.
+               If this results in a DOS the user really
+               shouldn't have their RPC port exposed.*/
+            if (mapArgs["-rpcpassword"].size() < 20)
+                MilliSleep(250);
+
+            conn->stream() << HTTPReply(HTTP_UNAUTHORIZED, "", false) << std::flush;
+            break;
+        }
+        if (mapHeaders["connection"] == "close")
+            fRun = false;
+
+        JSONRequest jreq;
+        try
+        {
+            // Parse request
+            Value valRequest;
+            if (!read_string(strRequest, valRequest))
+                throw JSONRPCError(RPC_PARSE_ERROR, "Parse error");
+
+            string strReply;
+
+            // singleton request
+            if (valRequest.type() == obj_type) {
+                jreq.parse(valRequest);
+
+                Value result = tableRPC.execute(jreq.strMethod, jreq.params);
+
+                // Send reply
+                strReply = JSONRPCReply(result, Value::null, jreq.id);
+
+            // array of requests
+            } else if (valRequest.type() == array_type)
+                strReply = JSONRPCExecBatch(valRequest.get_array());
+            else
+                throw JSONRPCError(RPC_PARSE_ERROR, "Top-level object parse error");
+
+            conn->stream() << HTTPReply(HTTP_OK, strReply, fRun) << std::flush;
+        }
+        catch (Object& objError)
+        {
+            ErrorReply(conn->stream(), objError, jreq.id);
+            break;
+        }
+        catch (std::exception& e)
+        {
+            ErrorReply(conn->stream(), JSONRPCError(RPC_PARSE_ERROR, e.what()), jreq.id);
+            break;
+        }
+    }
+
+    delete conn;
+    {
+        LOCK(cs_THREAD_RPCHANDLER);
+        vnThreadsRunning[THREAD_RPCHANDLER]--;
+    }
+}
+
+json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_spirit::Array &params) const
+{
+    // Find method
+    const CRPCCommand *pcmd = tableRPC[strMethod];
+    if (!pcmd)
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found");
+
+    // Observe safe mode
+    strin
