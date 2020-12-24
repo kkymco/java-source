@@ -1077,4 +1077,76 @@ json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_s
         throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found");
 
     // Observe safe mode
-    strin
+    string strWarning = GetWarnings("rpc");
+    if (strWarning != "" && !GetBoolArg("-disablesafemode") &&
+        !pcmd->okSafeMode)
+        throw JSONRPCError(RPC_FORBIDDEN_BY_SAFE_MODE, string("Safe mode: ") + strWarning);
+
+    try
+    {
+        // Execute
+        Value result;
+        {
+            if (pcmd->unlocked)
+                result = pcmd->actor(params, false);
+            else {
+                LOCK2(cs_main, pwalletMain->cs_wallet);
+                result = pcmd->actor(params, false);
+            }
+        }
+        return result;
+    }
+    catch (std::exception& e)
+    {
+        throw JSONRPCError(RPC_MISC_ERROR, e.what());
+    }
+}
+
+
+Object CallRPC(const string& strMethod, const Array& params)
+{
+    if (mapArgs["-rpcuser"] == "" && mapArgs["-rpcpassword"] == "")
+        throw runtime_error(strprintf(
+            _("You must set rpcpassword=<password> in the configuration file:\n%s\n"
+              "If the file does not exist, create it with owner-readable-only file permissions."),
+                GetConfigFile().string().c_str()));
+
+    // Connect to localhost
+    bool fUseSSL = GetBoolArg("-rpcssl");
+    asio::io_service io_service;
+    ssl::context context(io_service, ssl::context::sslv23);
+    context.set_options(ssl::context::no_sslv2);
+    asio::ssl::stream<asio::ip::tcp::socket> sslStream(io_service, context);
+    SSLIOStreamDevice<asio::ip::tcp> d(sslStream, fUseSSL);
+    iostreams::stream< SSLIOStreamDevice<asio::ip::tcp> > stream(d);
+    if (!d.connect(GetArg("-rpcconnect", "127.0.0.1"), GetArg("-rpcport", itostr(GetDefaultRPCPort()))))
+        throw runtime_error("couldn't connect to server");
+
+    // HTTP basic authentication
+    string strUserPass64 = EncodeBase64(mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"]);
+    map<string, string> mapRequestHeaders;
+    mapRequestHeaders["Authorization"] = string("Basic ") + strUserPass64;
+
+    // Send request
+    string strRequest = JSONRPCRequest(strMethod, params, 1);
+    string strPost = HTTPPost(strRequest, mapRequestHeaders);
+    stream << strPost << std::flush;
+
+    // Receive reply
+    map<string, string> mapHeaders;
+    string strReply;
+    int nStatus = ReadHTTP(stream, mapHeaders, strReply);
+    if (nStatus == HTTP_UNAUTHORIZED)
+        throw runtime_error("incorrect rpcuser or rpcpassword (authorization failed)");
+    else if (nStatus >= 400 && nStatus != HTTP_BAD_REQUEST && nStatus != HTTP_NOT_FOUND && nStatus != HTTP_INTERNAL_SERVER_ERROR)
+        throw runtime_error(strprintf("server returned HTTP error %d", nStatus));
+    else if (strReply.empty())
+        throw runtime_error("no response from server");
+
+    // Parse reply
+    Value valReply;
+    if (!read_string(strReply, valReply))
+        throw runtime_error("couldn't parse reply from server");
+    const Object& reply = valReply.get_obj();
+    if (reply.empty())
+        throw runtime_error("expected reply to have r
