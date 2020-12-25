@@ -1274,4 +1274,73 @@ int CommandLineRPC(int argc, char *argv[])
 
         if (error.type() != null_type)
         {
-            
+            // Error
+            strPrint = "error: " + write_string(error, false);
+            int code = find_value(error.get_obj(), "code").get_int();
+            nRet = abs(code);
+        }
+        else
+        {
+            // Result
+            if (result.type() == null_type)
+                strPrint = "";
+            else if (result.type() == str_type)
+                strPrint = result.get_str();
+            else
+                strPrint = write_string(result, true);
+        }
+    }
+    catch (std::exception& e)
+    {
+        strPrint = string("error: ") + e.what();
+        nRet = 87;
+    }
+    catch (...)
+    {
+        PrintException(NULL, "CommandLineRPC()");
+    }
+
+    if (strPrint != "")
+    {
+        fprintf((nRet == 0 ? stdout : stderr), "%s\n", strPrint.c_str());
+    }
+    return nRet;
+}
+
+
+
+
+#ifdef TEST
+int main(int argc, char *argv[])
+{
+#ifdef _MSC_VER
+    // Turn off Microsoft heap dump noise
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_WARN, CreateFile("NUL", GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, 0));
+#endif
+    setbuf(stdin, NULL);
+    setbuf(stdout, NULL);
+    setbuf(stderr, NULL);
+
+    try
+    {
+        if (argc >= 2 && string(argv[1]) == "-server")
+        {
+            printf("server ready\n");
+            ThreadRPCServer(NULL);
+        }
+        else
+        {
+            return CommandLineRPC(argc, argv);
+        }
+    }
+    catch (std::exception& e) {
+        PrintException(&e, "main()");
+    } catch (...) {
+        PrintException(NULL, "main()");
+    }
+    return 0;
+}
+#endif
+
+const CRPCTable tableRPC;
