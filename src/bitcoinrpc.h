@@ -205,4 +205,21 @@ extern json_spirit::Value getnewpubkey(const json_spirit::Array& params, bool fH
 extern json_spirit::Value getrawtransaction(const json_spirit::Array& params, bool fHelp); // in rcprawtransaction.cpp
 extern json_spirit::Value listunspent(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value createrawtransaction(const json_spirit::Array& params, bool fHelp);
-extern json_spirit::Value decoderawtransaction(const json_spirit::Array& params, bool fHe
+extern json_spirit::Value decoderawtransaction(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value decodescript(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value signrawtransaction(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value sendrawtransaction(const json_spirit::Array& params, bool fHelp);
+
+extern json_spirit::Value getbestblockhash(const json_spirit::Array& params, bool fHelp); // in rpcblockchain.cpp
+extern json_spirit::Value getblockcount(const json_spirit::Array& params, bool fHelp); // in rpcblockchain.cpp
+extern json_spirit::Value getdifficulty(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value settxfee(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getrawmempool(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getblockhash(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getblock(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getblockbynumber(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getcheckpoint(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getlastanontxinfo(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value listservicenodes(const json_spirit::Array& params, bool fHelp);
+
+#endif
