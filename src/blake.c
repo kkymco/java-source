@@ -313,4 +313,99 @@ static const unsigned sigma[16][16] = {
 #define CS9   SPH_C32(0x38D01377)
 #define CSA   SPH_C32(0xBE5466CF)
 #define CSB   SPH_C32(0x34E90C6C)
-#define CSC   SPH_C32(0
+#define CSC   SPH_C32(0xC0AC29B7)
+#define CSD   SPH_C32(0xC97C50DD)
+#define CSE   SPH_C32(0x3F84D5B5)
+#define CSF   SPH_C32(0xB5470917)
+
+#if SPH_COMPACT_BLAKE_32
+
+static const sph_u32 CS[16] = {
+	SPH_C32(0x243F6A88), SPH_C32(0x85A308D3),
+	SPH_C32(0x13198A2E), SPH_C32(0x03707344),
+	SPH_C32(0xA4093822), SPH_C32(0x299F31D0),
+	SPH_C32(0x082EFA98), SPH_C32(0xEC4E6C89),
+	SPH_C32(0x452821E6), SPH_C32(0x38D01377),
+	SPH_C32(0xBE5466CF), SPH_C32(0x34E90C6C),
+	SPH_C32(0xC0AC29B7), SPH_C32(0xC97C50DD),
+	SPH_C32(0x3F84D5B5), SPH_C32(0xB5470917)
+};
+
+#endif
+
+#if SPH_64
+
+#define CBx(r, i)   CBx_(Z ## r ## i)
+#define CBx_(n)     CBx__(n)
+#define CBx__(n)    CB ## n
+
+#define CB0   SPH_C64(0x243F6A8885A308D3)
+#define CB1   SPH_C64(0x13198A2E03707344)
+#define CB2   SPH_C64(0xA4093822299F31D0)
+#define CB3   SPH_C64(0x082EFA98EC4E6C89)
+#define CB4   SPH_C64(0x452821E638D01377)
+#define CB5   SPH_C64(0xBE5466CF34E90C6C)
+#define CB6   SPH_C64(0xC0AC29B7C97C50DD)
+#define CB7   SPH_C64(0x3F84D5B5B5470917)
+#define CB8   SPH_C64(0x9216D5D98979FB1B)
+#define CB9   SPH_C64(0xD1310BA698DFB5AC)
+#define CBA   SPH_C64(0x2FFD72DBD01ADFB7)
+#define CBB   SPH_C64(0xB8E1AFED6A267E96)
+#define CBC   SPH_C64(0xBA7C9045F12C7F99)
+#define CBD   SPH_C64(0x24A19947B3916CF7)
+#define CBE   SPH_C64(0x0801F2E2858EFC16)
+#define CBF   SPH_C64(0x636920D871574E69)
+
+#if SPH_COMPACT_BLAKE_64
+
+static const sph_u64 CB[16] = {
+	SPH_C64(0x243F6A8885A308D3), SPH_C64(0x13198A2E03707344),
+	SPH_C64(0xA4093822299F31D0), SPH_C64(0x082EFA98EC4E6C89),
+	SPH_C64(0x452821E638D01377), SPH_C64(0xBE5466CF34E90C6C),
+	SPH_C64(0xC0AC29B7C97C50DD), SPH_C64(0x3F84D5B5B5470917),
+	SPH_C64(0x9216D5D98979FB1B), SPH_C64(0xD1310BA698DFB5AC),
+	SPH_C64(0x2FFD72DBD01ADFB7), SPH_C64(0xB8E1AFED6A267E96),
+	SPH_C64(0xBA7C9045F12C7F99), SPH_C64(0x24A19947B3916CF7),
+	SPH_C64(0x0801F2E2858EFC16), SPH_C64(0x636920D871574E69)
+};
+
+#endif
+
+#endif
+
+#define GS(m0, m1, c0, c1, a, b, c, d)   do { \
+		a = SPH_T32(a + b + (m0 ^ c1)); \
+		d = SPH_ROTR32(d ^ a, 16); \
+		c = SPH_T32(c + d); \
+		b = SPH_ROTR32(b ^ c, 12); \
+		a = SPH_T32(a + b + (m1 ^ c0)); \
+		d = SPH_ROTR32(d ^ a, 8); \
+		c = SPH_T32(c + d); \
+		b = SPH_ROTR32(b ^ c, 7); \
+	} while (0)
+
+#if SPH_COMPACT_BLAKE_32
+
+#define ROUND_S(r)   do { \
+		GS(M[sigma[r][0x0]], M[sigma[r][0x1]], \
+			CS[sigma[r][0x0]], CS[sigma[r][0x1]], V0, V4, V8, VC); \
+		GS(M[sigma[r][0x2]], M[sigma[r][0x3]], \
+			CS[sigma[r][0x2]], CS[sigma[r][0x3]], V1, V5, V9, VD); \
+		GS(M[sigma[r][0x4]], M[sigma[r][0x5]], \
+			CS[sigma[r][0x4]], CS[sigma[r][0x5]], V2, V6, VA, VE); \
+		GS(M[sigma[r][0x6]], M[sigma[r][0x7]], \
+			CS[sigma[r][0x6]], CS[sigma[r][0x7]], V3, V7, VB, VF); \
+		GS(M[sigma[r][0x8]], M[sigma[r][0x9]], \
+			CS[sigma[r][0x8]], CS[sigma[r][0x9]], V0, V5, VA, VF); \
+		GS(M[sigma[r][0xA]], M[sigma[r][0xB]], \
+			CS[sigma[r][0xA]], CS[sigma[r][0xB]], V1, V6, VB, VC); \
+		GS(M[sigma[r][0xC]], M[sigma[r][0xD]], \
+			CS[sigma[r][0xC]], CS[sigma[r][0xD]], V2, V7, V8, VD); \
+		GS(M[sigma[r][0xE]], M[sigma[r][0xF]], \
+			CS[sigma[r][0xE]], CS[sigma[r][0xF]], V3, V4, V9, VE); \
+	} while (0)
+
+#else
+
+#define ROUND_S(r)   do { \
+		GS(Mx(r, 0), Mx(r, 1), CSx(r, 0), CSx(r, 1),
