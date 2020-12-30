@@ -408,4 +408,95 @@ static const sph_u64 CB[16] = {
 #else
 
 #define ROUND_S(r)   do { \
-		GS(Mx(r, 0), Mx(r, 1), CSx(r, 0), CSx(r, 1),
+		GS(Mx(r, 0), Mx(r, 1), CSx(r, 0), CSx(r, 1), V0, V4, V8, VC); \
+		GS(Mx(r, 2), Mx(r, 3), CSx(r, 2), CSx(r, 3), V1, V5, V9, VD); \
+		GS(Mx(r, 4), Mx(r, 5), CSx(r, 4), CSx(r, 5), V2, V6, VA, VE); \
+		GS(Mx(r, 6), Mx(r, 7), CSx(r, 6), CSx(r, 7), V3, V7, VB, VF); \
+		GS(Mx(r, 8), Mx(r, 9), CSx(r, 8), CSx(r, 9), V0, V5, VA, VF); \
+		GS(Mx(r, A), Mx(r, B), CSx(r, A), CSx(r, B), V1, V6, VB, VC); \
+		GS(Mx(r, C), Mx(r, D), CSx(r, C), CSx(r, D), V2, V7, V8, VD); \
+		GS(Mx(r, E), Mx(r, F), CSx(r, E), CSx(r, F), V3, V4, V9, VE); \
+	} while (0)
+
+#endif
+
+#if SPH_64
+
+#define GB(m0, m1, c0, c1, a, b, c, d)   do { \
+		a = SPH_T64(a + b + (m0 ^ c1)); \
+		d = SPH_ROTR64(d ^ a, 32); \
+		c = SPH_T64(c + d); \
+		b = SPH_ROTR64(b ^ c, 25); \
+		a = SPH_T64(a + b + (m1 ^ c0)); \
+		d = SPH_ROTR64(d ^ a, 16); \
+		c = SPH_T64(c + d); \
+		b = SPH_ROTR64(b ^ c, 11); \
+	} while (0)
+
+#if SPH_COMPACT_BLAKE_64
+
+#define ROUND_B(r)   do { \
+		GB(M[sigma[r][0x0]], M[sigma[r][0x1]], \
+			CB[sigma[r][0x0]], CB[sigma[r][0x1]], V0, V4, V8, VC); \
+		GB(M[sigma[r][0x2]], M[sigma[r][0x3]], \
+			CB[sigma[r][0x2]], CB[sigma[r][0x3]], V1, V5, V9, VD); \
+		GB(M[sigma[r][0x4]], M[sigma[r][0x5]], \
+			CB[sigma[r][0x4]], CB[sigma[r][0x5]], V2, V6, VA, VE); \
+		GB(M[sigma[r][0x6]], M[sigma[r][0x7]], \
+			CB[sigma[r][0x6]], CB[sigma[r][0x7]], V3, V7, VB, VF); \
+		GB(M[sigma[r][0x8]], M[sigma[r][0x9]], \
+			CB[sigma[r][0x8]], CB[sigma[r][0x9]], V0, V5, VA, VF); \
+		GB(M[sigma[r][0xA]], M[sigma[r][0xB]], \
+			CB[sigma[r][0xA]], CB[sigma[r][0xB]], V1, V6, VB, VC); \
+		GB(M[sigma[r][0xC]], M[sigma[r][0xD]], \
+			CB[sigma[r][0xC]], CB[sigma[r][0xD]], V2, V7, V8, VD); \
+		GB(M[sigma[r][0xE]], M[sigma[r][0xF]], \
+			CB[sigma[r][0xE]], CB[sigma[r][0xF]], V3, V4, V9, VE); \
+	} while (0)
+
+#else
+
+#define ROUND_B(r)   do { \
+		GB(Mx(r, 0), Mx(r, 1), CBx(r, 0), CBx(r, 1), V0, V4, V8, VC); \
+		GB(Mx(r, 2), Mx(r, 3), CBx(r, 2), CBx(r, 3), V1, V5, V9, VD); \
+		GB(Mx(r, 4), Mx(r, 5), CBx(r, 4), CBx(r, 5), V2, V6, VA, VE); \
+		GB(Mx(r, 6), Mx(r, 7), CBx(r, 6), CBx(r, 7), V3, V7, VB, VF); \
+		GB(Mx(r, 8), Mx(r, 9), CBx(r, 8), CBx(r, 9), V0, V5, VA, VF); \
+		GB(Mx(r, A), Mx(r, B), CBx(r, A), CBx(r, B), V1, V6, VB, VC); \
+		GB(Mx(r, C), Mx(r, D), CBx(r, C), CBx(r, D), V2, V7, V8, VD); \
+		GB(Mx(r, E), Mx(r, F), CBx(r, E), CBx(r, F), V3, V4, V9, VE); \
+	} while (0)
+
+#endif
+
+#endif
+
+#define DECL_STATE32 \
+	sph_u32 H0, H1, H2, H3, H4, H5, H6, H7; \
+	sph_u32 S0, S1, S2, S3, T0, T1;
+
+#define READ_STATE32(state)   do { \
+		H0 = (state)->H[0]; \
+		H1 = (state)->H[1]; \
+		H2 = (state)->H[2]; \
+		H3 = (state)->H[3]; \
+		H4 = (state)->H[4]; \
+		H5 = (state)->H[5]; \
+		H6 = (state)->H[6]; \
+		H7 = (state)->H[7]; \
+		S0 = (state)->S[0]; \
+		S1 = (state)->S[1]; \
+		S2 = (state)->S[2]; \
+		S3 = (state)->S[3]; \
+		T0 = (state)->T0; \
+		T1 = (state)->T1; \
+	} while (0)
+
+#define WRITE_STATE32(state)   do { \
+		(state)->H[0] = H0; \
+		(state)->H[1] = H1; \
+		(state)->H[2] = H2; \
+		(state)->H[3] = H3; \
+		(state)->H[4] = H4; \
+		(state)->H[5] = H5; \
+	
