@@ -614,4 +614,129 @@ static const sph_u64 CB[16] = {
 		ROUND_S(2); \
 		ROUND_S(3); \
 		H0 ^= S0 ^ V0 ^ V8; \
-		H1 ^= S1 ^ V1 
+		H1 ^= S1 ^ V1 ^ V9; \
+		H2 ^= S2 ^ V2 ^ VA; \
+		H3 ^= S3 ^ V3 ^ VB; \
+		H4 ^= S0 ^ V4 ^ VC; \
+		H5 ^= S1 ^ V5 ^ VD; \
+		H6 ^= S2 ^ V6 ^ VE; \
+		H7 ^= S3 ^ V7 ^ VF; \
+	} while (0)
+
+#endif
+
+#if SPH_64
+
+#define DECL_STATE64 \
+	sph_u64 H0, H1, H2, H3, H4, H5, H6, H7; \
+	sph_u64 S0, S1, S2, S3, T0, T1;
+
+#define READ_STATE64(state)   do { \
+		H0 = (state)->H[0]; \
+		H1 = (state)->H[1]; \
+		H2 = (state)->H[2]; \
+		H3 = (state)->H[3]; \
+		H4 = (state)->H[4]; \
+		H5 = (state)->H[5]; \
+		H6 = (state)->H[6]; \
+		H7 = (state)->H[7]; \
+		S0 = (state)->S[0]; \
+		S1 = (state)->S[1]; \
+		S2 = (state)->S[2]; \
+		S3 = (state)->S[3]; \
+		T0 = (state)->T0; \
+		T1 = (state)->T1; \
+	} while (0)
+
+#define WRITE_STATE64(state)   do { \
+		(state)->H[0] = H0; \
+		(state)->H[1] = H1; \
+		(state)->H[2] = H2; \
+		(state)->H[3] = H3; \
+		(state)->H[4] = H4; \
+		(state)->H[5] = H5; \
+		(state)->H[6] = H6; \
+		(state)->H[7] = H7; \
+		(state)->S[0] = S0; \
+		(state)->S[1] = S1; \
+		(state)->S[2] = S2; \
+		(state)->S[3] = S3; \
+		(state)->T0 = T0; \
+		(state)->T1 = T1; \
+	} while (0)
+
+#if SPH_COMPACT_BLAKE_64
+
+#define COMPRESS64   do { \
+		sph_u64 M[16]; \
+		sph_u64 V0, V1, V2, V3, V4, V5, V6, V7; \
+		sph_u64 V8, V9, VA, VB, VC, VD, VE, VF; \
+		unsigned r; \
+		V0 = H0; \
+		V1 = H1; \
+		V2 = H2; \
+		V3 = H3; \
+		V4 = H4; \
+		V5 = H5; \
+		V6 = H6; \
+		V7 = H7; \
+		V8 = S0 ^ CB0; \
+		V9 = S1 ^ CB1; \
+		VA = S2 ^ CB2; \
+		VB = S3 ^ CB3; \
+		VC = T0 ^ CB4; \
+		VD = T0 ^ CB5; \
+		VE = T1 ^ CB6; \
+		VF = T1 ^ CB7; \
+		M[0x0] = sph_dec64be_aligned(buf +   0); \
+		M[0x1] = sph_dec64be_aligned(buf +   8); \
+		M[0x2] = sph_dec64be_aligned(buf +  16); \
+		M[0x3] = sph_dec64be_aligned(buf +  24); \
+		M[0x4] = sph_dec64be_aligned(buf +  32); \
+		M[0x5] = sph_dec64be_aligned(buf +  40); \
+		M[0x6] = sph_dec64be_aligned(buf +  48); \
+		M[0x7] = sph_dec64be_aligned(buf +  56); \
+		M[0x8] = sph_dec64be_aligned(buf +  64); \
+		M[0x9] = sph_dec64be_aligned(buf +  72); \
+		M[0xA] = sph_dec64be_aligned(buf +  80); \
+		M[0xB] = sph_dec64be_aligned(buf +  88); \
+		M[0xC] = sph_dec64be_aligned(buf +  96); \
+		M[0xD] = sph_dec64be_aligned(buf + 104); \
+		M[0xE] = sph_dec64be_aligned(buf + 112); \
+		M[0xF] = sph_dec64be_aligned(buf + 120); \
+		for (r = 0; r < 16; r ++) \
+			ROUND_B(r); \
+		H0 ^= S0 ^ V0 ^ V8; \
+		H1 ^= S1 ^ V1 ^ V9; \
+		H2 ^= S2 ^ V2 ^ VA; \
+		H3 ^= S3 ^ V3 ^ VB; \
+		H4 ^= S0 ^ V4 ^ VC; \
+		H5 ^= S1 ^ V5 ^ VD; \
+		H6 ^= S2 ^ V6 ^ VE; \
+		H7 ^= S3 ^ V7 ^ VF; \
+	} while (0)
+
+#else
+
+#define COMPRESS64   do { \
+		sph_u64 M0, M1, M2, M3, M4, M5, M6, M7; \
+		sph_u64 M8, M9, MA, MB, MC, MD, ME, MF; \
+		sph_u64 V0, V1, V2, V3, V4, V5, V6, V7; \
+		sph_u64 V8, V9, VA, VB, VC, VD, VE, VF; \
+		V0 = H0; \
+		V1 = H1; \
+		V2 = H2; \
+		V3 = H3; \
+		V4 = H4; \
+		V5 = H5; \
+		V6 = H6; \
+		V7 = H7; \
+		V8 = S0 ^ CB0; \
+		V9 = S1 ^ CB1; \
+		VA = S2 ^ CB2; \
+		VB = S3 ^ CB3; \
+		VC = T0 ^ CB4; \
+		VD = T0 ^ CB5; \
+		VE = T1 ^ CB6; \
+		VF = T1 ^ CB7; \
+		M0 = sph
