@@ -739,4 +739,136 @@ static const sph_u64 CB[16] = {
 		VD = T0 ^ CB5; \
 		VE = T1 ^ CB6; \
 		VF = T1 ^ CB7; \
-		M0 = sph
+		M0 = sph_dec64be_aligned(buf +   0); \
+		M1 = sph_dec64be_aligned(buf +   8); \
+		M2 = sph_dec64be_aligned(buf +  16); \
+		M3 = sph_dec64be_aligned(buf +  24); \
+		M4 = sph_dec64be_aligned(buf +  32); \
+		M5 = sph_dec64be_aligned(buf +  40); \
+		M6 = sph_dec64be_aligned(buf +  48); \
+		M7 = sph_dec64be_aligned(buf +  56); \
+		M8 = sph_dec64be_aligned(buf +  64); \
+		M9 = sph_dec64be_aligned(buf +  72); \
+		MA = sph_dec64be_aligned(buf +  80); \
+		MB = sph_dec64be_aligned(buf +  88); \
+		MC = sph_dec64be_aligned(buf +  96); \
+		MD = sph_dec64be_aligned(buf + 104); \
+		ME = sph_dec64be_aligned(buf + 112); \
+		MF = sph_dec64be_aligned(buf + 120); \
+		ROUND_B(0); \
+		ROUND_B(1); \
+		ROUND_B(2); \
+		ROUND_B(3); \
+		ROUND_B(4); \
+		ROUND_B(5); \
+		ROUND_B(6); \
+		ROUND_B(7); \
+		ROUND_B(8); \
+		ROUND_B(9); \
+		ROUND_B(0); \
+		ROUND_B(1); \
+		ROUND_B(2); \
+		ROUND_B(3); \
+		ROUND_B(4); \
+		ROUND_B(5); \
+		H0 ^= S0 ^ V0 ^ V8; \
+		H1 ^= S1 ^ V1 ^ V9; \
+		H2 ^= S2 ^ V2 ^ VA; \
+		H3 ^= S3 ^ V3 ^ VB; \
+		H4 ^= S0 ^ V4 ^ VC; \
+		H5 ^= S1 ^ V5 ^ VD; \
+		H6 ^= S2 ^ V6 ^ VE; \
+		H7 ^= S3 ^ V7 ^ VF; \
+	} while (0)
+
+#endif
+
+#endif
+
+static const sph_u32 salt_zero_small[4] = { 0, 0, 0, 0 };
+
+static void
+blake32_init(sph_blake_small_context *sc,
+	const sph_u32 *iv, const sph_u32 *salt)
+{
+	memcpy(sc->H, iv, 8 * sizeof(sph_u32));
+	memcpy(sc->S, salt, 4 * sizeof(sph_u32));
+	sc->T0 = sc->T1 = 0;
+	sc->ptr = 0;
+}
+
+static void
+blake32(sph_blake_small_context *sc, const void *data, size_t len)
+{
+	unsigned char *buf;
+	size_t ptr;
+	DECL_STATE32
+
+	buf = sc->buf;
+	ptr = sc->ptr;
+	if (len < (sizeof sc->buf) - ptr) {
+		memcpy(buf + ptr, data, len);
+		ptr += len;
+		sc->ptr = ptr;
+		return;
+	}
+
+	READ_STATE32(sc);
+	while (len > 0) {
+		size_t clen;
+
+		clen = (sizeof sc->buf) - ptr;
+		if (clen > len)
+			clen = len;
+		memcpy(buf + ptr, data, clen);
+		ptr += clen;
+		data = (const unsigned char *)data + clen;
+		len -= clen;
+		if (ptr == sizeof sc->buf) {
+			if ((T0 = SPH_T32(T0 + 512)) < 512)
+				T1 = SPH_T32(T1 + 1);
+			COMPRESS32;
+			ptr = 0;
+		}
+	}
+	WRITE_STATE32(sc);
+	sc->ptr = ptr;
+}
+
+static void
+blake32_close(sph_blake_small_context *sc,
+	unsigned ub, unsigned n, void *dst, size_t out_size_w32)
+{
+	union {
+		unsigned char buf[64];
+		sph_u32 dummy;
+	} u;
+	size_t ptr, k;
+	unsigned bit_len;
+	unsigned z;
+	sph_u32 th, tl;
+	unsigned char *out;
+
+	ptr = sc->ptr;
+	bit_len = ((unsigned)ptr << 3) + n;
+	z = 0x80 >> n;
+	u.buf[ptr] = ((ub & -z) | z) & 0xFF;
+	tl = sc->T0 + bit_len;
+	th = sc->T1;
+	if (ptr == 0 && n == 0) {
+		sc->T0 = SPH_C32(0xFFFFFE00);
+		sc->T1 = SPH_C32(0xFFFFFFFF);
+	} else if (sc->T0 == 0) {
+		sc->T0 = SPH_C32(0xFFFFFE00) + bit_len;
+		sc->T1 = SPH_T32(sc->T1 - 1);
+	} else {
+		sc->T0 -= 512 - bit_len;
+	}
+	if (bit_len <= 446) {
+		memset(u.buf + ptr + 1, 0, 55 - ptr);
+		if (out_size_w32 == 8)
+			u.buf[55] |= 1;
+		sph_enc32be_aligned(u.buf + 56, th);
+		sph_enc32be_aligned(u.buf + 60, tl);
+		blake32(sc, u.buf + ptr, 64 - ptr);
+	} e
