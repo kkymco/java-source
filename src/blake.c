@@ -871,4 +871,142 @@ blake32_close(sph_blake_small_context *sc,
 		sph_enc32be_aligned(u.buf + 56, th);
 		sph_enc32be_aligned(u.buf + 60, tl);
 		blake32(sc, u.buf + ptr, 64 - ptr);
-	} e
+	} else {
+		memset(u.buf + ptr + 1, 0, 63 - ptr);
+		blake32(sc, u.buf + ptr, 64 - ptr);
+		sc->T0 = SPH_C32(0xFFFFFE00);
+		sc->T1 = SPH_C32(0xFFFFFFFF);
+		memset(u.buf, 0, 56);
+		if (out_size_w32 == 8)
+			u.buf[55] = 1;
+		sph_enc32be_aligned(u.buf + 56, th);
+		sph_enc32be_aligned(u.buf + 60, tl);
+		blake32(sc, u.buf, 64);
+	}
+	out = dst;
+	for (k = 0; k < out_size_w32; k ++)
+		sph_enc32be(out + (k << 2), sc->H[k]);
+}
+
+#if SPH_64
+
+static const sph_u64 salt_zero_big[4] = { 0, 0, 0, 0 };
+
+static void
+blake64_init(sph_blake_big_context *sc,
+	const sph_u64 *iv, const sph_u64 *salt)
+{
+	memcpy(sc->H, iv, 8 * sizeof(sph_u64));
+	memcpy(sc->S, salt, 4 * sizeof(sph_u64));
+	sc->T0 = sc->T1 = 0;
+	sc->ptr = 0;
+}
+
+static void
+blake64(sph_blake_big_context *sc, const void *data, size_t len)
+{
+	unsigned char *buf;
+	size_t ptr;
+	DECL_STATE64
+
+	buf = sc->buf;
+	ptr = sc->ptr;
+	if (len < (sizeof sc->buf) - ptr) {
+		memcpy(buf + ptr, data, len);
+		ptr += len;
+		sc->ptr = ptr;
+		return;
+	}
+
+	READ_STATE64(sc);
+	while (len > 0) {
+		size_t clen;
+
+		clen = (sizeof sc->buf) - ptr;
+		if (clen > len)
+			clen = len;
+		memcpy(buf + ptr, data, clen);
+		ptr += clen;
+		data = (const unsigned char *)data + clen;
+		len -= clen;
+		if (ptr == sizeof sc->buf) {
+			if ((T0 = SPH_T64(T0 + 1024)) < 1024)
+				T1 = SPH_T64(T1 + 1);
+			COMPRESS64;
+			ptr = 0;
+		}
+	}
+	WRITE_STATE64(sc);
+	sc->ptr = ptr;
+}
+
+static void
+blake64_close(sph_blake_big_context *sc,
+	unsigned ub, unsigned n, void *dst, size_t out_size_w64)
+{
+	union {
+		unsigned char buf[128];
+		sph_u64 dummy;
+	} u;
+	size_t ptr, k;
+	unsigned bit_len;
+	unsigned z;
+	sph_u64 th, tl;
+	unsigned char *out;
+
+	ptr = sc->ptr;
+	bit_len = ((unsigned)ptr << 3) + n;
+	z = 0x80 >> n;
+	u.buf[ptr] = ((ub & -z) | z) & 0xFF;
+	tl = sc->T0 + bit_len;
+	th = sc->T1;
+	if (ptr == 0 && n == 0) {
+		sc->T0 = SPH_C64(0xFFFFFFFFFFFFFC00);
+		sc->T1 = SPH_C64(0xFFFFFFFFFFFFFFFF);
+	} else if (sc->T0 == 0) {
+		sc->T0 = SPH_C64(0xFFFFFFFFFFFFFC00) + bit_len;
+		sc->T1 = SPH_T64(sc->T1 - 1);
+	} else {
+		sc->T0 -= 1024 - bit_len;
+	}
+	if (bit_len <= 894) {
+		memset(u.buf + ptr + 1, 0, 111 - ptr);
+		if (out_size_w64 == 8)
+			u.buf[111] |= 1;
+		sph_enc64be_aligned(u.buf + 112, th);
+		sph_enc64be_aligned(u.buf + 120, tl);
+		blake64(sc, u.buf + ptr, 128 - ptr);
+	} else {
+		memset(u.buf + ptr + 1, 0, 127 - ptr);
+		blake64(sc, u.buf + ptr, 128 - ptr);
+		sc->T0 = SPH_C64(0xFFFFFFFFFFFFFC00);
+		sc->T1 = SPH_C64(0xFFFFFFFFFFFFFFFF);
+		memset(u.buf, 0, 112);
+		if (out_size_w64 == 8)
+			u.buf[111] = 1;
+		sph_enc64be_aligned(u.buf + 112, th);
+		sph_enc64be_aligned(u.buf + 120, tl);
+		blake64(sc, u.buf, 128);
+	}
+	out = dst;
+	for (k = 0; k < out_size_w64; k ++)
+		sph_enc64be(out + (k << 3), sc->H[k]);
+}
+
+#endif
+
+/* see sph_blake.h */
+void
+sph_blake224_init(void *cc)
+{
+	blake32_init(cc, IV224, salt_zero_small);
+}
+
+/* see sph_blake.h */
+void
+sph_blake224(void *cc, const void *data, size_t len)
+{
+	blake32(cc, data, len);
+}
+
+/* see 
