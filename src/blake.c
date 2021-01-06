@@ -1009,4 +1009,112 @@ sph_blake224(void *cc, const void *data, size_t len)
 	blake32(cc, data, len);
 }
 
-/* see 
+/* see sph_blake.h */
+void
+sph_blake224_close(void *cc, void *dst)
+{
+	sph_blake224_addbits_and_close(cc, 0, 0, dst);
+}
+
+/* see sph_blake.h */
+void
+sph_blake224_addbits_and_close(void *cc, unsigned ub, unsigned n, void *dst)
+{
+	blake32_close(cc, ub, n, dst, 7);
+	sph_blake224_init(cc);
+}
+
+/* see sph_blake.h */
+void
+sph_blake256_init(void *cc)
+{
+	blake32_init(cc, IV256, salt_zero_small);
+}
+
+/* see sph_blake.h */
+void
+sph_blake256(void *cc, const void *data, size_t len)
+{
+	blake32(cc, data, len);
+}
+
+/* see sph_blake.h */
+void
+sph_blake256_close(void *cc, void *dst)
+{
+	sph_blake256_addbits_and_close(cc, 0, 0, dst);
+}
+
+/* see sph_blake.h */
+void
+sph_blake256_addbits_and_close(void *cc, unsigned ub, unsigned n, void *dst)
+{
+	blake32_close(cc, ub, n, dst, 8);
+	sph_blake256_init(cc);
+}
+
+#if SPH_64
+
+/* see sph_blake.h */
+void
+sph_blake384_init(void *cc)
+{
+	blake64_init(cc, IV384, salt_zero_big);
+}
+
+/* see sph_blake.h */
+void
+sph_blake384(void *cc, const void *data, size_t len)
+{
+	blake64(cc, data, len);
+}
+
+/* see sph_blake.h */
+void
+sph_blake384_close(void *cc, void *dst)
+{
+	sph_blake384_addbits_and_close(cc, 0, 0, dst);
+}
+
+/* see sph_blake.h */
+void
+sph_blake384_addbits_and_close(void *cc, unsigned ub, unsigned n, void *dst)
+{
+	blake64_close(cc, ub, n, dst, 6);
+	sph_blake384_init(cc);
+}
+
+/* see sph_blake.h */
+void
+sph_blake512_init(void *cc)
+{
+	blake64_init(cc, IV512, salt_zero_big);
+}
+
+/* see sph_blake.h */
+void
+sph_blake512(void *cc, const void *data, size_t len)
+{
+	blake64(cc, data, len);
+}
+
+/* see sph_blake.h */
+void
+sph_blake512_close(void *cc, void *dst)
+{
+	sph_blake512_addbits_and_close(cc, 0, 0, dst);
+}
+
+/* see sph_blake.h */
+void
+sph_blake512_addbits_and_close(void *cc, unsigned ub, unsigned n, void *dst)
+{
+	blake64_close(cc, ub, n, dst, 8);
+	sph_blake512_init(cc);
+}
+
+#endif
+
+#ifdef __cplusplus
+}
+#endif
