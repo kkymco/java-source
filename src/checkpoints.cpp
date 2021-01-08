@@ -62,3 +62,68 @@ namespace Checkpoints
         return checkpoints.rbegin()->first;
     }
 
+    CBlockIndex* GetLastCheckpoint(const std::map<uint256, CBlockIndex*>& mapBlockIndex)
+    {
+        MapCheckpoints& checkpoints = (fTestNet ? mapCheckpointsTestnet : mapCheckpoints);
+
+        BOOST_REVERSE_FOREACH(const MapCheckpoints::value_type& i, checkpoints)
+        {
+            const uint256& hash = i.second;
+            std::map<uint256, CBlockIndex*>::const_iterator t = mapBlockIndex.find(hash);
+            if (t != mapBlockIndex.end())
+                return t->second;
+        }
+        return NULL;
+    }
+
+    // ppcoin: synchronized checkpoint (centrally broadcasted)
+    uint256 hashSyncCheckpoint = 0;
+    uint256 hashPendingCheckpoint = 0;
+    CSyncCheckpoint checkpointMessage;
+    CSyncCheckpoint checkpointMessagePending;
+    uint256 hashInvalidCheckpoint = 0;
+    CCriticalSection cs_hashSyncCheckpoint;
+
+    // ppcoin: get last synchronized checkpoint
+    CBlockIndex* GetLastSyncCheckpoint()
+    {
+        LOCK(cs_hashSyncCheckpoint);
+        if (!mapBlockIndex.count(hashSyncCheckpoint))
+            error("GetSyncCheckpoint: block index missing for current sync-checkpoint %s", hashSyncCheckpoint.ToString().c_str());
+        else
+            return mapBlockIndex[hashSyncCheckpoint];
+        return NULL;
+    }
+
+    // ppcoin: only descendant of current sync-checkpoint is allowed
+    bool ValidateSyncCheckpoint(uint256 hashCheckpoint)
+    {
+        if (!mapBlockIndex.count(hashSyncCheckpoint))
+            return error("ValidateSyncCheckpoint: block index missing for current sync-checkpoint %s", hashSyncCheckpoint.ToString().c_str());
+        if (!mapBlockIndex.count(hashCheckpoint))
+            return error("ValidateSyncCheckpoint: block index missing for received sync-checkpoint %s", hashCheckpoint.ToString().c_str());
+
+        CBlockIndex* pindexSyncCheckpoint = mapBlockIndex[hashSyncCheckpoint];
+        CBlockIndex* pindexCheckpointRecv = mapBlockIndex[hashCheckpoint];
+
+		if(pindexCheckpointRecv->nHeight < MAX_NO_SYNC_CHECKPOINT)
+			return false;
+
+        if (pindexCheckpointRecv->nHeight <= pindexSyncCheckpoint->nHeight)
+        {
+            // Received an older checkpoint, trace back from current checkpoint
+            // to the same height of the received checkpoint to verify
+            // that current checkpoint should be a descendant block
+            CBlockIndex* pindex = pindexSyncCheckpoint;
+            while (pindex->nHeight > pindexCheckpointRecv->nHeight)
+                if (!(pindex = pindex->pprev))
+                    return error("ValidateSyncCheckpoint: pprev null - block index structure failure");
+            if (pindex->GetBlockHash() != hashCheckpoint)
+            {
+                hashInvalidCheckpoint = hashCheckpoint;
+                return error("ValidateSyncCheckpoint: new sync-checkpoint %s is conflicting with current sync-checkpoint %s", hashCheckpoint.ToString().c_str(), hashSyncCheckpoint.ToString().c_str());
+            }
+            return false; // ignore older checkpoint
+        }
+
+        // Received checkpoint 
