@@ -266,4 +266,71 @@ namespace Checkpoints
             // checkpoint block accepted but not yet in main chain
             printf("ResetSyncCheckpoint: SetBestChain to hardened checkpoint %s\n", hash.ToString().c_str());
             CTxDB txdb;
-            CBloc
+            CBlock block;
+            if (!block.ReadFromDisk(mapBlockIndex[hash]))
+                return error("ResetSyncCheckpoint: ReadFromDisk failed for hardened checkpoint %s", hash.ToString().c_str());
+            if (!block.SetBestChain(txdb, mapBlockIndex[hash]))
+            {
+                return error("ResetSyncCheckpoint: SetBestChain failed for hardened checkpoint %s", hash.ToString().c_str());
+            }
+        }
+        else if(!mapBlockIndex.count(hash))
+        {
+            // checkpoint block not yet accepted
+            hashPendingCheckpoint = hash;
+            checkpointMessagePending.SetNull();
+            printf("ResetSyncCheckpoint: pending for sync-checkpoint %s\n", hashPendingCheckpoint.ToString().c_str());
+        }
+
+        BOOST_REVERSE_FOREACH(const MapCheckpoints::value_type& i, mapCheckpoints)
+        {
+            const uint256& hash = i.second;
+            if (mapBlockIndex.count(hash) && mapBlockIndex[hash]->IsInMainChain())
+            {
+                if (!WriteSyncCheckpoint(hash))
+                    return error("ResetSyncCheckpoint: failed to write sync checkpoint %s", hash.ToString().c_str());
+                printf("ResetSyncCheckpoint: sync-checkpoint reset to %s\n", hashSyncCheckpoint.ToString().c_str());
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void AskForPendingSyncCheckpoint(CNode* pfrom)
+    {
+        LOCK(cs_hashSyncCheckpoint);
+        if (pfrom && hashPendingCheckpoint != 0 && (!mapBlockIndex.count(hashPendingCheckpoint)) && (!mapOrphanBlocks.count(hashPendingCheckpoint)))
+            pfrom->AskFor(CInv(MSG_BLOCK, hashPendingCheckpoint));
+    }
+
+    bool SetCheckpointPrivKey(std::string strPrivKey)
+    {
+        // Test signing a sync-checkpoint with genesis block
+        CSyncCheckpoint checkpoint;
+        checkpoint.hashCheckpoint = !fTestNet ? hashGenesisBlock : hashGenesisBlockTestNet;
+        CDataStream sMsg(SER_NETWORK, PROTOCOL_VERSION);
+        sMsg << (CUnsignedSyncCheckpoint)checkpoint;
+        checkpoint.vchMsg = std::vector<unsigned char>(sMsg.begin(), sMsg.end());
+
+        std::vector<unsigned char> vchPrivKey = ParseHex(strPrivKey);
+        CKey key;
+        key.SetPrivKey(CPrivKey(vchPrivKey.begin(), vchPrivKey.end())); // if key is not correct openssl may crash
+        if (!key.Sign(Hash(checkpoint.vchMsg.begin(), checkpoint.vchMsg.end()), checkpoint.vchSig))
+            return false;
+
+        // Test signing successful, proceed
+        CSyncCheckpoint::strMasterPrivKey = strPrivKey;
+        return true;
+    }
+
+    bool SendSyncCheckpoint(uint256 hashCheckpoint)
+    {
+        CSyncCheckpoint checkpoint;
+        checkpoint.hashCheckpoint = hashCheckpoint;
+        CDataStream sMsg(SER_NETWORK, PROTOCOL_VERSION);
+        sMsg << (CUnsignedSyncCheckpoint)checkpoint;
+        checkpoint.vchMsg = std::vector<unsigned char>(sMsg.begin(), sMsg.end());
+
+        if (CSyncCheckpoint::strMasterPrivKey.empty())
+            return error("SendSyncCheckpoint: Checkpoint master key unavailable."
