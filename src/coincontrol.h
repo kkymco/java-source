@@ -36,4 +36,35 @@ public:
     }
     
     void UnSelect(COutPoint& output)
-  
+    {
+        setSelected.erase(output);
+    }
+    
+    void UnSelectAll()
+    {
+        setSelected.clear();
+    }
+
+    void ListSelected(std::vector<COutPoint>& vOutpoints) const
+    {
+        vOutpoints.assign(setSelected.begin(), setSelected.end());
+    }
+
+	void SetAnonymousSend(bool b)
+	{
+		anonymousSend = b;
+	}
+
+	bool GetAnonymousSend() const
+	{
+		return anonymousSend;
+	}
+        
+        
+private:
+    std::set<COutPoint> setSelected;
+	bool anonymousSend;
+
+};
+
+#endif // COINCONTROL_H
