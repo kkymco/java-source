@@ -404,4 +404,36 @@ bool CSyncCheckpoint::ProcessSyncCheckpoint(CNode* pfrom)
         if (pfrom)
         {
             pfrom->PushGetBlocks(pindexBest, hashCheckpoint);
-            // ask directly as well in case rejected earlier 
+            // ask directly as well in case rejected earlier by duplicate
+            // proof-of-stake because getblocks may not get it this time
+            pfrom->AskFor(CInv(MSG_BLOCK, mapOrphanBlocks.count(hashCheckpoint)? WantedByOrphan(mapOrphanBlocks[hashCheckpoint]) : hashCheckpoint));
+        }
+        return false;
+    }
+
+    if (!Checkpoints::ValidateSyncCheckpoint(hashCheckpoint))
+        return false;
+
+    CTxDB txdb;
+    CBlockIndex* pindexCheckpoint = mapBlockIndex[hashCheckpoint];
+    if (!pindexCheckpoint->IsInMainChain())
+    {
+        // checkpoint chain received but not yet main chain
+        CBlock block;
+        if (!block.ReadFromDisk(pindexCheckpoint))
+            return error("ProcessSyncCheckpoint: ReadFromDisk failed for sync checkpoint %s", hashCheckpoint.ToString().c_str());
+        if (!block.SetBestChain(txdb, pindexCheckpoint))
+        {
+            Checkpoints::hashInvalidCheckpoint = hashCheckpoint;
+            return error("ProcessSyncCheckpoint: SetBestChain failed for sync checkpoint %s", hashCheckpoint.ToString().c_str());
+        }
+    }
+
+    if (!Checkpoints::WriteSyncCheckpoint(hashCheckpoint))
+        return error("ProcessSyncCheckpoint(): failed to write sync checkpoint %s", hashCheckpoint.ToString().c_str());
+    Checkpoints::checkpointMessage = *this;
+    Checkpoints::hashPendingCheckpoint = 0;
+    Checkpoints::checkpointMessagePending.SetNull();
+    // printf("ProcessSyncCheckpoint: sync-checkpoint at %s\n", hashCheckpoint.ToString().c_str());
+    return true;
+}
