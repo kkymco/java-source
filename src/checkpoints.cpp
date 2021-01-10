@@ -333,4 +333,75 @@ namespace Checkpoints
         checkpoint.vchMsg = std::vector<unsigned char>(sMsg.begin(), sMsg.end());
 
         if (CSyncCheckpoint::strMasterPrivKey.empty())
-            return error("SendSyncCheckpoint: Checkpoint master key unavailable."
+            return error("SendSyncCheckpoint: Checkpoint master key unavailable.");
+        std::vector<unsigned char> vchPrivKey = ParseHex(CSyncCheckpoint::strMasterPrivKey);
+        CKey key;
+        key.SetPrivKey(CPrivKey(vchPrivKey.begin(), vchPrivKey.end())); // if key is not correct openssl may crash
+        if (!key.Sign(Hash(checkpoint.vchMsg.begin(), checkpoint.vchMsg.end()), checkpoint.vchSig))
+            return error("SendSyncCheckpoint: Unable to sign checkpoint, check private key?");
+
+        if(!checkpoint.ProcessSyncCheckpoint(NULL))
+        {
+            printf("WARNING: SendSyncCheckpoint: Failed to process checkpoint.\n");
+            return false;
+        }
+
+        // Relay checkpoint
+        {
+            LOCK(cs_vNodes);
+            BOOST_FOREACH(CNode* pnode, vNodes)
+                checkpoint.RelayTo(pnode);
+        }
+        return true;
+    }
+
+    // Is the sync-checkpoint outside maturity window?
+    bool IsMatureSyncCheckpoint()
+    {
+        LOCK(cs_hashSyncCheckpoint);
+        // sync-checkpoint should always be accepted block
+        assert(mapBlockIndex.count(hashSyncCheckpoint));
+        const CBlockIndex* pindexSync = mapBlockIndex[hashSyncCheckpoint];
+        return (nBestHeight >= pindexSync->nHeight + nCoinbaseMaturity ||
+                pindexSync->GetBlockTime() + nStakeMinAge < GetAdjustedTime());
+    }
+}
+
+// ppcoin: sync-checkpoint master key
+const std::string CSyncCheckpoint::strMasterPubKey = "04c654399c3230b63e3638c6ca5129cb1181d3313c5fe607c4914702dd91b646ef39f115adfc1ffc1a2e569ff8c15a233ce1a409d763284c612b2f34569b36aa44";
+
+std::string CSyncCheckpoint::strMasterPrivKey = "";
+
+// ppcoin: verify signature of sync-checkpoint message
+bool CSyncCheckpoint::CheckSignature()
+{
+    CKey key;
+    if (!key.SetPubKey(ParseHex(CSyncCheckpoint::strMasterPubKey)))
+        return error("CSyncCheckpoint::CheckSignature() : SetPubKey failed");
+    if (!key.Verify(Hash(vchMsg.begin(), vchMsg.end()), vchSig))
+        return error("CSyncCheckpoint::CheckSignature() : verify signature failed");
+
+    // Now unserialize the data
+    CDataStream sMsg(vchMsg, SER_NETWORK, PROTOCOL_VERSION);
+    sMsg >> *(CUnsignedSyncCheckpoint*)this;
+    return true;
+}
+
+// ppcoin: process synchronized checkpoint
+bool CSyncCheckpoint::ProcessSyncCheckpoint(CNode* pfrom)
+{
+    if (!CheckSignature())
+        return false;
+
+    LOCK(Checkpoints::cs_hashSyncCheckpoint);
+    if (!mapBlockIndex.count(hashCheckpoint))
+    {
+        // We haven't received the checkpoint chain, keep the checkpoint as pending
+        Checkpoints::hashPendingCheckpoint = hashCheckpoint;
+        Checkpoints::checkpointMessagePending = *this;
+        printf("ProcessSyncCheckpoint: pending for sync-checkpoint %s\n", hashCheckpoint.ToString().c_str());
+        // Ask this guy to fill in what we're missing
+        if (pfrom)
+        {
+            pfrom->PushGetBlocks(pindexBest, hashCheckpoint);
+            // ask directly as well in case rejected earlier 
