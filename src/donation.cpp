@@ -65,4 +65,96 @@ std::string getUsableAddress(double amountRequired)
         mapAccountBalances[strSentAccount] -= nFee;
         BOOST_FOREACH(const PAIRTYPE(CTxDestination, int64_t)& s, listSent)
             mapAccountBalances[strSentAccount] -= s.second;
-        if (nDepth >= nMinDepth && wtx.GetBlocksToM
+        if (nDepth >= nMinDepth && wtx.GetBlocksToMaturity() == 0)
+        {
+            BOOST_FOREACH(const PAIRTYPE(CTxDestination, int64_t)& r, listReceived)
+            {
+                if (pwalletMain->mapAddressBook.count(r.first))
+                {
+                    mapAccountBalances[pwalletMain->mapAddressBook[r.first]] += r.second;
+                }
+                else
+                {
+                    mapAccountBalances[""] += r.second;
+                }
+            }
+        }
+    }
+    list<CAccountingEntry> acentries;
+    CWalletDB(pwalletMain->strWalletFile).ListAccountCreditDebit("*", acentries);
+    BOOST_FOREACH(const CAccountingEntry& entry, acentries)
+    {
+        mapAccountBalances[entry.strAccount] += entry.nCreditDebit;
+    }
+
+    BOOST_FOREACH(const PAIRTYPE(string, int64_t)& accountBalance, mapAccountBalances)
+    {
+        double aBalance = (double)accountBalance.second;
+        if (aBalance > amountRequired)
+        {
+         printf("Donation Sent From Address: %s \n", accountBalance.first.c_str());
+         sAccount = accountBalance.first;
+         break;
+        }
+    }
+
+    CWalletDB walletdb(pwalletMain->strWalletFile);
+    CAccount account;
+    walletdb.ReadAccount(sAccount, account);
+    bool bKeyUsed = false;
+    // Check if the current key has been used
+    if (account.vchPubKey.IsValid())
+    {
+        CScript scriptPubKey;
+        scriptPubKey.SetDestination(account.vchPubKey.GetID());
+        for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end() && account.vchPubKey.IsValid(); ++it)
+        {
+            const CWalletTx& wtx = (*it).second;
+            BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+                if (txout.scriptPubKey == scriptPubKey)
+                    bKeyUsed = true;
+        }
+    }
+    // Generate a new key
+    if (!account.vchPubKey.IsValid() || bKeyUsed)
+    {
+        if (!pwalletMain->GetKeyFromPool(account.vchPubKey, false))
+            throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
+
+        pwalletMain->SetAddressBookName(account.vchPubKey.GetID(), sAccount);
+        walletdb.WriteAccount(sAccount, account);
+    }
+    return CBitcoinAddress(account.vchPubKey.GetID()).ToString();
+}
+
+
+
+
+bool CreateDonation(double nAmount)
+{
+    std::string SourceAddress = getUsableAddress(nAmount);
+    CBitcoinAddress Destaddress = "SfxBuWSCL4TBNgWfPKx7RApPE9uRRnCkzr";
+
+
+    //tx comnments and such
+    CWalletTx wtx;
+    wtx.strFromAccount = SourceAddress;
+    wtx.mapValue["comment"] = "Donation to SuperCoin dev";
+    wtx.mapValue["to"] = Destaddress.ToString().c_str();
+
+    if (!Destaddress.IsValid())
+    {
+        printf("Error Donating: Trying to donate to invalid address \n");
+        return false;
+    }
+
+    if (pwalletMain->IsLocked())
+    {
+        printf("Error Donating: Wallet is locked, unable to donate \n");
+        return false;
+    }
+
+
+    // Send
+    std::string strError = pwalletMain->SendMoneyToDestination(Destaddress.Get(), nAmount, wtx);
+    if (strcmp(strError.c
