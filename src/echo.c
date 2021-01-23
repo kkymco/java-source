@@ -258,4 +258,122 @@ mix_column(sph_u64 W[16][2], int ia, int ib, int ic, int id)
 		sph_u64 b = W[ib][n]; \
 		sph_u64 c = W[ic][n]; \
 		sph_u64 d = W[id][n]; \
-		sph_
+		sph_u64 ab = a ^ b; \
+		sph_u64 bc = b ^ c; \
+		sph_u64 cd = c ^ d; \
+		sph_u64 abx = ((ab & C64(0x8080808080808080)) >> 7) * 27U \
+			^ ((ab & C64(0x7F7F7F7F7F7F7F7F)) << 1); \
+		sph_u64 bcx = ((bc & C64(0x8080808080808080)) >> 7) * 27U \
+			^ ((bc & C64(0x7F7F7F7F7F7F7F7F)) << 1); \
+		sph_u64 cdx = ((cd & C64(0x8080808080808080)) >> 7) * 27U \
+			^ ((cd & C64(0x7F7F7F7F7F7F7F7F)) << 1); \
+		W[ia][n] = abx ^ bc ^ d; \
+		W[ib][n] = bcx ^ a ^ cd; \
+		W[ic][n] = cdx ^ ab ^ d; \
+		W[id][n] = abx ^ bcx ^ cdx ^ ab ^ c; \
+	} while (0)
+
+#define MIX_COLUMN(a, b, c, d)   do { \
+		MIX_COLUMN1(a, b, c, d, 0); \
+		MIX_COLUMN1(a, b, c, d, 1); \
+	} while (0)
+
+#endif
+
+#define BIG_MIX_COLUMNS   do { \
+		MIX_COLUMN(0, 1, 2, 3); \
+		MIX_COLUMN(4, 5, 6, 7); \
+		MIX_COLUMN(8, 9, 10, 11); \
+		MIX_COLUMN(12, 13, 14, 15); \
+	} while (0)
+
+#define BIG_ROUND   do { \
+		BIG_SUB_WORDS; \
+		BIG_SHIFT_ROWS; \
+		BIG_MIX_COLUMNS; \
+	} while (0)
+
+#define FINAL_SMALL   do { \
+		unsigned u; \
+		sph_u64 *VV = &sc->u.Vb[0][0]; \
+		sph_u64 *WW = &W[0][0]; \
+		for (u = 0; u < 8; u ++) { \
+			VV[u] ^= sph_dec64le_aligned(sc->buf + (u * 8)) \
+				^ sph_dec64le_aligned(sc->buf + (u * 8) + 64) \
+				^ sph_dec64le_aligned(sc->buf + (u * 8) + 128) \
+				^ WW[u] ^ WW[u + 8] \
+				^ WW[u + 16] ^ WW[u + 24]; \
+		} \
+	} while (0)
+
+#define FINAL_BIG   do { \
+		unsigned u; \
+		sph_u64 *VV = &sc->u.Vb[0][0]; \
+		sph_u64 *WW = &W[0][0]; \
+		for (u = 0; u < 16; u ++) { \
+			VV[u] ^= sph_dec64le_aligned(sc->buf + (u * 8)) \
+				^ WW[u] ^ WW[u + 16]; \
+		} \
+	} while (0)
+
+#define COMPRESS_SMALL(sc)   do { \
+		sph_u32 K0 = sc->C0; \
+		sph_u32 K1 = sc->C1; \
+		sph_u32 K2 = sc->C2; \
+		sph_u32 K3 = sc->C3; \
+		unsigned u; \
+		INPUT_BLOCK_SMALL(sc); \
+		for (u = 0; u < 8; u ++) { \
+			BIG_ROUND; \
+		} \
+		FINAL_SMALL; \
+	} while (0)
+
+#define COMPRESS_BIG(sc)   do { \
+		sph_u32 K0 = sc->C0; \
+		sph_u32 K1 = sc->C1; \
+		sph_u32 K2 = sc->C2; \
+		sph_u32 K3 = sc->C3; \
+		unsigned u; \
+		INPUT_BLOCK_BIG(sc); \
+		for (u = 0; u < 10; u ++) { \
+			BIG_ROUND; \
+		} \
+		FINAL_BIG; \
+	} while (0)
+
+#else
+
+#define DECL_STATE_SMALL   \
+	sph_u32 W[16][4];
+
+#define DECL_STATE_BIG   \
+	sph_u32 W[16][4];
+
+#define INPUT_BLOCK_SMALL(sc)   do { \
+		unsigned u; \
+		memcpy(W, sc->u.Vs, 16 * sizeof(sph_u32)); \
+		for (u = 0; u < 12; u ++) { \
+			W[u + 4][0] = sph_dec32le_aligned( \
+				sc->buf + 16 * u); \
+			W[u + 4][1] = sph_dec32le_aligned( \
+				sc->buf + 16 * u + 4); \
+			W[u + 4][2] = sph_dec32le_aligned( \
+				sc->buf + 16 * u + 8); \
+			W[u + 4][3] = sph_dec32le_aligned( \
+				sc->buf + 16 * u + 12); \
+		} \
+	} while (0)
+
+#define INPUT_BLOCK_BIG(sc)   do { \
+		unsigned u; \
+		memcpy(W, sc->u.Vs, 32 * sizeof(sph_u32)); \
+		for (u = 0; u < 8; u ++) { \
+			W[u + 8][0] = sph_dec32le_aligned( \
+				sc->buf + 16 * u); \
+			W[u + 8][1] = sph_dec32le_aligned( \
+				sc->buf + 16 * u + 4); \
+			W[u + 8][2] = sph_dec32le_aligned( \
+				sc->buf + 16 * u + 8); \
+			W[u + 8][3] = sph_dec32le_aligned( \
+				sc->buf + 16 * u + 12); \
