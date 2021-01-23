@@ -377,3 +377,147 @@ mix_column(sph_u64 W[16][2], int ia, int ib, int ic, int id)
 				sc->buf + 16 * u + 8); \
 			W[u + 8][3] = sph_dec32le_aligned( \
 				sc->buf + 16 * u + 12); \
+		} \
+	} while (0)
+
+#if SPH_SMALL_FOOTPRINT_ECHO
+
+static void
+aes_2rounds_all(sph_u32 W[16][4],
+	sph_u32 *pK0, sph_u32 *pK1, sph_u32 *pK2, sph_u32 *pK3)
+{
+	int n;
+	sph_u32 K0 = *pK0;
+	sph_u32 K1 = *pK1;
+	sph_u32 K2 = *pK2;
+	sph_u32 K3 = *pK3;
+
+	for (n = 0; n < 16; n ++) {
+		sph_u32 *X = W[n];
+		sph_u32 Y0, Y1, Y2, Y3;
+		AES_ROUND_LE(X[0], X[1], X[2], X[3],
+			K0, K1, K2, K3, Y0, Y1, Y2, Y3);
+		AES_ROUND_NOKEY_LE(Y0, Y1, Y2, Y3, X[0], X[1], X[2], X[3]);
+		if ((K0 = T32(K0 + 1)) == 0) {
+			if ((K1 = T32(K1 + 1)) == 0)
+				if ((K2 = T32(K2 + 1)) == 0)
+					K3 = T32(K3 + 1);
+		}
+	}
+	*pK0 = K0;
+	*pK1 = K1;
+	*pK2 = K2;
+	*pK3 = K3;
+}
+
+#define BIG_SUB_WORDS   do { \
+		aes_2rounds_all(W, &K0, &K1, &K2, &K3); \
+	} while (0)
+
+#else
+
+#define AES_2ROUNDS(X)   do { \
+		sph_u32 Y0, Y1, Y2, Y3; \
+		AES_ROUND_LE(X[0], X[1], X[2], X[3], \
+			K0, K1, K2, K3, Y0, Y1, Y2, Y3); \
+		AES_ROUND_NOKEY_LE(Y0, Y1, Y2, Y3, X[0], X[1], X[2], X[3]); \
+		if ((K0 = T32(K0 + 1)) == 0) { \
+			if ((K1 = T32(K1 + 1)) == 0) \
+				if ((K2 = T32(K2 + 1)) == 0) \
+					K3 = T32(K3 + 1); \
+		} \
+	} while (0)
+
+#define BIG_SUB_WORDS   do { \
+		AES_2ROUNDS(W[ 0]); \
+		AES_2ROUNDS(W[ 1]); \
+		AES_2ROUNDS(W[ 2]); \
+		AES_2ROUNDS(W[ 3]); \
+		AES_2ROUNDS(W[ 4]); \
+		AES_2ROUNDS(W[ 5]); \
+		AES_2ROUNDS(W[ 6]); \
+		AES_2ROUNDS(W[ 7]); \
+		AES_2ROUNDS(W[ 8]); \
+		AES_2ROUNDS(W[ 9]); \
+		AES_2ROUNDS(W[10]); \
+		AES_2ROUNDS(W[11]); \
+		AES_2ROUNDS(W[12]); \
+		AES_2ROUNDS(W[13]); \
+		AES_2ROUNDS(W[14]); \
+		AES_2ROUNDS(W[15]); \
+	} while (0)
+
+#endif
+
+#define SHIFT_ROW1(a, b, c, d)   do { \
+		sph_u32 tmp; \
+		tmp = W[a][0]; \
+		W[a][0] = W[b][0]; \
+		W[b][0] = W[c][0]; \
+		W[c][0] = W[d][0]; \
+		W[d][0] = tmp; \
+		tmp = W[a][1]; \
+		W[a][1] = W[b][1]; \
+		W[b][1] = W[c][1]; \
+		W[c][1] = W[d][1]; \
+		W[d][1] = tmp; \
+		tmp = W[a][2]; \
+		W[a][2] = W[b][2]; \
+		W[b][2] = W[c][2]; \
+		W[c][2] = W[d][2]; \
+		W[d][2] = tmp; \
+		tmp = W[a][3]; \
+		W[a][3] = W[b][3]; \
+		W[b][3] = W[c][3]; \
+		W[c][3] = W[d][3]; \
+		W[d][3] = tmp; \
+	} while (0)
+
+#define SHIFT_ROW2(a, b, c, d)   do { \
+		sph_u32 tmp; \
+		tmp = W[a][0]; \
+		W[a][0] = W[c][0]; \
+		W[c][0] = tmp; \
+		tmp = W[b][0]; \
+		W[b][0] = W[d][0]; \
+		W[d][0] = tmp; \
+		tmp = W[a][1]; \
+		W[a][1] = W[c][1]; \
+		W[c][1] = tmp; \
+		tmp = W[b][1]; \
+		W[b][1] = W[d][1]; \
+		W[d][1] = tmp; \
+		tmp = W[a][2]; \
+		W[a][2] = W[c][2]; \
+		W[c][2] = tmp; \
+		tmp = W[b][2]; \
+		W[b][2] = W[d][2]; \
+		W[d][2] = tmp; \
+		tmp = W[a][3]; \
+		W[a][3] = W[c][3]; \
+		W[c][3] = tmp; \
+		tmp = W[b][3]; \
+		W[b][3] = W[d][3]; \
+		W[d][3] = tmp; \
+	} while (0)
+
+#define SHIFT_ROW3(a, b, c, d)   SHIFT_ROW1(d, c, b, a)
+
+#define BIG_SHIFT_ROWS   do { \
+		SHIFT_ROW1(1, 5, 9, 13); \
+		SHIFT_ROW2(2, 6, 10, 14); \
+		SHIFT_ROW3(3, 7, 11, 15); \
+	} while (0)
+
+#if SPH_SMALL_FOOTPRINT_ECHO
+
+static void
+mix_column(sph_u32 W[16][4], int ia, int ib, int ic, int id)
+{
+	int n;
+
+	for (n = 0; n < 4; n ++) {
+		sph_u32 a = W[ia][n];
+		sph_u32 b = W[ib][n];
+		sph_u32 c = W[ic][n];
+		sph_u32
