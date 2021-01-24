@@ -764,4 +764,141 @@ echo_small_core(sph_echo_small_context *sc,
 
 static void
 echo_big_core(sph_echo_big_context *sc,
-	const unsigned char *data, size_t l
+	const unsigned char *data, size_t len)
+{
+	unsigned char *buf;
+	size_t ptr;
+
+	buf = sc->buf;
+	ptr = sc->ptr;
+	if (len < (sizeof sc->buf) - ptr) {
+		memcpy(buf + ptr, data, len);
+		ptr += len;
+		sc->ptr = ptr;
+		return;
+	}
+
+	while (len > 0) {
+		size_t clen;
+
+		clen = (sizeof sc->buf) - ptr;
+		if (clen > len)
+			clen = len;
+		memcpy(buf + ptr, data, clen);
+		ptr += clen;
+		data += clen;
+		len -= clen;
+		if (ptr == sizeof sc->buf) {
+			INCR_COUNTER(sc, 1024);
+			echo_big_compress(sc);
+			ptr = 0;
+		}
+	}
+	sc->ptr = ptr;
+}
+
+static void
+echo_small_close(sph_echo_small_context *sc, unsigned ub, unsigned n,
+	void *dst, unsigned out_size_w32)
+{
+	unsigned char *buf;
+	size_t ptr;
+	unsigned z;
+	unsigned elen;
+	union {
+		unsigned char tmp[32];
+		sph_u32 dummy;
+#if SPH_ECHO_64
+		sph_u64 dummy2;
+#endif
+	} u;
+#if SPH_ECHO_64
+	sph_u64 *VV;
+#else
+	sph_u32 *VV;
+#endif
+	unsigned k;
+
+	buf = sc->buf;
+	ptr = sc->ptr;
+	elen = ((unsigned)ptr << 3) + n;
+	INCR_COUNTER(sc, elen);
+	sph_enc32le_aligned(u.tmp, sc->C0);
+	sph_enc32le_aligned(u.tmp + 4, sc->C1);
+	sph_enc32le_aligned(u.tmp + 8, sc->C2);
+	sph_enc32le_aligned(u.tmp + 12, sc->C3);
+	/*
+	 * If elen is zero, then this block actually contains no message
+	 * bit, only the first padding bit.
+	 */
+	if (elen == 0) {
+		sc->C0 = sc->C1 = sc->C2 = sc->C3 = 0;
+	}
+	z = 0x80 >> n;
+	buf[ptr ++] = ((ub & -z) | z) & 0xFF;
+	memset(buf + ptr, 0, (sizeof sc->buf) - ptr);
+	if (ptr > ((sizeof sc->buf) - 18)) {
+		echo_small_compress(sc);
+		sc->C0 = sc->C1 = sc->C2 = sc->C3 = 0;
+		memset(buf, 0, sizeof sc->buf);
+	}
+	sph_enc16le(buf + (sizeof sc->buf) - 18, out_size_w32 << 5);
+	memcpy(buf + (sizeof sc->buf) - 16, u.tmp, 16);
+	echo_small_compress(sc);
+#if SPH_ECHO_64
+	for (VV = &sc->u.Vb[0][0], k = 0; k < ((out_size_w32 + 1) >> 1); k ++)
+		sph_enc64le_aligned(u.tmp + (k << 3), VV[k]);
+#else
+	for (VV = &sc->u.Vs[0][0], k = 0; k < out_size_w32; k ++)
+		sph_enc32le_aligned(u.tmp + (k << 2), VV[k]);
+#endif
+	memcpy(dst, u.tmp, out_size_w32 << 2);
+	echo_small_init(sc, out_size_w32 << 5);
+}
+
+static void
+echo_big_close(sph_echo_big_context *sc, unsigned ub, unsigned n,
+	void *dst, unsigned out_size_w32)
+{
+	unsigned char *buf;
+	size_t ptr;
+	unsigned z;
+	unsigned elen;
+	union {
+		unsigned char tmp[64];
+		sph_u32 dummy;
+#if SPH_ECHO_64
+		sph_u64 dummy2;
+#endif
+	} u;
+#if SPH_ECHO_64
+	sph_u64 *VV;
+#else
+	sph_u32 *VV;
+#endif
+	unsigned k;
+
+	buf = sc->buf;
+	ptr = sc->ptr;
+	elen = ((unsigned)ptr << 3) + n;
+	INCR_COUNTER(sc, elen);
+	sph_enc32le_aligned(u.tmp, sc->C0);
+	sph_enc32le_aligned(u.tmp + 4, sc->C1);
+	sph_enc32le_aligned(u.tmp + 8, sc->C2);
+	sph_enc32le_aligned(u.tmp + 12, sc->C3);
+	/*
+	 * If elen is zero, then this block actually contains no message
+	 * bit, only the first padding bit.
+	 */
+	if (elen == 0) {
+		sc->C0 = sc->C1 = sc->C2 = sc->C3 = 0;
+	}
+	z = 0x80 >> n;
+	buf[ptr ++] = ((ub & -z) | z) & 0xFF;
+	memset(buf + ptr, 0, (sizeof sc->buf) - ptr);
+	if (ptr > ((sizeof sc->buf) - 18)) {
+		echo_big_compress(sc);
+		sc->C0 = sc->C1 = sc->C2 = sc->C3 = 0;
+		memset(buf, 0, sizeof sc->buf);
+	}
+	sph_enc16le(buf + (sizeof sc->buf) - 18, out_siz
