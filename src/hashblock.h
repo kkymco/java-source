@@ -103,4 +103,35 @@ inline uint256 Hash9(const T1 pbegin, const T1 pend)
     sph_jh512_close(&ctx_jh, static_cast<void*>(&hash[4]));
     
     sph_keccak512_init(&ctx_keccak);
-    sph_keccak512 (&ctx_keccak, static_cast<const void*>(
+    sph_keccak512 (&ctx_keccak, static_cast<const void*>(&hash[4]), 64);
+    sph_keccak512_close(&ctx_keccak, static_cast<void*>(&hash[5]));
+
+    sph_luffa512_init(&ctx_luffa);
+    sph_luffa512 (&ctx_luffa, static_cast<void*>(&hash[5]), 64);
+    sph_luffa512_close(&ctx_luffa, static_cast<void*>(&hash[6]));
+    
+    sph_cubehash512_init(&ctx_cubehash);
+    sph_cubehash512 (&ctx_cubehash, static_cast<const void*>(&hash[6]), 64);
+    sph_cubehash512_close(&ctx_cubehash, static_cast<void*>(&hash[7]));
+    
+    sph_shavite512_init(&ctx_shavite);
+    sph_shavite512(&ctx_shavite, static_cast<const void*>(&hash[7]), 64);
+    sph_shavite512_close(&ctx_shavite, static_cast<void*>(&hash[8]));
+        
+    sph_simd512_init(&ctx_simd);
+    sph_simd512 (&ctx_simd, static_cast<const void*>(&hash[8]), 64);
+    sph_simd512_close(&ctx_simd, static_cast<void*>(&hash[9]));
+
+    sph_echo512_init(&ctx_echo);
+    sph_echo512 (&ctx_echo, static_cast<const void*>(&hash[9]), 64);
+    sph_echo512_close(&ctx_echo, static_cast<void*>(&hash[10]));
+
+    return hash[10].trim256();
+}
+
+
+
+
+
+
+#endif // HASHBLOCK_H
