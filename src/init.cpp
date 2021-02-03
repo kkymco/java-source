@@ -85,4 +85,122 @@ void Shutdown(void* parg)
         fShutdown = true;
         nTransactionsUpdated++;
 //        CTxDB().Close();
-        bi
+        bitdb.Flush(false);
+        StopNode();
+        bitdb.Flush(true);
+        boost::filesystem::remove(GetPidFile());
+        UnregisterWallet(pwalletMain);
+        delete pwalletMain;
+        NewThread(ExitTimeout, NULL);
+        MilliSleep(50);
+        printf("SuperCoin exited\n\n");
+        fExit = true;
+#ifndef QT_GUI
+        // ensure non-UI client gets exited here, but let Bitcoin-Qt reach 'return 0;' in bitcoin.cpp
+        exit(0);
+#endif
+    }
+    else
+    {
+        while (!fExit)
+            MilliSleep(500);
+        MilliSleep(100);
+        ExitThread(0);
+    }
+}
+
+void HandleSIGTERM(int)
+{
+    fRequestShutdown = true;
+}
+
+void HandleSIGHUP(int)
+{
+    fReopenDebugLog = true;
+}
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Start
+//
+#if !defined(QT_GUI)
+bool AppInit(int argc, char* argv[])
+{
+    bool fRet = false;
+    try
+    {
+        //
+        // Parameters
+        //
+        // If Qt is used, parameters/bitcoin.conf are parsed in qt/bitcoin.cpp's main()
+        ParseParameters(argc, argv);
+        if (!boost::filesystem::is_directory(GetDataDir(false)))
+        {
+            fprintf(stderr, "Error: Specified directory does not exist\n");
+            Shutdown(NULL);
+        }
+        ReadConfigFile(mapArgs, mapMultiArgs);
+
+        if (mapArgs.count("-?") || mapArgs.count("--help"))
+        {
+            // First part of help message is specific to bitcoind / RPC client
+            std::string strUsage = _("SuperCoin version") + " " + FormatFullVersion() + "\n\n" +
+                _("Usage:") + "\n" +
+                  "  SuperCoind [options]                     " + "\n" +
+                  "  SuperCoind [options] <command> [params]  " + _("Send command to -server or SuperCoind") + "\n" +
+                  "  SuperCoind [options] help                " + _("List commands") + "\n" +
+                  "  SuperCoind [options] help <command>      " + _("Get help for a command") + "\n";
+
+            strUsage += "\n" + HelpMessage();
+
+            fprintf(stdout, "%s", strUsage.c_str());
+            return false;
+        }
+
+        // Command-line RPC
+        for (int i = 1; i < argc; i++)
+            if (!IsSwitchChar(argv[i][0]) && !boost::algorithm::istarts_with(argv[i], "SuperCoin:"))
+                fCommandLine = true;
+
+        if (fCommandLine)
+        {
+            int ret = CommandLineRPC(argc, argv);
+            exit(ret);
+        }
+
+        fRet = AppInit2();
+    }
+    catch (std::exception& e) {
+        PrintException(&e, "AppInit()");
+    } catch (...) {
+        PrintException(NULL, "AppInit()");
+    }
+    if (!fRet)
+        Shutdown(NULL);
+    return fRet;
+}
+
+extern void noui_connect();
+int main(int argc, char* argv[])
+{
+    bool fRet = false;
+
+    // Connect bitcoind signal handlers
+    noui_connect();
+
+    fRet = AppInit(argc, argv);
+
+    if (fRet && fDaemon)
+        return 0;
+
+    return 1;
+}
+#endif
+
+bool static InitError(const std::string &str)
+{
+    uiInterface.ThreadSafeMessageBo
