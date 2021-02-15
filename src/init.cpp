@@ -331,4 +331,89 @@ bool AppInit2()
 #endif
 #if _MSC_VER >= 1400
     // Disable confusing "helpful" text message on abort, Ctrl-C
-    _set_abort_be
+    _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+#endif
+#ifdef WIN32
+    // Enable Data Execution Prevention (DEP)
+    // Minimum supported OS versions: WinXP SP3, WinVista >= SP1, Win Server 2008
+    // A failure is non-critical and needs no further attention!
+#ifndef PROCESS_DEP_ENABLE
+// We define this here, because GCCs winbase.h limits this to _WIN32_WINNT >= 0x0601 (Windows 7),
+// which is not correct. Can be removed, when GCCs winbase.h is fixed!
+#define PROCESS_DEP_ENABLE 0x00000001
+#endif
+    typedef BOOL (WINAPI *PSETPROCDEPPOL)(DWORD);
+    PSETPROCDEPPOL setProcDEPPol = (PSETPROCDEPPOL)GetProcAddress(GetModuleHandleA("Kernel32.dll"), "SetProcessDEPPolicy");
+    if (setProcDEPPol != NULL) setProcDEPPol(PROCESS_DEP_ENABLE);
+#endif
+#ifndef WIN32
+    umask(077);
+
+    // Clean shutdown on SIGTERM
+    struct sigaction sa;
+    sa.sa_handler = HandleSIGTERM;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGTERM, &sa, NULL);
+    sigaction(SIGINT, &sa, NULL);
+
+    // Reopen debug.log on SIGHUP
+    struct sigaction sa_hup;
+    sa_hup.sa_handler = HandleSIGHUP;
+    sigemptyset(&sa_hup.sa_mask);
+    sa_hup.sa_flags = 0;
+    sigaction(SIGHUP, &sa_hup, NULL);
+#endif
+
+    // ********************************************************* Step 2: parameter interactions
+
+    nNodeLifespan = GetArg("-addrlifespan", 7);
+    fUseFastIndex = GetBoolArg("-fastindex", true);
+    nMinerSleep = GetArg("-minersleep", 500);
+
+    CheckpointsMode = Checkpoints::STRICT;
+    std::string strCpMode = GetArg("-cppolicy", "strict");
+
+    if(strCpMode == "strict")
+        CheckpointsMode = Checkpoints::STRICT;
+
+    if(strCpMode == "advisory")
+        CheckpointsMode = Checkpoints::ADVISORY;
+
+    if(strCpMode == "permissive")
+        CheckpointsMode = Checkpoints::PERMISSIVE;
+
+    nDerivationMethodIndex = 0;
+
+    fTestNet = GetBoolArg("-testnet");
+    //fTestNet = true;
+    if (fTestNet) {
+        SoftSetBoolArg("-irc", true);
+    }
+
+    if (mapArgs.count("-bind")) {
+        // when specifying an explicit binding address, you want to listen on it
+        // even when -connect or -proxy is specified
+        SoftSetBoolArg("-listen", true);
+    }
+
+    if (mapArgs.count("-connect") && mapMultiArgs["-connect"].size() > 0) {
+        // when only connecting to trusted nodes, do not seed via DNS, or listen by default
+        SoftSetBoolArg("-dnsseed", false);
+        SoftSetBoolArg("-listen", false);
+    }
+
+    if (mapArgs.count("-proxy")) {
+        // to protect privacy, do not listen by default if a proxy server is specified
+        SoftSetBoolArg("-listen", false);
+    }
+
+    if (!GetBoolArg("-listen", true)) {
+        // do not map ports or try to retrieve public IP when not listening (pointless)
+        SoftSetBoolArg("-upnp", false);
+        SoftSetBoolArg("-discover", false);
+    }
+
+    if (mapArgs.count("-externalip")) {
+        // if an explicit public IP is specified, do not try to find others
+        SoftSetBoolArg("-dis
