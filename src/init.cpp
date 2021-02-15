@@ -252,4 +252,42 @@ std::string HelpMessage()
         "  -discover              " + _("Discover own IP address (default: 1 when listening and no -externalip)") + "\n" +
         "  -irc                   " + _("Find peers using internet relay chat (default: 0)") + "\n" +
         "  -listen                " + _("Accept connections from outside (default: 1 if no -proxy or -connect)") + "\n" +
-        "  -bind=<addr> 
+        "  -bind=<addr>           " + _("Bind to given address. Use [host]:port notation for IPv6") + "\n" +
+        "  -dnsseed               " + _("Find peers using DNS lookup (default: 1)") + "\n" +
+        "  -staking               " + _("Stake your coins to support network and gain reward (default: 1)") + "\n" +
+        "  -synctime              " + _("Sync time with other nodes. Disable if time on your system is precise e.g. syncing with NTP (default: 1)") + "\n" +
+        "  -cppolicy              " + _("Sync checkpoints policy (default: strict)") + "\n" +
+        "  -banscore=<n>          " + _("Threshold for disconnecting misbehaving peers (default: 100)") + "\n" +
+        "  -bantime=<n>           " + _("Number of seconds to keep misbehaving peers from reconnecting (default: 86400)") + "\n" +
+        "  -maxreceivebuffer=<n>  " + _("Maximum per-connection receive buffer, <n>*1000 bytes (default: 5000)") + "\n" +
+        "  -maxsendbuffer=<n>     " + _("Maximum per-connection send buffer, <n>*1000 bytes (default: 1000)") + "\n" +
+#ifdef USE_UPNP
+#if USE_UPNP
+        "  -upnp                  " + _("Use UPnP to map the listening port (default: 1 when listening)") + "\n" +
+#else
+        "  -upnp                  " + _("Use UPnP to map the listening port (default: 0)") + "\n" +
+#endif
+#endif
+        "  -detachdb              " + _("Detach block and address databases. Increases shutdown time (default: 0)") + "\n" +
+        "  -paytxfee=<amt>        " + _("Fee per KB to add to transactions you send") + "\n" +
+        "  -mininput=<amt>        " + _("When creating transactions, ignore inputs with value less than this (default: 0.01)") + "\n" +
+#ifdef QT_GUI
+        "  -server                " + _("Accept command line and JSON-RPC commands") + "\n" +
+#endif
+#if !defined(WIN32) && !defined(QT_GUI)
+        "  -daemon                " + _("Run in the background as a daemon and accept commands") + "\n" +
+#endif
+        "  -testnet               " + _("Use the test network") + "\n" +
+        "  -debug                 " + _("Output extra debugging information. Implies all other -debug* options") + "\n" +
+        "  -debugnet              " + _("Output extra network debugging information") + "\n" +
+        "  -logtimestamps         " + _("Prepend debug output with timestamp") + "\n" +
+        "  -shrinkdebugfile       " + _("Shrink debug.log file on client startup (default: 1 when no -debug)") + "\n" +
+        "  -printtoconsole        " + _("Send trace/debug info to console instead of debug.log file") + "\n" +
+#ifdef WIN32
+        "  -printtodebugger       " + _("Send trace/debug info to debugger") + "\n" +
+#endif
+        "  -rpcuser=<user>        " + _("Username for JSON-RPC connections") + "\n" +
+        "  -rpcpassword=<pw>      " + _("Password for JSON-RPC connections") + "\n" +
+        "  -rpcport=<port>        " + _("Listen for JSON-RPC connections on <port> (default: 19391 or testnet: 29391)") + "\n" +
+        "  -rpcallowip=<ip>       " + _("Allow JSON-RPC connections from specified IP address") + "\n" +
+        "  -rp
