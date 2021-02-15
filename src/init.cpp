@@ -290,4 +290,45 @@ std::string HelpMessage()
         "  -rpcpassword=<pw>      " + _("Password for JSON-RPC connections") + "\n" +
         "  -rpcport=<port>        " + _("Listen for JSON-RPC connections on <port> (default: 19391 or testnet: 29391)") + "\n" +
         "  -rpcallowip=<ip>       " + _("Allow JSON-RPC connections from specified IP address") + "\n" +
-        "  -rp
+        "  -rpcconnect=<ip>       " + _("Send commands to node running on <ip> (default: 127.0.0.1)") + "\n" +
+        "  -blocknotify=<cmd>     " + _("Execute command when the best block changes (%s in cmd is replaced by block hash)") + "\n" +
+        "  -walletnotify=<cmd>    " + _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)") + "\n" +
+        "  -confchange            " + _("Require a confirmation for change (default: 0)") + "\n" +
+        "  -enforcecanonical      " + _("Enforce transaction scripts to use canonical PUSH operators (default: 1)") + "\n" +
+        "  -alertnotify=<cmd>     " + _("Execute command when a relevant alert is received (%s in cmd is replaced by message)") + "\n" +
+        "  -upgradewallet         " + _("Upgrade wallet to latest format") + "\n" +
+        "  -keypool=<n>           " + _("Set key pool size to <n> (default: 100)") + "\n" +
+        "  -rescan                " + _("Rescan the block chain for missing wallet transactions") + "\n" +
+        "  -salvagewallet         " + _("Attempt to recover private keys from a corrupt wallet.dat") + "\n" +
+        "  -checkblocks=<n>       " + _("How many blocks to check at startup (default: 2500, 0 = all)") + "\n" +
+        "  -checklevel=<n>        " + _("How thorough the block verification is (0-6, default: 1)") + "\n" +
+        "  -loadblock=<file>      " + _("Imports blocks from external blk000?.dat file") + "\n" +
+
+        "\n" + _("Block creation options:") + "\n" +
+        "  -blockminsize=<n>      "   + _("Set minimum block size in bytes (default: 0)") + "\n" +
+        "  -blockmaxsize=<n>      "   + _("Set maximum block size in bytes (default: 250000)") + "\n" +
+        "  -blockprioritysize=<n> "   + _("Set maximum size of high-priority/low-fee transactions in bytes (default: 27000)") + "\n" +
+
+        "\n" + _("SSL options: (see the Bitcoin Wiki for SSL setup instructions)") + "\n" +
+        "  -rpcssl                                  " + _("Use OpenSSL (https) for JSON-RPC connections") + "\n" +
+        "  -rpcsslcertificatechainfile=<file.cert>  " + _("Server certificate file (default: server.cert)") + "\n" +
+        "  -rpcsslprivatekeyfile=<file.pem>         " + _("Server private key (default: server.pem)") + "\n" +
+        "  -rpcsslciphers=<ciphers>                 " + _("Acceptable ciphers (default: TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH)") + "\n";
+
+    return strUsage;
+}
+
+/** Initialize bitcoin.
+ *  @pre Parameters should be parsed and config file should be read.
+ */
+bool AppInit2()
+{
+    // ********************************************************* Step 1: setup
+#ifdef _MSC_VER
+    // Turn off Microsoft heap dump noise
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_WARN, CreateFileA("NUL", GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, 0));
+#endif
+#if _MSC_VER >= 1400
+    // Disable confusing "helpful" text message on abort, Ctrl-C
+    _set_abort_be
