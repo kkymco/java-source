@@ -499,4 +499,79 @@ bool AppInit2()
     FILE* file = fopen(pathLockFile.string().c_str(), "a"); // empty lock file; created if it doesn't exist.
     if (file) fclose(file);
     static boost::interprocess::file_lock lock(pathLockFile.string().c_str());
- 
+    if (!lock.try_lock())
+        return InitError(strprintf(_("Cannot obtain a lock on data directory %s.  SuperCoin is probably already running."), strDataDir.c_str()));
+
+#if !defined(WIN32) && !defined(QT_GUI)
+    if (fDaemon)
+    {
+        // Daemonize
+        pid_t pid = fork();
+        if (pid < 0)
+        {
+            fprintf(stderr, "Error: fork() returned %d errno %d\n", pid, errno);
+            return false;
+        }
+        if (pid > 0)
+        {
+            CreatePidFile(GetPidFile(), pid);
+            return true;
+        }
+
+        pid_t sid = setsid();
+        if (sid < 0)
+            fprintf(stderr, "Error: setsid() returned %d errno %d\n", sid, errno);
+    }
+#endif
+
+    if (GetBoolArg("-shrinkdebugfile", !fDebug))
+        ShrinkDebugFile();
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    printf("SuperCoin version %s (%s)\n", FormatFullVersion().c_str(), CLIENT_DATE.c_str());
+    printf("Using OpenSSL version %s\n", SSLeay_version(SSLEAY_VERSION));
+    if (!fLogTimestamps)
+        printf("Startup time: %s\n", DateTimeStrFormat("%x %H:%M:%S", GetTime()).c_str());
+    printf("Default data directory %s\n", GetDefaultDataDir().string().c_str());
+    printf("Used data directory %s\n", strDataDir.c_str());
+    std::ostringstream strErrors;
+
+    if (fDaemon)
+        fprintf(stdout, "SuperCoin server starting\n");
+
+    int64_t nStart;
+
+    // ********************************************************* Step 5: verify database integrity
+ if (!fDisableWallet) {
+    uiInterface.InitMessage(_("Verifying database integrity..."));
+
+    if (!bitdb.Open(GetDataDir()))
+    {
+        string msg = strprintf(_("Error initializing database environment %s!"
+                                 " To recover, BACKUP THAT DIRECTORY, then remove"
+                                 " everything from it except for wallet.dat."), strDataDir.c_str());
+        return InitError(msg);
+    }
+
+    if (GetBoolArg("-salvagewallet"))
+    {
+        // Recover readable keypairs:
+        if (!CWalletDB::Recover(bitdb, strWalletFileName, true))
+            return false;
+    }
+
+    if (filesystem::exists(GetDataDir() / strWalletFileName))
+    {
+        CDBEnv::VerifyResult r = bitdb.Verify(strWalletFileName, CWalletDB::Recover);
+        if (r == CDBEnv::RECOVER_OK)
+        {
+            string msg = strprintf(_("Warning: wallet.dat corrupt, data salvaged!"
+                                     " Original wallet.dat saved as wallet.{timestamp}.bak in %s; if"
+                                     " your balance or transactions are incorrect you should"
+                                     " restore from a backup."), strDataDir.c_str());
+            uiInterface.ThreadSafeMessageBox(msg, _("SuperCoin"), CClientUIInterface::OK | CClientUIInterface::ICON_EXCLAMATION | CClientUIInterface::MODAL);
+        }
+        if (r == CDBEnv::RECOVER_FAIL)
+            return InitError(_("wallet.dat corrupt, salvage failed"));
+    }
+        // Donations database.
+        //CDonationDB::Init("donations.dat");
