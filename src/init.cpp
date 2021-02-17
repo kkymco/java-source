@@ -575,3 +575,89 @@ bool AppInit2()
     }
         // Donations database.
         //CDonationDB::Init("donations.dat");
+    }
+
+    // ********************************************************* Step 6: network initialization
+
+    int nSocksVersion = GetArg("-socks", 5);
+
+    if (nSocksVersion != 4 && nSocksVersion != 5)
+        return InitError(strprintf(_("Unknown -socks proxy version requested: %i"), nSocksVersion));
+
+    if (mapArgs.count("-onlynet")) {
+        std::set<enum Network> nets;
+        BOOST_FOREACH(std::string snet, mapMultiArgs["-onlynet"]) {
+            enum Network net = ParseNetwork(snet);
+            if (net == NET_UNROUTABLE)
+                return InitError(strprintf(_("Unknown network specified in -onlynet: '%s'"), snet.c_str()));
+            nets.insert(net);
+        }
+        for (int n = 0; n < NET_MAX; n++) {
+            enum Network net = (enum Network)n;
+            if (!nets.count(net))
+                SetLimited(net);
+        }
+    }
+#if defined(USE_IPV6)
+#if ! USE_IPV6
+    else
+        SetLimited(NET_IPV6);
+#endif
+#endif
+
+    CService addrProxy;
+    bool fProxy = false;
+    if (mapArgs.count("-proxy")) {
+        addrProxy = CService(mapArgs["-proxy"], 9050);
+        if (!addrProxy.IsValid())
+            return InitError(strprintf(_("Invalid -proxy address: '%s'"), mapArgs["-proxy"].c_str()));
+
+        if (!IsLimited(NET_IPV4))
+            SetProxy(NET_IPV4, addrProxy, nSocksVersion);
+        if (nSocksVersion > 4) {
+#ifdef USE_IPV6
+            if (!IsLimited(NET_IPV6))
+                SetProxy(NET_IPV6, addrProxy, nSocksVersion);
+#endif
+            SetNameProxy(addrProxy, nSocksVersion);
+        }
+        fProxy = true;
+    }
+
+    // -tor can override normal proxy, -notor disables tor entirely
+    if (!(mapArgs.count("-tor") && mapArgs["-tor"] == "0") && (fProxy || mapArgs.count("-tor"))) {
+        CService addrOnion;
+        if (!mapArgs.count("-tor"))
+            addrOnion = addrProxy;
+        else
+            addrOnion = CService(mapArgs["-tor"], 9050);
+        if (!addrOnion.IsValid())
+            return InitError(strprintf(_("Invalid -tor address: '%s'"), mapArgs["-tor"].c_str()));
+        SetProxy(NET_TOR, addrOnion, 5);
+        SetReachable(NET_TOR);
+    }
+
+    // see Step 2: parameter interactions for more information about these
+    fNoListen = !GetBoolArg("-listen", true);
+    fDiscover = GetBoolArg("-discover", true);
+    fNameLookup = GetBoolArg("-dns", true);
+#ifdef USE_UPNP
+    fUseUPnP = GetBoolArg("-upnp", USE_UPNP);
+#endif
+
+    bool fBound = false;
+    if (!fNoListen)
+    {
+        std::string strError;
+        if (mapArgs.count("-bind")) {
+            BOOST_FOREACH(std::string strBind, mapMultiArgs["-bind"]) {
+                CService addrBind;
+                if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false))
+                    return InitError(strprintf(_("Cannot resolve -bind address: '%s'"), strBind.c_str()));
+                fBound |= Bind(addrBind);
+            }
+        } else {
+            struct in_addr inaddr_any;
+            inaddr_any.s_addr = INADDR_ANY;
+#ifdef USE_IPV6
+            if (!IsLim
