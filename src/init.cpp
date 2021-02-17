@@ -416,4 +416,87 @@ bool AppInit2()
 
     if (mapArgs.count("-externalip")) {
         // if an explicit public IP is specified, do not try to find others
-        SoftSetBoolArg("-dis
+        SoftSetBoolArg("-discover", false);
+    }
+
+    if (GetBoolArg("-salvagewallet")) {
+        // Rewrite just private keys: rescan to find transactions
+        SoftSetBoolArg("-rescan", true);
+    }
+
+    // ********************************************************* Step 3: parameter-to-internal-flags
+
+    fDebug = GetBoolArg("-debug");
+
+    // -debug implies fDebug*
+    if (fDebug)
+        fDebugNet = true;
+    else
+        fDebugNet = GetBoolArg("-debugnet");
+
+    bitdb.SetDetach(GetBoolArg("-detachdb", false));
+
+#if !defined(WIN32) && !defined(QT_GUI)
+    fDaemon = GetBoolArg("-daemon");
+#else
+    fDaemon = false;
+#endif
+
+    if (fDaemon)
+        fServer = true;
+    else
+        fServer = GetBoolArg("-server");
+
+    /* force fServer when running without GUI */
+#if !defined(QT_GUI)
+    fServer = true;
+#endif
+    fPrintToConsole = GetBoolArg("-printtoconsole");
+    fPrintToDebugger = GetBoolArg("-printtodebugger");
+    fLogTimestamps = GetBoolArg("-logtimestamps");
+   bool fDisableWallet = GetBoolArg("-disablewallet", false);
+
+    if (mapArgs.count("-timeout"))
+    {
+        int nNewTimeout = GetArg("-timeout", 5000);
+        if (nNewTimeout > 0 && nNewTimeout < 600000)
+            nConnectTimeout = nNewTimeout;
+    }
+
+    if (mapArgs.count("-donate"))
+        {
+            nDonatePercent = atof(mapArgs["-donate"].c_str());
+        }
+
+    if (mapArgs.count("-paytxfee"))
+    {
+        if (!ParseMoney(mapArgs["-paytxfee"], nTransactionFee))
+            return InitError(strprintf(_("Invalid amount for -paytxfee=<amount>: '%s'"), mapArgs["-paytxfee"].c_str()));
+        if (nTransactionFee > 0.25 * COIN)
+            InitWarning(_("Warning: -paytxfee is set very high! This is the transaction fee you will pay if you send a transaction."));
+    }
+
+    fConfChange = GetBoolArg("-confchange", false);
+    fEnforceCanonical = GetBoolArg("-enforcecanonical", true);
+
+    if (mapArgs.count("-mininput"))
+    {
+        if (!ParseMoney(mapArgs["-mininput"], nMinimumInputValue))
+            return InitError(strprintf(_("Invalid amount for -mininput=<amount>: '%s'"), mapArgs["-mininput"].c_str()));
+    }
+
+    // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
+
+    std::string strDataDir = GetDataDir().string();
+    std::string strWalletFileName = GetArg("-wallet", "wallet.dat");
+
+    // strWalletFileName must be a plain filename without a directory
+    if (strWalletFileName != boost::filesystem::basename(strWalletFileName) + boost::filesystem::extension(strWalletFileName))
+        return InitError(strprintf(_("Wallet %s resides outside data directory %s."), strWalletFileName.c_str(), strDataDir.c_str()));
+
+    // Make sure only a single Bitcoin process is using the data directory.
+    boost::filesystem::path pathLockFile = GetDataDir() / ".lock";
+    FILE* file = fopen(pathLockFile.string().c_str(), "a"); // empty lock file; created if it doesn't exist.
+    if (file) fclose(file);
+    static boost::interprocess::file_lock lock(pathLockFile.string().c_str());
+ 
