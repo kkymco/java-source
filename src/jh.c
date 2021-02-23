@@ -200,4 +200,92 @@ static const sph_u64 C[] = {
 	C64e(0x742a5116f2e03298), C64e(0x0deb30d8e3cef89a),
 	C64e(0x4bc59e7bb5f17992), C64e(0xff51e66e048668d3),
 	C64e(0x9b234d57e6966731), C64e(0xcce6a6f3170a7505),
-	C64e(0xb17681d913326cce), C64e(0x3c175284f
+	C64e(0xb17681d913326cce), C64e(0x3c175284f805a262),
+	C64e(0xf42bcbb378471547), C64e(0xff46548223936a48),
+	C64e(0x38df58074e5e6565), C64e(0xf2fc7c89fc86508e),
+	C64e(0x31702e44d00bca86), C64e(0xf04009a23078474e),
+	C64e(0x65a0ee39d1f73883), C64e(0xf75ee937e42c3abd),
+	C64e(0x2197b2260113f86f), C64e(0xa344edd1ef9fdee7),
+	C64e(0x8ba0df15762592d9), C64e(0x3c85f7f612dc42be),
+	C64e(0xd8a7ec7cab27b07e), C64e(0x538d7ddaaa3ea8de),
+	C64e(0xaa25ce93bd0269d8), C64e(0x5af643fd1a7308f9),
+	C64e(0xc05fefda174a19a5), C64e(0x974d66334cfd216a),
+	C64e(0x35b49831db411570), C64e(0xea1e0fbbedcd549b),
+	C64e(0x9ad063a151974072), C64e(0xf6759dbf91476fe2)
+};
+
+#define Ceven_hi(r)   (C[((r) << 2) + 0])
+#define Ceven_lo(r)   (C[((r) << 2) + 1])
+#define Codd_hi(r)    (C[((r) << 2) + 2])
+#define Codd_lo(r)    (C[((r) << 2) + 3])
+
+#define S(x0, x1, x2, x3, cb, r)   do { \
+		Sb(x0 ## h, x1 ## h, x2 ## h, x3 ## h, cb ## hi(r)); \
+		Sb(x0 ## l, x1 ## l, x2 ## l, x3 ## l, cb ## lo(r)); \
+	} while (0)
+
+#define L(x0, x1, x2, x3, x4, x5, x6, x7)   do { \
+		Lb(x0 ## h, x1 ## h, x2 ## h, x3 ## h, \
+			x4 ## h, x5 ## h, x6 ## h, x7 ## h); \
+		Lb(x0 ## l, x1 ## l, x2 ## l, x3 ## l, \
+			x4 ## l, x5 ## l, x6 ## l, x7 ## l); \
+	} while (0)
+
+#define Wz(x, c, n)   do { \
+		sph_u64 t = (x ## h & (c)) << (n); \
+		x ## h = ((x ## h >> (n)) & (c)) | t; \
+		t = (x ## l & (c)) << (n); \
+		x ## l = ((x ## l >> (n)) & (c)) | t; \
+	} while (0)
+
+#define W0(x)   Wz(x, SPH_C64(0x5555555555555555),  1)
+#define W1(x)   Wz(x, SPH_C64(0x3333333333333333),  2)
+#define W2(x)   Wz(x, SPH_C64(0x0F0F0F0F0F0F0F0F),  4)
+#define W3(x)   Wz(x, SPH_C64(0x00FF00FF00FF00FF),  8)
+#define W4(x)   Wz(x, SPH_C64(0x0000FFFF0000FFFF), 16)
+#define W5(x)   Wz(x, SPH_C64(0x00000000FFFFFFFF), 32)
+#define W6(x)   do { \
+		sph_u64 t = x ## h; \
+		x ## h = x ## l; \
+		x ## l = t; \
+	} while (0)
+
+#define DECL_STATE \
+	sph_u64 h0h, h1h, h2h, h3h, h4h, h5h, h6h, h7h; \
+	sph_u64 h0l, h1l, h2l, h3l, h4l, h5l, h6l, h7l; \
+	sph_u64 tmp;
+
+#define READ_STATE(state)   do { \
+		h0h = (state)->H.wide[ 0]; \
+		h0l = (state)->H.wide[ 1]; \
+		h1h = (state)->H.wide[ 2]; \
+		h1l = (state)->H.wide[ 3]; \
+		h2h = (state)->H.wide[ 4]; \
+		h2l = (state)->H.wide[ 5]; \
+		h3h = (state)->H.wide[ 6]; \
+		h3l = (state)->H.wide[ 7]; \
+		h4h = (state)->H.wide[ 8]; \
+		h4l = (state)->H.wide[ 9]; \
+		h5h = (state)->H.wide[10]; \
+		h5l = (state)->H.wide[11]; \
+		h6h = (state)->H.wide[12]; \
+		h6l = (state)->H.wide[13]; \
+		h7h = (state)->H.wide[14]; \
+		h7l = (state)->H.wide[15]; \
+	} while (0)
+
+#define WRITE_STATE(state)   do { \
+		(state)->H.wide[ 0] = h0h; \
+		(state)->H.wide[ 1] = h0l; \
+		(state)->H.wide[ 2] = h1h; \
+		(state)->H.wide[ 3] = h1l; \
+		(state)->H.wide[ 4] = h2h; \
+		(state)->H.wide[ 5] = h2l; \
+		(state)->H.wide[ 6] = h3h; \
+		(state)->H.wide[ 7] = h3l; \
+		(state)->H.wide[ 8] = h4h; \
+		(state)->H.wide[ 9] = h4l; \
+		(state)->H.wide[10] = h5h; \
+		(state)->H.wide[11] = h5l; \
+		(state)->H.wide[12] = h6h; \
+		(state)->H.wide[13] = 
