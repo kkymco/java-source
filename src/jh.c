@@ -288,4 +288,91 @@ static const sph_u64 C[] = {
 		(state)->H.wide[10] = h5h; \
 		(state)->H.wide[11] = h5l; \
 		(state)->H.wide[12] = h6h; \
-		(state)->H.wide[13] = 
+		(state)->H.wide[13] = h6l; \
+		(state)->H.wide[14] = h7h; \
+		(state)->H.wide[15] = h7l; \
+	} while (0)
+
+#define INPUT_BUF1 \
+	sph_u64 m0h = dec64e_aligned(buf +  0); \
+	sph_u64 m0l = dec64e_aligned(buf +  8); \
+	sph_u64 m1h = dec64e_aligned(buf + 16); \
+	sph_u64 m1l = dec64e_aligned(buf + 24); \
+	sph_u64 m2h = dec64e_aligned(buf + 32); \
+	sph_u64 m2l = dec64e_aligned(buf + 40); \
+	sph_u64 m3h = dec64e_aligned(buf + 48); \
+	sph_u64 m3l = dec64e_aligned(buf + 56); \
+	h0h ^= m0h; \
+	h0l ^= m0l; \
+	h1h ^= m1h; \
+	h1l ^= m1l; \
+	h2h ^= m2h; \
+	h2l ^= m2l; \
+	h3h ^= m3h; \
+	h3l ^= m3l;
+
+#define INPUT_BUF2 \
+	h4h ^= m0h; \
+	h4l ^= m0l; \
+	h5h ^= m1h; \
+	h5l ^= m1l; \
+	h6h ^= m2h; \
+	h6l ^= m2l; \
+	h7h ^= m3h; \
+	h7l ^= m3l;
+
+static const sph_u64 IV224[] = {
+	C64e(0x2dfedd62f99a98ac), C64e(0xae7cacd619d634e7),
+	C64e(0xa4831005bc301216), C64e(0xb86038c6c9661494),
+	C64e(0x66d9899f2580706f), C64e(0xce9ea31b1d9b1adc),
+	C64e(0x11e8325f7b366e10), C64e(0xf994857f02fa06c1),
+	C64e(0x1b4f1b5cd8c840b3), C64e(0x97f6a17f6e738099),
+	C64e(0xdcdf93a5adeaa3d3), C64e(0xa431e8dec9539a68),
+	C64e(0x22b4a98aec86a1e4), C64e(0xd574ac959ce56cf0),
+	C64e(0x15960deab5ab2bbf), C64e(0x9611dcf0dd64ea6e)
+};
+
+static const sph_u64 IV256[] = {
+	C64e(0xeb98a3412c20d3eb), C64e(0x92cdbe7b9cb245c1),
+	C64e(0x1c93519160d4c7fa), C64e(0x260082d67e508a03),
+	C64e(0xa4239e267726b945), C64e(0xe0fb1a48d41a9477),
+	C64e(0xcdb5ab26026b177a), C64e(0x56f024420fff2fa8),
+	C64e(0x71a396897f2e4d75), C64e(0x1d144908f77de262),
+	C64e(0x277695f776248f94), C64e(0x87d5b6574780296c),
+	C64e(0x5c5e272dac8e0d6c), C64e(0x518450c657057a0f),
+	C64e(0x7be4d367702412ea), C64e(0x89e3ab13d31cd769)
+};
+
+static const sph_u64 IV384[] = {
+	C64e(0x481e3bc6d813398a), C64e(0x6d3b5e894ade879b),
+	C64e(0x63faea68d480ad2e), C64e(0x332ccb21480f8267),
+	C64e(0x98aec84d9082b928), C64e(0xd455ea3041114249),
+	C64e(0x36f555b2924847ec), C64e(0xc7250a93baf43ce1),
+	C64e(0x569b7f8a27db454c), C64e(0x9efcbd496397af0e),
+	C64e(0x589fc27d26aa80cd), C64e(0x80c08b8c9deb2eda),
+	C64e(0x8a7981e8f8d5373a), C64e(0xf43967adddd17a71),
+	C64e(0xa9b4d3bda475d394), C64e(0x976c3fba9842737f)
+};
+
+static const sph_u64 IV512[] = {
+	C64e(0x6fd14b963e00aa17), C64e(0x636a2e057a15d543),
+	C64e(0x8a225e8d0c97ef0b), C64e(0xe9341259f2b3c361),
+	C64e(0x891da0c1536f801e), C64e(0x2aa9056bea2b6d80),
+	C64e(0x588eccdb2075baa6), C64e(0xa90f3a76baf83bf7),
+	C64e(0x0169e60541e34a69), C64e(0x46b58a8e2e6fe65a),
+	C64e(0x1047a7d0c1843c24), C64e(0x3b6e71b12d5ac199),
+	C64e(0xcf57f6ec9db1f856), C64e(0xa706887c5716b156),
+	C64e(0xe3c2fcdfe68517fb), C64e(0x545a4678cc8cdd4b)
+};
+
+#else
+
+static const sph_u32 C[] = {
+	C32e(0x72d5dea2), C32e(0xdf15f867), C32e(0x7b84150a),
+	C32e(0xb7231557), C32e(0x81abd690), C32e(0x4d5a87f6),
+	C32e(0x4e9f4fc5), C32e(0xc3d12b40), C32e(0xea983ae0),
+	C32e(0x5c45fa9c), C32e(0x03c5d299), C32e(0x66b2999a),
+	C32e(0x660296b4), C32e(0xf2bb538a), C32e(0xb556141a),
+	C32e(0x88dba231), C32e(0x03a35a5c), C32e(0x9a190edb),
+	C32e(0x403fb20a), C32e(0x87c14410), C32e(0x1c051980),
+	C32e(0x849e951d), C32e(0x6f33
