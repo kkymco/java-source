@@ -580,4 +580,103 @@ static const sph_u32 C[] = {
 		h60 = (state)->H.narrow[27]; \
 		h73 = (state)->H.narrow[28]; \
 		h72 = (state)->H.narrow[29]; \
-	
+		h71 = (state)->H.narrow[30]; \
+		h70 = (state)->H.narrow[31]; \
+	} while (0)
+
+#define WRITE_STATE(state)   do { \
+		(state)->H.narrow[ 0] = h03; \
+		(state)->H.narrow[ 1] = h02; \
+		(state)->H.narrow[ 2] = h01; \
+		(state)->H.narrow[ 3] = h00; \
+		(state)->H.narrow[ 4] = h13; \
+		(state)->H.narrow[ 5] = h12; \
+		(state)->H.narrow[ 6] = h11; \
+		(state)->H.narrow[ 7] = h10; \
+		(state)->H.narrow[ 8] = h23; \
+		(state)->H.narrow[ 9] = h22; \
+		(state)->H.narrow[10] = h21; \
+		(state)->H.narrow[11] = h20; \
+		(state)->H.narrow[12] = h33; \
+		(state)->H.narrow[13] = h32; \
+		(state)->H.narrow[14] = h31; \
+		(state)->H.narrow[15] = h30; \
+		(state)->H.narrow[16] = h43; \
+		(state)->H.narrow[17] = h42; \
+		(state)->H.narrow[18] = h41; \
+		(state)->H.narrow[19] = h40; \
+		(state)->H.narrow[20] = h53; \
+		(state)->H.narrow[21] = h52; \
+		(state)->H.narrow[22] = h51; \
+		(state)->H.narrow[23] = h50; \
+		(state)->H.narrow[24] = h63; \
+		(state)->H.narrow[25] = h62; \
+		(state)->H.narrow[26] = h61; \
+		(state)->H.narrow[27] = h60; \
+		(state)->H.narrow[28] = h73; \
+		(state)->H.narrow[29] = h72; \
+		(state)->H.narrow[30] = h71; \
+		(state)->H.narrow[31] = h70; \
+	} while (0)
+
+#define INPUT_BUF1 \
+	sph_u32 m03 = dec32e_aligned(buf +  0); \
+	sph_u32 m02 = dec32e_aligned(buf +  4); \
+	sph_u32 m01 = dec32e_aligned(buf +  8); \
+	sph_u32 m00 = dec32e_aligned(buf + 12); \
+	sph_u32 m13 = dec32e_aligned(buf + 16); \
+	sph_u32 m12 = dec32e_aligned(buf + 20); \
+	sph_u32 m11 = dec32e_aligned(buf + 24); \
+	sph_u32 m10 = dec32e_aligned(buf + 28); \
+	sph_u32 m23 = dec32e_aligned(buf + 32); \
+	sph_u32 m22 = dec32e_aligned(buf + 36); \
+	sph_u32 m21 = dec32e_aligned(buf + 40); \
+	sph_u32 m20 = dec32e_aligned(buf + 44); \
+	sph_u32 m33 = dec32e_aligned(buf + 48); \
+	sph_u32 m32 = dec32e_aligned(buf + 52); \
+	sph_u32 m31 = dec32e_aligned(buf + 56); \
+	sph_u32 m30 = dec32e_aligned(buf + 60); \
+	h03 ^= m03; \
+	h02 ^= m02; \
+	h01 ^= m01; \
+	h00 ^= m00; \
+	h13 ^= m13; \
+	h12 ^= m12; \
+	h11 ^= m11; \
+	h10 ^= m10; \
+	h23 ^= m23; \
+	h22 ^= m22; \
+	h21 ^= m21; \
+	h20 ^= m20; \
+	h33 ^= m33; \
+	h32 ^= m32; \
+	h31 ^= m31; \
+	h30 ^= m30;
+
+#define INPUT_BUF2 \
+	h43 ^= m03; \
+	h42 ^= m02; \
+	h41 ^= m01; \
+	h40 ^= m00; \
+	h53 ^= m13; \
+	h52 ^= m12; \
+	h51 ^= m11; \
+	h50 ^= m10; \
+	h63 ^= m23; \
+	h62 ^= m22; \
+	h61 ^= m21; \
+	h60 ^= m20; \
+	h73 ^= m33; \
+	h72 ^= m32; \
+	h71 ^= m31; \
+	h70 ^= m30;
+
+static const sph_u32 IV224[] = {
+	C32e(0x2dfedd62), C32e(0xf99a98ac), C32e(0xae7cacd6), C32e(0x19d634e7),
+	C32e(0xa4831005), C32e(0xbc301216), C32e(0xb86038c6), C32e(0xc9661494),
+	C32e(0x66d9899f), C32e(0x2580706f), C32e(0xce9ea31b), C32e(0x1d9b1adc),
+	C32e(0x11e8325f), C32e(0x7b366e10), C32e(0xf994857f), C32e(0x02fa06c1),
+	C32e(0x1b4f1b5c), C32e(0xd8c840b3), C32e(0x97f6a17f), C32e(0x6e738099),
+	C32e(0xdcdf93a5), C32e(0xadeaa3d3), C32e(0xa431e8de), C32e(0xc9539a68),
+	C32e(0x22b4a98a), C32e(0xec86a1e4), C32e(0xd574ac95), C32e(0x9ce56cf0),
+	C32e(0x15960dea), C32e(0xb5ab2bbf), C32e(0x
