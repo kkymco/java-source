@@ -486,4 +486,98 @@ static const sph_u32 C[] = {
 #define Ceven_w2(r)   (C[((r) << 3) + 1])
 #define Ceven_w1(r)   (C[((r) << 3) + 2])
 #define Ceven_w0(r)   (C[((r) << 3) + 3])
-#define Codd_w3(r)    (C[((
+#define Codd_w3(r)    (C[((r) << 3) + 4])
+#define Codd_w2(r)    (C[((r) << 3) + 5])
+#define Codd_w1(r)    (C[((r) << 3) + 6])
+#define Codd_w0(r)    (C[((r) << 3) + 7])
+
+#define S(x0, x1, x2, x3, cb, r)   do { \
+		Sb(x0 ## 3, x1 ## 3, x2 ## 3, x3 ## 3, cb ## w3(r)); \
+		Sb(x0 ## 2, x1 ## 2, x2 ## 2, x3 ## 2, cb ## w2(r)); \
+		Sb(x0 ## 1, x1 ## 1, x2 ## 1, x3 ## 1, cb ## w1(r)); \
+		Sb(x0 ## 0, x1 ## 0, x2 ## 0, x3 ## 0, cb ## w0(r)); \
+	} while (0)
+
+#define L(x0, x1, x2, x3, x4, x5, x6, x7)   do { \
+		Lb(x0 ## 3, x1 ## 3, x2 ## 3, x3 ## 3, \
+			x4 ## 3, x5 ## 3, x6 ## 3, x7 ## 3); \
+		Lb(x0 ## 2, x1 ## 2, x2 ## 2, x3 ## 2, \
+			x4 ## 2, x5 ## 2, x6 ## 2, x7 ## 2); \
+		Lb(x0 ## 1, x1 ## 1, x2 ## 1, x3 ## 1, \
+			x4 ## 1, x5 ## 1, x6 ## 1, x7 ## 1); \
+		Lb(x0 ## 0, x1 ## 0, x2 ## 0, x3 ## 0, \
+			x4 ## 0, x5 ## 0, x6 ## 0, x7 ## 0); \
+	} while (0)
+
+#define Wz(x, c, n)   do { \
+		sph_u32 t = (x ## 3 & (c)) << (n); \
+		x ## 3 = ((x ## 3 >> (n)) & (c)) | t; \
+		t = (x ## 2 & (c)) << (n); \
+		x ## 2 = ((x ## 2 >> (n)) & (c)) | t; \
+		t = (x ## 1 & (c)) << (n); \
+		x ## 1 = ((x ## 1 >> (n)) & (c)) | t; \
+		t = (x ## 0 & (c)) << (n); \
+		x ## 0 = ((x ## 0 >> (n)) & (c)) | t; \
+	} while (0)
+
+#define W0(x)   Wz(x, SPH_C32(0x55555555),  1)
+#define W1(x)   Wz(x, SPH_C32(0x33333333),  2)
+#define W2(x)   Wz(x, SPH_C32(0x0F0F0F0F),  4)
+#define W3(x)   Wz(x, SPH_C32(0x00FF00FF),  8)
+#define W4(x)   Wz(x, SPH_C32(0x0000FFFF), 16)
+#define W5(x)   do { \
+		sph_u32 t = x ## 3; \
+		x ## 3 = x ## 2; \
+		x ## 2 = t; \
+		t = x ## 1; \
+		x ## 1 = x ## 0; \
+		x ## 0 = t; \
+	} while (0)
+#define W6(x)   do { \
+		sph_u32 t = x ## 3; \
+		x ## 3 = x ## 1; \
+		x ## 1 = t; \
+		t = x ## 2; \
+		x ## 2 = x ## 0; \
+		x ## 0 = t; \
+	} while (0)
+
+#define DECL_STATE \
+	sph_u32 h03, h02, h01, h00, h13, h12, h11, h10; \
+	sph_u32 h23, h22, h21, h20, h33, h32, h31, h30; \
+	sph_u32 h43, h42, h41, h40, h53, h52, h51, h50; \
+	sph_u32 h63, h62, h61, h60, h73, h72, h71, h70; \
+	sph_u32 tmp;
+
+#define READ_STATE(state)   do { \
+		h03 = (state)->H.narrow[ 0]; \
+		h02 = (state)->H.narrow[ 1]; \
+		h01 = (state)->H.narrow[ 2]; \
+		h00 = (state)->H.narrow[ 3]; \
+		h13 = (state)->H.narrow[ 4]; \
+		h12 = (state)->H.narrow[ 5]; \
+		h11 = (state)->H.narrow[ 6]; \
+		h10 = (state)->H.narrow[ 7]; \
+		h23 = (state)->H.narrow[ 8]; \
+		h22 = (state)->H.narrow[ 9]; \
+		h21 = (state)->H.narrow[10]; \
+		h20 = (state)->H.narrow[11]; \
+		h33 = (state)->H.narrow[12]; \
+		h32 = (state)->H.narrow[13]; \
+		h31 = (state)->H.narrow[14]; \
+		h30 = (state)->H.narrow[15]; \
+		h43 = (state)->H.narrow[16]; \
+		h42 = (state)->H.narrow[17]; \
+		h41 = (state)->H.narrow[18]; \
+		h40 = (state)->H.narrow[19]; \
+		h53 = (state)->H.narrow[20]; \
+		h52 = (state)->H.narrow[21]; \
+		h51 = (state)->H.narrow[22]; \
+		h50 = (state)->H.narrow[23]; \
+		h63 = (state)->H.narrow[24]; \
+		h62 = (state)->H.narrow[25]; \
+		h61 = (state)->H.narrow[26]; \
+		h60 = (state)->H.narrow[27]; \
+		h73 = (state)->H.narrow[28]; \
+		h72 = (state)->H.narrow[29]; \
+	
