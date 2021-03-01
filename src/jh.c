@@ -793,4 +793,186 @@ static const sph_u32 IV512[] = {
 			case 5: \
 				W5(h1); \
 				W5(h3); \
-				W5(h5)
+				W5(h5); \
+				W5(h7); \
+				break; \
+			case 6: \
+				W6(h1); \
+				W6(h3); \
+				W6(h5); \
+				W6(h7); \
+				break; \
+			} \
+			if (++ g == 7) \
+				g = 0; \
+		} \
+	} while (0)
+
+#endif
+
+#else
+
+#if SPH_JH_64
+
+/*
+ * On a "true 64-bit" architecture, we can unroll at will.
+ */
+
+#define E8   do { \
+		SLu( 0, 0); \
+		SLu( 1, 1); \
+		SLu( 2, 2); \
+		SLu( 3, 3); \
+		SLu( 4, 4); \
+		SLu( 5, 5); \
+		SLu( 6, 6); \
+		SLu( 7, 0); \
+		SLu( 8, 1); \
+		SLu( 9, 2); \
+		SLu(10, 3); \
+		SLu(11, 4); \
+		SLu(12, 5); \
+		SLu(13, 6); \
+		SLu(14, 0); \
+		SLu(15, 1); \
+		SLu(16, 2); \
+		SLu(17, 3); \
+		SLu(18, 4); \
+		SLu(19, 5); \
+		SLu(20, 6); \
+		SLu(21, 0); \
+		SLu(22, 1); \
+		SLu(23, 2); \
+		SLu(24, 3); \
+		SLu(25, 4); \
+		SLu(26, 5); \
+		SLu(27, 6); \
+		SLu(28, 0); \
+		SLu(29, 1); \
+		SLu(30, 2); \
+		SLu(31, 3); \
+		SLu(32, 4); \
+		SLu(33, 5); \
+		SLu(34, 6); \
+		SLu(35, 0); \
+		SLu(36, 1); \
+		SLu(37, 2); \
+		SLu(38, 3); \
+		SLu(39, 4); \
+		SLu(40, 5); \
+		SLu(41, 6); \
+	} while (0)
+
+#else
+
+/*
+ * We are not aiming at a small footprint, but we are still using a
+ * 32-bit implementation. Full loop unrolling would smash the L1
+ * cache on some "big" architectures (32 kB L1 cache).
+ */
+
+#define E8   do { \
+		unsigned r; \
+		for (r = 0; r < 42; r += 7) { \
+			SL(0); \
+			SL(1); \
+			SL(2); \
+			SL(3); \
+			SL(4); \
+			SL(5); \
+			SL(6); \
+		} \
+	} while (0)
+
+#endif
+
+#endif
+
+static void
+jh_init(sph_jh_context *sc, const void *iv)
+{
+	sc->ptr = 0;
+#if SPH_JH_64
+	memcpy(sc->H.wide, iv, sizeof sc->H.wide);
+#else
+	memcpy(sc->H.narrow, iv, sizeof sc->H.narrow);
+#endif
+#if SPH_64
+	sc->block_count = 0;
+#else
+	sc->block_count_high = 0;
+	sc->block_count_low = 0;
+#endif
+}
+
+static void
+jh_core(sph_jh_context *sc, const void *data, size_t len)
+{
+	unsigned char *buf;
+	size_t ptr;
+	DECL_STATE
+
+	buf = sc->buf;
+	ptr = sc->ptr;
+	if (len < (sizeof sc->buf) - ptr) {
+		memcpy(buf + ptr, data, len);
+		ptr += len;
+		sc->ptr = ptr;
+		return;
+	}
+
+	READ_STATE(sc);
+	while (len > 0) {
+		size_t clen;
+
+		clen = (sizeof sc->buf) - ptr;
+		if (clen > len)
+			clen = len;
+		memcpy(buf + ptr, data, clen);
+		ptr += clen;
+		data = (const unsigned char *)data + clen;
+		len -= clen;
+		if (ptr == sizeof sc->buf) {
+			INPUT_BUF1;
+			E8;
+			INPUT_BUF2;
+#if SPH_64
+			sc->block_count ++;
+#else
+			if ((sc->block_count_low = SPH_T32(
+				sc->block_count_low + 1)) == 0)
+				sc->block_count_high ++;
+#endif
+			ptr = 0;
+		}
+	}
+	WRITE_STATE(sc);
+	sc->ptr = ptr;
+}
+
+static void
+jh_close(sph_jh_context *sc, unsigned ub, unsigned n,
+	void *dst, size_t out_size_w32, const void *iv)
+{
+	unsigned z;
+	unsigned char buf[128];
+	size_t numz, u;
+#if SPH_64
+	sph_u64 l0, l1;
+#else
+	sph_u32 l0, l1, l2, l3;
+#endif
+
+	z = 0x80 >> n;
+	buf[0] = ((ub & -z) | z) & 0xFF;
+	if (sc->ptr == 0 && n == 0) {
+		numz = 47;
+	} else {
+		numz = 111 - sc->ptr;
+	}
+	memset(buf + 1, 0, numz);
+#if SPH_64
+	l0 = SPH_T64(sc->block_count << 9) + (sc->ptr << 3) + n;
+	l1 = SPH_T64(sc->block_count >> 55);
+	sph_enc64be(buf + numz + 1, l1);
+	sph_enc
