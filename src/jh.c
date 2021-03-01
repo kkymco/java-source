@@ -679,4 +679,118 @@ static const sph_u32 IV224[] = {
 	C32e(0x1b4f1b5c), C32e(0xd8c840b3), C32e(0x97f6a17f), C32e(0x6e738099),
 	C32e(0xdcdf93a5), C32e(0xadeaa3d3), C32e(0xa431e8de), C32e(0xc9539a68),
 	C32e(0x22b4a98a), C32e(0xec86a1e4), C32e(0xd574ac95), C32e(0x9ce56cf0),
-	C32e(0x15960dea), C32e(0xb5ab2bbf), C32e(0x
+	C32e(0x15960dea), C32e(0xb5ab2bbf), C32e(0x9611dcf0), C32e(0xdd64ea6e)
+};
+
+static const sph_u32 IV256[] = {
+	C32e(0xeb98a341), C32e(0x2c20d3eb), C32e(0x92cdbe7b), C32e(0x9cb245c1),
+	C32e(0x1c935191), C32e(0x60d4c7fa), C32e(0x260082d6), C32e(0x7e508a03),
+	C32e(0xa4239e26), C32e(0x7726b945), C32e(0xe0fb1a48), C32e(0xd41a9477),
+	C32e(0xcdb5ab26), C32e(0x026b177a), C32e(0x56f02442), C32e(0x0fff2fa8),
+	C32e(0x71a39689), C32e(0x7f2e4d75), C32e(0x1d144908), C32e(0xf77de262),
+	C32e(0x277695f7), C32e(0x76248f94), C32e(0x87d5b657), C32e(0x4780296c),
+	C32e(0x5c5e272d), C32e(0xac8e0d6c), C32e(0x518450c6), C32e(0x57057a0f),
+	C32e(0x7be4d367), C32e(0x702412ea), C32e(0x89e3ab13), C32e(0xd31cd769)
+};
+
+static const sph_u32 IV384[] = {
+	C32e(0x481e3bc6), C32e(0xd813398a), C32e(0x6d3b5e89), C32e(0x4ade879b),
+	C32e(0x63faea68), C32e(0xd480ad2e), C32e(0x332ccb21), C32e(0x480f8267),
+	C32e(0x98aec84d), C32e(0x9082b928), C32e(0xd455ea30), C32e(0x41114249),
+	C32e(0x36f555b2), C32e(0x924847ec), C32e(0xc7250a93), C32e(0xbaf43ce1),
+	C32e(0x569b7f8a), C32e(0x27db454c), C32e(0x9efcbd49), C32e(0x6397af0e),
+	C32e(0x589fc27d), C32e(0x26aa80cd), C32e(0x80c08b8c), C32e(0x9deb2eda),
+	C32e(0x8a7981e8), C32e(0xf8d5373a), C32e(0xf43967ad), C32e(0xddd17a71),
+	C32e(0xa9b4d3bd), C32e(0xa475d394), C32e(0x976c3fba), C32e(0x9842737f)
+};
+
+static const sph_u32 IV512[] = {
+	C32e(0x6fd14b96), C32e(0x3e00aa17), C32e(0x636a2e05), C32e(0x7a15d543),
+	C32e(0x8a225e8d), C32e(0x0c97ef0b), C32e(0xe9341259), C32e(0xf2b3c361),
+	C32e(0x891da0c1), C32e(0x536f801e), C32e(0x2aa9056b), C32e(0xea2b6d80),
+	C32e(0x588eccdb), C32e(0x2075baa6), C32e(0xa90f3a76), C32e(0xbaf83bf7),
+	C32e(0x0169e605), C32e(0x41e34a69), C32e(0x46b58a8e), C32e(0x2e6fe65a),
+	C32e(0x1047a7d0), C32e(0xc1843c24), C32e(0x3b6e71b1), C32e(0x2d5ac199),
+	C32e(0xcf57f6ec), C32e(0x9db1f856), C32e(0xa706887c), C32e(0x5716b156),
+	C32e(0xe3c2fcdf), C32e(0xe68517fb), C32e(0x545a4678), C32e(0xcc8cdd4b)
+};
+
+#endif
+
+#define SL(ro)   SLu(r + ro, ro)
+
+#define SLu(r, ro)   do { \
+		S(h0, h2, h4, h6, Ceven_, r); \
+		S(h1, h3, h5, h7, Codd_, r); \
+		L(h0, h2, h4, h6, h1, h3, h5, h7); \
+		W ## ro(h1); \
+		W ## ro(h3); \
+		W ## ro(h5); \
+		W ## ro(h7); \
+	} while (0)
+
+#if SPH_SMALL_FOOTPRINT_JH
+
+#if SPH_JH_64
+
+/*
+ * The "small footprint" 64-bit version just uses a partially unrolled
+ * loop.
+ */
+
+#define E8   do { \
+		unsigned r; \
+		for (r = 0; r < 42; r += 7) { \
+			SL(0); \
+			SL(1); \
+			SL(2); \
+			SL(3); \
+			SL(4); \
+			SL(5); \
+			SL(6); \
+		} \
+	} while (0)
+
+#else
+
+#define E8   do { \
+		unsigned r, g; \
+		for (r = g = 0; r < 42; r ++) { \
+			S(h0, h2, h4, h6, Ceven_, r); \
+			S(h1, h3, h5, h7, Codd_, r); \
+			L(h0, h2, h4, h6, h1, h3, h5, h7); \
+			switch (g) { \
+			case 0: \
+				W0(h1); \
+				W0(h3); \
+				W0(h5); \
+				W0(h7); \
+				break; \
+			case 1: \
+				W1(h1); \
+				W1(h3); \
+				W1(h5); \
+				W1(h7); \
+				break; \
+			case 2: \
+				W2(h1); \
+				W2(h3); \
+				W2(h5); \
+				W2(h7); \
+				break; \
+			case 3: \
+				W3(h1); \
+				W3(h3); \
+				W3(h5); \
+				W3(h7); \
+				break; \
+			case 4: \
+				W4(h1); \
+				W4(h3); \
+				W4(h5); \
+				W4(h7); \
+				break; \
+			case 5: \
+				W5(h1); \
+				W5(h3); \
+				W5(h5)
