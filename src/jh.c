@@ -975,4 +975,142 @@ jh_close(sph_jh_context *sc, unsigned ub, unsigned n,
 	l0 = SPH_T64(sc->block_count << 9) + (sc->ptr << 3) + n;
 	l1 = SPH_T64(sc->block_count >> 55);
 	sph_enc64be(buf + numz + 1, l1);
-	sph_enc
+	sph_enc64be(buf + numz + 9, l0);
+#else
+	l0 = SPH_T32(sc->block_count_low << 9) + (sc->ptr << 3) + n;
+	l1 = SPH_T32(sc->block_count_low >> 23)
+		+ SPH_T32(sc->block_count_high << 9);
+	l2 = SPH_T32(sc->block_count_high >> 23);
+	l3 = 0;
+	sph_enc32be(buf + numz +  1, l3);
+	sph_enc32be(buf + numz +  5, l2);
+	sph_enc32be(buf + numz +  9, l1);
+	sph_enc32be(buf + numz + 13, l0);
+#endif
+	jh_core(sc, buf, numz + 17);
+#if SPH_JH_64
+	for (u = 0; u < 8; u ++)
+		enc64e(buf + (u << 3), sc->H.wide[u + 8]);
+#else
+	for (u = 0; u < 16; u ++)
+		enc32e(buf + (u << 2), sc->H.narrow[u + 16]);
+#endif
+	memcpy(dst, buf + ((16 - out_size_w32) << 2), out_size_w32 << 2);
+	jh_init(sc, iv);
+}
+
+/* see sph_jh.h */
+void
+sph_jh224_init(void *cc)
+{
+	jh_init(cc, IV224);
+}
+
+/* see sph_jh.h */
+void
+sph_jh224(void *cc, const void *data, size_t len)
+{
+	jh_core(cc, data, len);
+}
+
+/* see sph_jh.h */
+void
+sph_jh224_close(void *cc, void *dst)
+{
+	jh_close(cc, 0, 0, dst, 7, IV224);
+}
+
+/* see sph_jh.h */
+void
+sph_jh224_addbits_and_close(void *cc, unsigned ub, unsigned n, void *dst)
+{
+	jh_close(cc, ub, n, dst, 7, IV224);
+}
+
+/* see sph_jh.h */
+void
+sph_jh256_init(void *cc)
+{
+	jh_init(cc, IV256);
+}
+
+/* see sph_jh.h */
+void
+sph_jh256(void *cc, const void *data, size_t len)
+{
+	jh_core(cc, data, len);
+}
+
+/* see sph_jh.h */
+void
+sph_jh256_close(void *cc, void *dst)
+{
+	jh_close(cc, 0, 0, dst, 8, IV256);
+}
+
+/* see sph_jh.h */
+void
+sph_jh256_addbits_and_close(void *cc, unsigned ub, unsigned n, void *dst)
+{
+	jh_close(cc, ub, n, dst, 8, IV256);
+}
+
+/* see sph_jh.h */
+void
+sph_jh384_init(void *cc)
+{
+	jh_init(cc, IV384);
+}
+
+/* see sph_jh.h */
+void
+sph_jh384(void *cc, const void *data, size_t len)
+{
+	jh_core(cc, data, len);
+}
+
+/* see sph_jh.h */
+void
+sph_jh384_close(void *cc, void *dst)
+{
+	jh_close(cc, 0, 0, dst, 12, IV384);
+}
+
+/* see sph_jh.h */
+void
+sph_jh384_addbits_and_close(void *cc, unsigned ub, unsigned n, void *dst)
+{
+	jh_close(cc, ub, n, dst, 12, IV384);
+}
+
+/* see sph_jh.h */
+void
+sph_jh512_init(void *cc)
+{
+	jh_init(cc, IV512);
+}
+
+/* see sph_jh.h */
+void
+sph_jh512(void *cc, const void *data, size_t len)
+{
+	jh_core(cc, data, len);
+}
+
+/* see sph_jh.h */
+void
+sph_jh512_close(void *cc, void *dst)
+{
+	jh_close(cc, 0, 0, dst, 16, IV512);
+}
+
+/* see sph_jh.h */
+void
+sph_jh512_addbits_and_close(void *cc, unsigned ub, unsigned n, void *dst)
+{
+	jh_close(cc, ub, n, dst, 16, IV512);
+}
+
+#ifdef __cplusplus
+}
+#endif
