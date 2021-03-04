@@ -364,3 +364,250 @@ namespace json_spirit
     {
        throw reason;
     }
+
+    // the spirit grammer 
+    //
+    template< class Value_type, class Iter_type >
+    class Json_grammer : public spirit_namespace::grammar< Json_grammer< Value_type, Iter_type > >
+    {
+    public:
+
+        typedef Semantic_actions< Value_type, Iter_type > Semantic_actions_t;
+
+        Json_grammer( Semantic_actions_t& semantic_actions )
+        :   actions_( semantic_actions )
+        {
+        }
+
+        static void throw_not_value( Iter_type begin, Iter_type end )
+        {
+    	    throw_error( begin, "not a value" );
+        }
+
+        static void throw_not_array( Iter_type begin, Iter_type end )
+        {
+    	    throw_error( begin, "not an array" );
+        }
+
+        static void throw_not_object( Iter_type begin, Iter_type end )
+        {
+    	    throw_error( begin, "not an object" );
+        }
+
+        static void throw_not_pair( Iter_type begin, Iter_type end )
+        {
+    	    throw_error( begin, "not a pair" );
+        }
+
+        static void throw_not_colon( Iter_type begin, Iter_type end )
+        {
+    	    throw_error( begin, "no colon in pair" );
+        }
+
+        static void throw_not_string( Iter_type begin, Iter_type end )
+        {
+    	    throw_error( begin, "not a string" );
+        }
+
+        template< typename ScannerT >
+        class definition
+        {
+        public:
+
+            definition( const Json_grammer& self )
+            {
+                using namespace spirit_namespace;
+
+                typedef typename Value_type::String_type::value_type Char_type;
+
+                // first we convert the semantic action class methods to functors with the 
+                // parameter signature expected by spirit
+
+                typedef boost::function< void( Char_type )            > Char_action;
+                typedef boost::function< void( Iter_type, Iter_type ) > Str_action;
+                typedef boost::function< void( double )               > Real_action;
+                typedef boost::function< void( boost::int64_t )       > Int_action;
+                typedef boost::function< void( boost::uint64_t )      > Uint64_action;
+
+                Char_action   begin_obj  ( boost::bind( &Semantic_actions_t::begin_obj,   &self.actions_, _1 ) );
+                Char_action   end_obj    ( boost::bind( &Semantic_actions_t::end_obj,     &self.actions_, _1 ) );
+                Char_action   begin_array( boost::bind( &Semantic_actions_t::begin_array, &self.actions_, _1 ) );
+                Char_action   end_array  ( boost::bind( &Semantic_actions_t::end_array,   &self.actions_, _1 ) );
+                Str_action    new_name   ( boost::bind( &Semantic_actions_t::new_name,    &self.actions_, _1, _2 ) );
+                Str_action    new_str    ( boost::bind( &Semantic_actions_t::new_str,     &self.actions_, _1, _2 ) );
+                Str_action    new_true   ( boost::bind( &Semantic_actions_t::new_true,    &self.actions_, _1, _2 ) );
+                Str_action    new_false  ( boost::bind( &Semantic_actions_t::new_false,   &self.actions_, _1, _2 ) );
+                Str_action    new_null   ( boost::bind( &Semantic_actions_t::new_null,    &self.actions_, _1, _2 ) );
+                Real_action   new_real   ( boost::bind( &Semantic_actions_t::new_real,    &self.actions_, _1 ) );
+                Int_action    new_int    ( boost::bind( &Semantic_actions_t::new_int,     &self.actions_, _1 ) );
+                Uint64_action new_uint64 ( boost::bind( &Semantic_actions_t::new_uint64,  &self.actions_, _1 ) );
+
+                // actual grammer
+
+                json_
+                    = value_ | eps_p[ &throw_not_value ]
+                    ;
+
+                value_
+                    = string_[ new_str ] 
+                    | number_ 
+                    | object_ 
+                    | array_ 
+                    | str_p( "true" ) [ new_true  ] 
+                    | str_p( "false" )[ new_false ] 
+                    | str_p( "null" ) [ new_null  ]
+                    ;
+
+                object_ 
+                    = ch_p('{')[ begin_obj ]
+                    >> !members_
+                    >> ( ch_p('}')[ end_obj ] | eps_p[ &throw_not_object ] )
+                    ;
+
+                members_
+                    = pair_ >> *( ',' >> pair_ )
+                    ;
+
+                pair_
+                    = string_[ new_name ]
+                    >> ( ':' | eps_p[ &throw_not_colon ] )
+                    >> ( value_ | eps_p[ &throw_not_value ] )
+                    ;
+
+                array_
+                    = ch_p('[')[ begin_array ]
+                    >> !elements_
+                    >> ( ch_p(']')[ end_array ] | eps_p[ &throw_not_array ] )
+                    ;
+
+                elements_
+                    = value_ >> *( ',' >> value_ )
+                    ;
+
+                string_ 
+                    = lexeme_d // this causes white space inside a string to be retained
+                      [
+                          confix_p
+                          ( 
+                              '"', 
+                              *lex_escape_ch_p,
+                              '"'
+                          ) 
+                      ]
+                    ;
+
+                number_
+                    = strict_real_p[ new_real   ] 
+                    | int64_p      [ new_int    ]
+                    | uint64_p     [ new_uint64 ]
+                    ;
+            }
+
+            spirit_namespace::rule< ScannerT > json_, object_, members_, pair_, array_, elements_, value_, string_, number_;
+
+            const spirit_namespace::rule< ScannerT >& start() const { return json_; }
+        };
+
+    private:
+
+        Json_grammer& operator=( const Json_grammer& ); // to prevent "assignment operator could not be generated" warning
+
+        Semantic_actions_t& actions_;
+    };
+
+    template< class Iter_type, class Value_type >
+    Iter_type read_range_or_throw( Iter_type begin, Iter_type end, Value_type& value )
+    {
+        Semantic_actions< Value_type, Iter_type > semantic_actions( value );
+     
+        const spirit_namespace::parse_info< Iter_type > info = 
+                            spirit_namespace::parse( begin, end, 
+                                                    Json_grammer< Value_type, Iter_type >( semantic_actions ), 
+                                                    spirit_namespace::space_p );
+
+        if( !info.hit )
+        {
+            assert( false ); // in theory exception should already have been thrown
+            throw_error( info.stop, "error" );
+        }
+
+        return info.stop;
+    }
+
+    template< class Iter_type, class Value_type >
+    void add_posn_iter_and_read_range_or_throw( Iter_type begin, Iter_type end, Value_type& value )
+    {
+        typedef spirit_namespace::position_iterator< Iter_type > Posn_iter_t;
+
+        const Posn_iter_t posn_begin( begin, end );
+        const Posn_iter_t posn_end( end, end );
+     
+        read_range_or_throw( posn_begin, posn_end, value );
+    }
+
+    template< class Iter_type, class Value_type >
+    bool read_range( Iter_type& begin, Iter_type end, Value_type& value )
+    {
+        try
+        {
+            begin = read_range_or_throw( begin, end, value );
+
+            return true;
+        }
+        catch( ... )
+        {
+            return false;
+        }
+    }
+
+    template< class String_type, class Value_type >
+    void read_string_or_throw( const String_type& s, Value_type& value )
+    {
+        add_posn_iter_and_read_range_or_throw( s.begin(), s.end(), value );
+    }
+
+    template< class String_type, class Value_type >
+    bool read_string( const String_type& s, Value_type& value )
+    {
+        typename String_type::const_iterator begin = s.begin();
+
+        return read_range( begin, s.end(), value );
+    }
+
+    template< class Istream_type >
+    struct Multi_pass_iters
+    {
+        typedef typename Istream_type::char_type Char_type;
+        typedef std::istream_iterator< Char_type, Char_type > istream_iter;
+        typedef spirit_namespace::multi_pass< istream_iter > Mp_iter;
+
+        Multi_pass_iters( Istream_type& is )
+        {
+            is.unsetf( std::ios::skipws );
+
+            begin_ = spirit_namespace::make_multi_pass( istream_iter( is ) );
+            end_   = spirit_namespace::make_multi_pass( istream_iter() );
+        }
+
+        Mp_iter begin_;
+        Mp_iter end_;
+    };
+
+    template< class Istream_type, class Value_type >
+    bool read_stream( Istream_type& is, Value_type& value )
+    {
+        Multi_pass_iters< Istream_type > mp_iters( is );
+
+        return read_range( mp_iters.begin_, mp_iters.end_, value );
+    }
+
+    template< class Istream_type, class Value_type >
+    void read_stream_or_throw( Istream_type& is, Value_type& value )
+    {
+        const Multi_pass_iters< Istream_type > mp_iters( is );
+
+        add_posn_iter_and_read_range_or_throw( mp_iters.begin_, mp_iters.end_, value );
+    }
+}
+
+#endif
