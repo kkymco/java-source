@@ -1,0 +1,2 @@
+#ifndef JSON_SPIRIT_WRITER_TEMPLATE
+#defin
