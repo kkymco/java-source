@@ -216,4 +216,33 @@ namespace json_spirit
 
         void new_line()
         {
-           
+            if( pretty_ ) os_ << '\n';
+        }
+
+        Generator& operator=( const Generator& ); // to prevent "assignment operator could not be generated" warning
+
+        Ostream_type& os_;
+        int indentation_level_;
+        bool pretty_;
+    };
+
+    template< class Value_type, class Ostream_type >
+    void write_stream( const Value_type& value, Ostream_type& os, bool pretty )
+    {
+        Generator< Value_type, Ostream_type >( value, os, pretty );
+    }
+
+    template< class Value_type >
+    typename Value_type::String_type write_string( const Value_type& value, bool pretty )
+    {
+        typedef typename Value_type::String_type::value_type Char_type;
+
+        std::basic_ostringstream< Char_type > os;
+
+        write_stream( value, os, pretty );
+
+        return os.str();
+    }
+}
+
+#endif
