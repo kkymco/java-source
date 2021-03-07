@@ -105,4 +105,115 @@ namespace json_spirit
 
     public:
 
+        Generator( const Value_type& value, Ostream_type& os, bool pretty )
+        :   os_( os )
+        ,   indentation_level_( 0 )
+        ,   pretty_( pretty )
+        {
+            output( value );
+        }
+
+    private:
+
+        void output( const Value_type& value )
+        {
+            switch( value.type() )
+            {
+                case obj_type:   output( value.get_obj() );   break;
+                case array_type: output( value.get_array() ); break;
+                case str_type:   output( value.get_str() );   break;
+                case bool_type:  output( value.get_bool() );  break;
+                case int_type:   output_int( value );         break;
+
+                /// Bitcoin: Added std::fixed and changed precision from 16 to 8
+                case real_type:  os_ << std::showpoint << std::fixed << std::setprecision(8)
+                                     << value.get_real();     break;
+
+                case null_type:  os_ << "null";               break;
+                default: assert( false );
+            }
+        }
+
+        void output( const Object_type& obj )
+        {
+            output_array_or_obj( obj, '{', '}' );
+        }
+
+        void output( const Array_type& arr )
+        {
+            output_array_or_obj( arr, '[', ']' );
+        }
+
+        void output( const Obj_member_type& member )
+        {
+            output( Config_type::get_name( member ) ); space(); 
+            os_ << ':'; space(); 
+            output( Config_type::get_value( member ) );
+        }
+
+        void output_int( const Value_type& value )
+        {
+            if( value.is_uint64() )
+            {
+                os_ << value.get_uint64();
+            }
+            else
+            {
+               os_ << value.get_int64();
+            }
+        }
+
+        void output( const String_type& s )
+        {
+            os_ << '"' << add_esc_chars( s ) << '"';
+        }
+
+        void output( bool b )
+        {
+            os_ << to_str< String_type >( b ? "true" : "false" );
+        }
+
+        template< class T >
+        void output_array_or_obj( const T& t, Char_type start_char, Char_type end_char )
+        {
+            os_ << start_char; new_line();
+
+            ++indentation_level_;
+            
+            for( typename T::const_iterator i = t.begin(); i != t.end(); ++i )
+            {
+                indent(); output( *i );
+
+                typename T::const_iterator next = i;
+
+                if( ++next != t.end())
+                {
+                    os_ << ',';
+                }
+
+                new_line();
+            }
+
+            --indentation_level_;
+
+            indent(); os_ << end_char;
+        }
         
+        void indent()
+        {
+            if( !pretty_ ) return;
+
+            for( int i = 0; i < indentation_level_; ++i )
+            { 
+                os_ << "    ";
+            }
+        }
+
+        void space()
+        {
+            if( pretty_ ) os_ << ' ';
+        }
+
+        void new_line()
+        {
+           
