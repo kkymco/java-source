@@ -143,4 +143,113 @@ CKey::CKey()
     Reset();
 }
 
-CKey::CKey(const CKey& b
+CKey::CKey(const CKey& b)
+{
+    pkey = EC_KEY_dup(b.pkey);
+    if (pkey == NULL)
+        throw key_error("CKey::CKey(const CKey&) : EC_KEY_dup failed");
+    fSet = b.fSet;
+}
+
+CKey& CKey::operator=(const CKey& b)
+{
+    if (!EC_KEY_copy(pkey, b.pkey))
+        throw key_error("CKey::operator=(const CKey&) : EC_KEY_copy failed");
+    fSet = b.fSet;
+    return (*this);
+}
+
+CKey::~CKey()
+{
+    EC_KEY_free(pkey);
+}
+
+bool CKey::IsNull() const
+{
+    return !fSet;
+}
+
+bool CKey::IsCompressed() const
+{
+    return fCompressedPubKey;
+}
+
+void CKey::MakeNewKey(bool fCompressed)
+{
+    if (!EC_KEY_generate_key(pkey))
+        throw key_error("CKey::MakeNewKey() : EC_KEY_generate_key failed");
+    if (fCompressed)
+        SetCompressedPubKey();
+    fSet = true;
+}
+
+bool CKey::SetPrivKey(const CPrivKey& vchPrivKey)
+{
+    const unsigned char* pbegin = &vchPrivKey[0];
+    if (d2i_ECPrivateKey(&pkey, &pbegin, vchPrivKey.size()))
+    {
+        // In testing, d2i_ECPrivateKey can return true
+        // but fill in pkey with a key that fails
+        // EC_KEY_check_key, so:
+        if (EC_KEY_check_key(pkey))
+        {
+            fSet = true;
+            return true;
+        }
+    }
+    // If vchPrivKey data is bad d2i_ECPrivateKey() can
+    // leave pkey in a state where calling EC_KEY_free()
+    // crashes. To avoid that, set pkey to NULL and
+    // leak the memory (a leak is better than a crash)
+    pkey = NULL;
+    Reset();
+    return false;
+}
+
+bool CKey::SetSecret(const CSecret& vchSecret, bool fCompressed)
+{
+    EC_KEY_free(pkey);
+    pkey = EC_KEY_new_by_curve_name(NID_secp256k1);
+    if (pkey == NULL)
+        throw key_error("CKey::SetSecret() : EC_KEY_new_by_curve_name failed");
+    if (vchSecret.size() != 32)
+        throw key_error("CKey::SetSecret() : secret must be 32 bytes");
+    BIGNUM *bn = BN_bin2bn(&vchSecret[0],32,BN_new());
+    if (bn == NULL)
+        throw key_error("CKey::SetSecret() : BN_bin2bn failed");
+    if (!EC_KEY_regenerate_key(pkey,bn))
+    {
+        BN_clear_free(bn);
+        throw key_error("CKey::SetSecret() : EC_KEY_regenerate_key failed");
+    }
+    BN_clear_free(bn);
+    fSet = true;
+    if (fCompressed || fCompressedPubKey)
+        SetCompressedPubKey();
+    return true;
+}
+
+CSecret CKey::GetSecret(bool &fCompressed) const
+{
+    CSecret vchRet;
+    vchRet.resize(32);
+    const BIGNUM *bn = EC_KEY_get0_private_key(pkey);
+    int nBytes = BN_num_bytes(bn);
+    if (bn == NULL)
+        throw key_error("CKey::GetSecret() : EC_KEY_get0_private_key failed");
+    int n=BN_bn2bin(bn,&vchRet[32 - nBytes]);
+    if (n != nBytes)
+        throw key_error("CKey::GetSecret(): BN_bn2bin failed");
+    fCompressed = fCompressedPubKey;
+    return vchRet;
+}
+
+CPrivKey CKey::GetPrivKey() const
+{
+    int nSize = i2d_ECPrivateKey(pkey, NULL);
+    if (!nSize)
+        throw key_error("CKey::GetPrivKey() : i2d_ECPrivateKey failed");
+    CPrivKey vchPrivKey(nSize, 0);
+    unsigned char* pbegin = &vchPrivKey[0];
+    if (i2d_ECPrivateKey(pkey, &pbegin) != nSize)
+        throw key_error("CKey::GetPrivKey() : i2d_ECPrivateKey returned unexpected si
