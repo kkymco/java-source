@@ -344,4 +344,82 @@ bool CKey::SignCompact(uint256 hash, std::vector<unsigned char>& vchSig)
 
         if (nRecId == -1)
         {
-            ECD
+            ECDSA_SIG_free(sig);
+            throw key_error("CKey::SignCompact() : unable to construct recoverable key");
+        }
+
+        vchSig[0] = nRecId+27+(fCompressedPubKey ? 4 : 0);
+        BN_bn2bin(sig->r,&vchSig[33-(nBitsR+7)/8]);
+        BN_bn2bin(sig->s,&vchSig[65-(nBitsS+7)/8]);
+        fOk = true;
+    }
+    ECDSA_SIG_free(sig);
+    return fOk;
+}
+
+// reconstruct public key from a compact signature
+// This is only slightly more CPU intensive than just verifying it.
+// If this function succeeds, the recovered public key is guaranteed to be valid
+// (the signature is a valid signature of the given data for that key)
+bool CKey::SetCompactSignature(uint256 hash, const std::vector<unsigned char>& vchSig)
+{
+    if (vchSig.size() != 65)
+        return false;
+    int nV = vchSig[0];
+    if (nV<27 || nV>=35)
+        return false;
+    ECDSA_SIG *sig = ECDSA_SIG_new();
+    BN_bin2bn(&vchSig[1],32,sig->r);
+    BN_bin2bn(&vchSig[33],32,sig->s);
+
+    EC_KEY_free(pkey);
+    pkey = EC_KEY_new_by_curve_name(NID_secp256k1);
+    if (nV >= 31)
+    {
+        SetCompressedPubKey();
+        nV -= 4;
+    }
+    if (ECDSA_SIG_recover_key_GFp(pkey, sig, (unsigned char*)&hash, sizeof(hash), nV - 27, 0) == 1)
+    {
+        fSet = true;
+        ECDSA_SIG_free(sig);
+        return true;
+    }
+    ECDSA_SIG_free(sig);
+    return false;
+}
+
+bool CKey::Verify(uint256 hash, const std::vector<unsigned char>& vchSig)
+{
+    // -1 = error, 0 = bad sig, 1 = good
+    if (ECDSA_verify(0, (unsigned char*)&hash, sizeof(hash), &vchSig[0], vchSig.size(), pkey) != 1)
+        return false;
+
+    return true;
+}
+
+bool CKey::VerifyCompact(uint256 hash, const std::vector<unsigned char>& vchSig)
+{
+    CKey key;
+    if (!key.SetCompactSignature(hash, vchSig))
+        return false;
+    if (GetPubKey() != key.GetPubKey())
+        return false;
+
+    return true;
+}
+
+bool CKey::IsValid()
+{
+    if (!fSet)
+        return false;
+
+    if (!EC_KEY_check_key(pkey))
+        return false;
+
+    bool fCompr;
+    CSecret secret = GetSecret(fCompr);
+    CKey key2;
+    key2.SetSecret(secret, fCompr);
+    return GetPubKey() == key2.GetPubKey();
+}
