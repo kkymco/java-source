@@ -165,4 +165,96 @@ int main(int argc, char** argv) {
   char* err = NULL;
   int run = -1;
 
-  CheckCo
+  CheckCondition(leveldb_major_version() >= 1);
+  CheckCondition(leveldb_minor_version() >= 1);
+
+  snprintf(dbname, sizeof(dbname),
+           "%s/leveldb_c_test-%d",
+           GetTempDir(),
+           ((int) geteuid()));
+
+  StartPhase("create_objects");
+  cmp = leveldb_comparator_create(NULL, CmpDestroy, CmpCompare, CmpName);
+  env = leveldb_create_default_env();
+  cache = leveldb_cache_create_lru(100000);
+
+  options = leveldb_options_create();
+  leveldb_options_set_comparator(options, cmp);
+  leveldb_options_set_error_if_exists(options, 1);
+  leveldb_options_set_cache(options, cache);
+  leveldb_options_set_env(options, env);
+  leveldb_options_set_info_log(options, NULL);
+  leveldb_options_set_write_buffer_size(options, 100000);
+  leveldb_options_set_paranoid_checks(options, 1);
+  leveldb_options_set_max_open_files(options, 10);
+  leveldb_options_set_block_size(options, 1024);
+  leveldb_options_set_block_restart_interval(options, 8);
+  leveldb_options_set_compression(options, leveldb_no_compression);
+
+  roptions = leveldb_readoptions_create();
+  leveldb_readoptions_set_verify_checksums(roptions, 1);
+  leveldb_readoptions_set_fill_cache(roptions, 0);
+
+  woptions = leveldb_writeoptions_create();
+  leveldb_writeoptions_set_sync(woptions, 1);
+
+  StartPhase("destroy");
+  leveldb_destroy_db(options, dbname, &err);
+  Free(&err);
+
+  StartPhase("open_error");
+  db = leveldb_open(options, dbname, &err);
+  CheckCondition(err != NULL);
+  Free(&err);
+
+  StartPhase("leveldb_free");
+  db = leveldb_open(options, dbname, &err);
+  CheckCondition(err != NULL);
+  leveldb_free(err);
+  err = NULL;
+
+  StartPhase("open");
+  leveldb_options_set_create_if_missing(options, 1);
+  db = leveldb_open(options, dbname, &err);
+  CheckNoError(err);
+  CheckGet(db, roptions, "foo", NULL);
+
+  StartPhase("put");
+  leveldb_put(db, woptions, "foo", 3, "hello", 5, &err);
+  CheckNoError(err);
+  CheckGet(db, roptions, "foo", "hello");
+
+  StartPhase("compactall");
+  leveldb_compact_range(db, NULL, 0, NULL, 0);
+  CheckGet(db, roptions, "foo", "hello");
+
+  StartPhase("compactrange");
+  leveldb_compact_range(db, "a", 1, "z", 1);
+  CheckGet(db, roptions, "foo", "hello");
+
+  StartPhase("writebatch");
+  {
+    leveldb_writebatch_t* wb = leveldb_writebatch_create();
+    leveldb_writebatch_put(wb, "foo", 3, "a", 1);
+    leveldb_writebatch_clear(wb);
+    leveldb_writebatch_put(wb, "bar", 3, "b", 1);
+    leveldb_writebatch_put(wb, "box", 3, "c", 1);
+    leveldb_writebatch_delete(wb, "bar", 3);
+    leveldb_write(db, woptions, wb, &err);
+    CheckNoError(err);
+    CheckGet(db, roptions, "foo", "hello");
+    CheckGet(db, roptions, "bar", NULL);
+    CheckGet(db, roptions, "box", "c");
+    int pos = 0;
+    leveldb_writebatch_iterate(wb, &pos, CheckPut, CheckDel);
+    CheckCondition(pos == 3);
+    leveldb_writebatch_destroy(wb);
+  }
+
+  StartPhase("iter");
+  {
+    leveldb_iterator_t* iter = leveldb_create_iterator(db, roptions);
+    CheckCondition(!leveldb_iter_valid(iter));
+    leveldb_iter_seek_to_first(iter);
+    CheckCondition(leveldb_iter_valid(iter));
+    Chec
