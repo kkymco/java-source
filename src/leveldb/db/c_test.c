@@ -353,4 +353,38 @@ int main(int argc, char** argv) {
     leveldb_options_set_filter_policy(options, policy);
     db = leveldb_open(options, dbname, &err);
     CheckNoError(err);
-    leveldb_put(db
+    leveldb_put(db, woptions, "foo", 3, "foovalue", 8, &err);
+    CheckNoError(err);
+    leveldb_put(db, woptions, "bar", 3, "barvalue", 8, &err);
+    CheckNoError(err);
+    leveldb_compact_range(db, NULL, 0, NULL, 0);
+
+    fake_filter_result = 1;
+    CheckGet(db, roptions, "foo", "foovalue");
+    CheckGet(db, roptions, "bar", "barvalue");
+    if (phase == 0) {
+      // Must not find value when custom filter returns false
+      fake_filter_result = 0;
+      CheckGet(db, roptions, "foo", NULL);
+      CheckGet(db, roptions, "bar", NULL);
+      fake_filter_result = 1;
+
+      CheckGet(db, roptions, "foo", "foovalue");
+      CheckGet(db, roptions, "bar", "barvalue");
+    }
+    leveldb_options_set_filter_policy(options, NULL);
+    leveldb_filterpolicy_destroy(policy);
+  }
+
+  StartPhase("cleanup");
+  leveldb_close(db);
+  leveldb_options_destroy(options);
+  leveldb_readoptions_destroy(roptions);
+  leveldb_writeoptions_destroy(woptions);
+  leveldb_cache_destroy(cache);
+  leveldb_comparator_destroy(cmp);
+  leveldb_env_destroy(env);
+
+  fprintf(stderr, "PASS\n");
+  return 0;
+}
