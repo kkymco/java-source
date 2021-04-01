@@ -223,4 +223,97 @@ void DBImpl::DeleteObsoleteFiles() {
   }
 
   // Make a set of all of the live files
-  std::set<uint64_t> li
+  std::set<uint64_t> live = pending_outputs_;
+  versions_->AddLiveFiles(&live);
+
+  std::vector<std::string> filenames;
+  env_->GetChildren(dbname_, &filenames); // Ignoring errors on purpose
+  uint64_t number;
+  FileType type;
+  for (size_t i = 0; i < filenames.size(); i++) {
+    if (ParseFileName(filenames[i], &number, &type)) {
+      bool keep = true;
+      switch (type) {
+        case kLogFile:
+          keep = ((number >= versions_->LogNumber()) ||
+                  (number == versions_->PrevLogNumber()));
+          break;
+        case kDescriptorFile:
+          // Keep my manifest file, and any newer incarnations'
+          // (in case there is a race that allows other incarnations)
+          keep = (number >= versions_->ManifestFileNumber());
+          break;
+        case kTableFile:
+          keep = (live.find(number) != live.end());
+          break;
+        case kTempFile:
+          // Any temp files that are currently being written to must
+          // be recorded in pending_outputs_, which is inserted into "live"
+          keep = (live.find(number) != live.end());
+          break;
+        case kCurrentFile:
+        case kDBLockFile:
+        case kInfoLogFile:
+          keep = true;
+          break;
+      }
+
+      if (!keep) {
+        if (type == kTableFile) {
+          table_cache_->Evict(number);
+        }
+        Log(options_.info_log, "Delete type=%d #%lld\n",
+            int(type),
+            static_cast<unsigned long long>(number));
+        env_->DeleteFile(dbname_ + "/" + filenames[i]);
+      }
+    }
+  }
+}
+
+Status DBImpl::Recover(VersionEdit* edit) {
+  mutex_.AssertHeld();
+
+  // Ignore error from CreateDir since the creation of the DB is
+  // committed only when the descriptor is created, and this directory
+  // may already exist from a previous failed creation attempt.
+  env_->CreateDir(dbname_);
+  assert(db_lock_ == NULL);
+  Status s = env_->LockFile(LockFileName(dbname_), &db_lock_);
+  if (!s.ok()) {
+    return s;
+  }
+
+  if (!env_->FileExists(CurrentFileName(dbname_))) {
+    if (options_.create_if_missing) {
+      s = NewDB();
+      if (!s.ok()) {
+        return s;
+      }
+    } else {
+      return Status::InvalidArgument(
+          dbname_, "does not exist (create_if_missing is false)");
+    }
+  } else {
+    if (options_.error_if_exists) {
+      return Status::InvalidArgument(
+          dbname_, "exists (error_if_exists is true)");
+    }
+  }
+
+  s = versions_->Recover();
+  if (s.ok()) {
+    SequenceNumber max_sequence(0);
+
+    // Recover from all newer log files than the ones named in the
+    // descriptor (new log files may have been added by the previous
+    // incarnation without registering them in the descriptor).
+    //
+    // Note that PrevLogNumber() is no longer used, but we pay
+    // attention to it in case we are recovering a database
+    // produced by an older version of leveldb.
+    const uint64_t min_log = versions_->LogNumber();
+    const uint64_t prev_log = versions_->PrevLogNumber();
+    std::vector<std::string> filenames;
+    s = env_->GetChildren(dbname_, &filenames);
+    if (!
