@@ -114,4 +114,113 @@ Options SanitizeOptions(const std::string& dbname,
 }
 
 DBImpl::DBImpl(const Options& raw_options, const std::string& dbname)
-    : env
+    : env_(raw_options.env),
+      internal_comparator_(raw_options.comparator),
+      internal_filter_policy_(raw_options.filter_policy),
+      options_(SanitizeOptions(dbname, &internal_comparator_,
+                               &internal_filter_policy_, raw_options)),
+      owns_info_log_(options_.info_log != raw_options.info_log),
+      owns_cache_(options_.block_cache != raw_options.block_cache),
+      dbname_(dbname),
+      db_lock_(NULL),
+      shutting_down_(NULL),
+      bg_cv_(&mutex_),
+      mem_(new MemTable(internal_comparator_)),
+      imm_(NULL),
+      logfile_(NULL),
+      logfile_number_(0),
+      log_(NULL),
+      seed_(0),
+      tmp_batch_(new WriteBatch),
+      bg_compaction_scheduled_(false),
+      manual_compaction_(NULL) {
+  mem_->Ref();
+  has_imm_.Release_Store(NULL);
+
+  // Reserve ten files or so for other uses and give the rest to TableCache.
+  const int table_cache_size = options_.max_open_files - kNumNonTableCacheFiles;
+  table_cache_ = new TableCache(dbname_, &options_, table_cache_size);
+
+  versions_ = new VersionSet(dbname_, &options_, table_cache_,
+                             &internal_comparator_);
+}
+
+DBImpl::~DBImpl() {
+  // Wait for background work to finish
+  mutex_.Lock();
+  shutting_down_.Release_Store(this);  // Any non-NULL value is ok
+  while (bg_compaction_scheduled_) {
+    bg_cv_.Wait();
+  }
+  mutex_.Unlock();
+
+  if (db_lock_ != NULL) {
+    env_->UnlockFile(db_lock_);
+  }
+
+  delete versions_;
+  if (mem_ != NULL) mem_->Unref();
+  if (imm_ != NULL) imm_->Unref();
+  delete tmp_batch_;
+  delete log_;
+  delete logfile_;
+  delete table_cache_;
+
+  if (owns_info_log_) {
+    delete options_.info_log;
+  }
+  if (owns_cache_) {
+    delete options_.block_cache;
+  }
+}
+
+Status DBImpl::NewDB() {
+  VersionEdit new_db;
+  new_db.SetComparatorName(user_comparator()->Name());
+  new_db.SetLogNumber(0);
+  new_db.SetNextFile(2);
+  new_db.SetLastSequence(0);
+
+  const std::string manifest = DescriptorFileName(dbname_, 1);
+  WritableFile* file;
+  Status s = env_->NewWritableFile(manifest, &file);
+  if (!s.ok()) {
+    return s;
+  }
+  {
+    log::Writer log(file);
+    std::string record;
+    new_db.EncodeTo(&record);
+    s = log.AddRecord(record);
+    if (s.ok()) {
+      s = file->Close();
+    }
+  }
+  delete file;
+  if (s.ok()) {
+    // Make "CURRENT" file that points to the new manifest file.
+    s = SetCurrentFile(env_, dbname_, 1);
+  } else {
+    env_->DeleteFile(manifest);
+  }
+  return s;
+}
+
+void DBImpl::MaybeIgnoreError(Status* s) const {
+  if (s->ok() || options_.paranoid_checks) {
+    // No change needed
+  } else {
+    Log(options_.info_log, "Ignoring error %s", s->ToString().c_str());
+    *s = Status::OK();
+  }
+}
+
+void DBImpl::DeleteObsoleteFiles() {
+  if (!bg_error_.ok()) {
+    // After a background error, we don't know whether a new version may
+    // or may not have been committed, so we cannot safely garbage collect.
+    return;
+  }
+
+  // Make a set of all of the live files
+  std::set<uint64_t> li
