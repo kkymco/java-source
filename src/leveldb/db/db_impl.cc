@@ -316,4 +316,90 @@ Status DBImpl::Recover(VersionEdit* edit) {
     const uint64_t prev_log = versions_->PrevLogNumber();
     std::vector<std::string> filenames;
     s = env_->GetChildren(dbname_, &filenames);
-    if (!
+    if (!s.ok()) {
+      return s;
+    }
+    std::set<uint64_t> expected;
+    versions_->AddLiveFiles(&expected);
+    uint64_t number;
+    FileType type;
+    std::vector<uint64_t> logs;
+    for (size_t i = 0; i < filenames.size(); i++) {
+      if (ParseFileName(filenames[i], &number, &type)) {
+        expected.erase(number);
+        if (type == kLogFile && ((number >= min_log) || (number == prev_log)))
+          logs.push_back(number);
+      }
+    }
+    if (!expected.empty()) {
+      char buf[50];
+      snprintf(buf, sizeof(buf), "%d missing files; e.g.",
+               static_cast<int>(expected.size()));
+      return Status::Corruption(buf, TableFileName(dbname_, *(expected.begin())));
+    }
+
+    // Recover in the order in which the logs were generated
+    std::sort(logs.begin(), logs.end());
+    for (size_t i = 0; i < logs.size(); i++) {
+      s = RecoverLogFile(logs[i], edit, &max_sequence);
+
+      // The previous incarnation may not have written any MANIFEST
+      // records after allocating this log number.  So we manually
+      // update the file number allocation counter in VersionSet.
+      versions_->MarkFileNumberUsed(logs[i]);
+    }
+
+    if (s.ok()) {
+      if (versions_->LastSequence() < max_sequence) {
+        versions_->SetLastSequence(max_sequence);
+      }
+    }
+  }
+
+  return s;
+}
+
+Status DBImpl::RecoverLogFile(uint64_t log_number,
+                              VersionEdit* edit,
+                              SequenceNumber* max_sequence) {
+  struct LogReporter : public log::Reader::Reporter {
+    Env* env;
+    Logger* info_log;
+    const char* fname;
+    Status* status;  // NULL if options_.paranoid_checks==false
+    virtual void Corruption(size_t bytes, const Status& s) {
+      Log(info_log, "%s%s: dropping %d bytes; %s",
+          (this->status == NULL ? "(ignoring error) " : ""),
+          fname, static_cast<int>(bytes), s.ToString().c_str());
+      if (this->status != NULL && this->status->ok()) *this->status = s;
+    }
+  };
+
+  mutex_.AssertHeld();
+
+  // Open the log file
+  std::string fname = LogFileName(dbname_, log_number);
+  SequentialFile* file;
+  Status status = env_->NewSequentialFile(fname, &file);
+  if (!status.ok()) {
+    MaybeIgnoreError(&status);
+    return status;
+  }
+
+  // Create the log reader.
+  LogReporter reporter;
+  reporter.env = env_;
+  reporter.info_log = options_.info_log;
+  reporter.fname = fname.c_str();
+  reporter.status = (options_.paranoid_checks ? &status : NULL);
+  // We intentially make log::Reader do checksumming even if
+  // paranoid_checks==false so that corruptions cause entire commits
+  // to be skipped instead of propagating bad information (like overly
+  // large sequence numbers).
+  log::Reader reader(file, &reporter, true/*checksum*/,
+                     0/*initial_offset*/);
+  Log(options_.info_log, "Recovering log #%llu",
+      (unsigned long long) log_number);
+
+  // Read all the records and add to a memtable
+  std::s
