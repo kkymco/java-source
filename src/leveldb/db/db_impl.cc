@@ -402,4 +402,108 @@ Status DBImpl::RecoverLogFile(uint64_t log_number,
       (unsigned long long) log_number);
 
   // Read all the records and add to a memtable
-  std::s
+  std::string scratch;
+  Slice record;
+  WriteBatch batch;
+  MemTable* mem = NULL;
+  while (reader.ReadRecord(&record, &scratch) &&
+         status.ok()) {
+    if (record.size() < 12) {
+      reporter.Corruption(
+          record.size(), Status::Corruption("log record too small"));
+      continue;
+    }
+    WriteBatchInternal::SetContents(&batch, record);
+
+    if (mem == NULL) {
+      mem = new MemTable(internal_comparator_);
+      mem->Ref();
+    }
+    status = WriteBatchInternal::InsertInto(&batch, mem);
+    MaybeIgnoreError(&status);
+    if (!status.ok()) {
+      break;
+    }
+    const SequenceNumber last_seq =
+        WriteBatchInternal::Sequence(&batch) +
+        WriteBatchInternal::Count(&batch) - 1;
+    if (last_seq > *max_sequence) {
+      *max_sequence = last_seq;
+    }
+
+    if (mem->ApproximateMemoryUsage() > options_.write_buffer_size) {
+      status = WriteLevel0Table(mem, edit, NULL);
+      if (!status.ok()) {
+        // Reflect errors immediately so that conditions like full
+        // file-systems cause the DB::Open() to fail.
+        break;
+      }
+      mem->Unref();
+      mem = NULL;
+    }
+  }
+
+  if (status.ok() && mem != NULL) {
+    status = WriteLevel0Table(mem, edit, NULL);
+    // Reflect errors immediately so that conditions like full
+    // file-systems cause the DB::Open() to fail.
+  }
+
+  if (mem != NULL) mem->Unref();
+  delete file;
+  return status;
+}
+
+Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
+                                Version* base) {
+  mutex_.AssertHeld();
+  const uint64_t start_micros = env_->NowMicros();
+  FileMetaData meta;
+  meta.number = versions_->NewFileNumber();
+  pending_outputs_.insert(meta.number);
+  Iterator* iter = mem->NewIterator();
+  Log(options_.info_log, "Level-0 table #%llu: started",
+      (unsigned long long) meta.number);
+
+  Status s;
+  {
+    mutex_.Unlock();
+    s = BuildTable(dbname_, env_, options_, table_cache_, iter, &meta);
+    mutex_.Lock();
+  }
+
+  Log(options_.info_log, "Level-0 table #%llu: %lld bytes %s",
+      (unsigned long long) meta.number,
+      (unsigned long long) meta.file_size,
+      s.ToString().c_str());
+  delete iter;
+  pending_outputs_.erase(meta.number);
+
+
+  // Note that if file_size is zero, the file has been deleted and
+  // should not be added to the manifest.
+  int level = 0;
+  if (s.ok() && meta.file_size > 0) {
+    const Slice min_user_key = meta.smallest.user_key();
+    const Slice max_user_key = meta.largest.user_key();
+    if (base != NULL) {
+      level = base->PickLevelForMemTableOutput(min_user_key, max_user_key);
+    }
+    edit->AddFile(level, meta.number, meta.file_size,
+                  meta.smallest, meta.largest);
+  }
+
+  CompactionStats stats;
+  stats.micros = env_->NowMicros() - start_micros;
+  stats.bytes_written = meta.file_size;
+  stats_[level].Add(stats);
+  return s;
+}
+
+void DBImpl::CompactMemTable() {
+  mutex_.AssertHeld();
+  assert(imm_ != NULL);
+
+  // Save the contents of the memtable as a new Table
+  VersionEdit edit;
+  Version* base = versions_->cu
