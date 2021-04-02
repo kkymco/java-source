@@ -506,4 +506,113 @@ void DBImpl::CompactMemTable() {
 
   // Save the contents of the memtable as a new Table
   VersionEdit edit;
-  Version* base = versions_->cu
+  Version* base = versions_->current();
+  base->Ref();
+  Status s = WriteLevel0Table(imm_, &edit, base);
+  base->Unref();
+
+  if (s.ok() && shutting_down_.Acquire_Load()) {
+    s = Status::IOError("Deleting DB during memtable compaction");
+  }
+
+  // Replace immutable memtable with the generated Table
+  if (s.ok()) {
+    edit.SetPrevLogNumber(0);
+    edit.SetLogNumber(logfile_number_);  // Earlier logs no longer needed
+    s = versions_->LogAndApply(&edit, &mutex_);
+  }
+
+  if (s.ok()) {
+    // Commit to the new state
+    imm_->Unref();
+    imm_ = NULL;
+    has_imm_.Release_Store(NULL);
+    DeleteObsoleteFiles();
+  } else {
+    RecordBackgroundError(s);
+  }
+}
+
+void DBImpl::CompactRange(const Slice* begin, const Slice* end) {
+  int max_level_with_files = 1;
+  {
+    MutexLock l(&mutex_);
+    Version* base = versions_->current();
+    for (int level = 1; level < config::kNumLevels; level++) {
+      if (base->OverlapInLevel(level, begin, end)) {
+        max_level_with_files = level;
+      }
+    }
+  }
+  TEST_CompactMemTable(); // TODO(sanjay): Skip if memtable does not overlap
+  for (int level = 0; level < max_level_with_files; level++) {
+    TEST_CompactRange(level, begin, end);
+  }
+}
+
+void DBImpl::TEST_CompactRange(int level, const Slice* begin,const Slice* end) {
+  assert(level >= 0);
+  assert(level + 1 < config::kNumLevels);
+
+  InternalKey begin_storage, end_storage;
+
+  ManualCompaction manual;
+  manual.level = level;
+  manual.done = false;
+  if (begin == NULL) {
+    manual.begin = NULL;
+  } else {
+    begin_storage = InternalKey(*begin, kMaxSequenceNumber, kValueTypeForSeek);
+    manual.begin = &begin_storage;
+  }
+  if (end == NULL) {
+    manual.end = NULL;
+  } else {
+    end_storage = InternalKey(*end, 0, static_cast<ValueType>(0));
+    manual.end = &end_storage;
+  }
+
+  MutexLock l(&mutex_);
+  while (!manual.done && !shutting_down_.Acquire_Load() && bg_error_.ok()) {
+    if (manual_compaction_ == NULL) {  // Idle
+      manual_compaction_ = &manual;
+      MaybeScheduleCompaction();
+    } else {  // Running either my compaction or another compaction.
+      bg_cv_.Wait();
+    }
+  }
+  if (manual_compaction_ == &manual) {
+    // Cancel my manual compaction since we aborted early for some reason.
+    manual_compaction_ = NULL;
+  }
+}
+
+Status DBImpl::TEST_CompactMemTable() {
+  // NULL batch means just wait for earlier writes to be done
+  Status s = Write(WriteOptions(), NULL);
+  if (s.ok()) {
+    // Wait until the compaction completes
+    MutexLock l(&mutex_);
+    while (imm_ != NULL && bg_error_.ok()) {
+      bg_cv_.Wait();
+    }
+    if (imm_ != NULL) {
+      s = bg_error_;
+    }
+  }
+  return s;
+}
+
+void DBImpl::RecordBackgroundError(const Status& s) {
+  mutex_.AssertHeld();
+  if (bg_error_.ok()) {
+    bg_error_ = s;
+    bg_cv_.SignalAll();
+  }
+}
+
+void DBImpl::MaybeScheduleCompaction() {
+  mutex_.AssertHeld();
+  if (bg_compaction_scheduled_) {
+    // Already scheduled
+  } else if (shu
