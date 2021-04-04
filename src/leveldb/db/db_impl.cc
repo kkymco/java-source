@@ -818,4 +818,91 @@ Status DBImpl::FinishCompactionOutputFile(CompactionState* compact,
                                                output_number,
                                                current_bytes);
     s = iter->status();
-    delete iter
+    delete iter;
+    if (s.ok()) {
+      Log(options_.info_log,
+          "Generated table #%llu: %lld keys, %lld bytes",
+          (unsigned long long) output_number,
+          (unsigned long long) current_entries,
+          (unsigned long long) current_bytes);
+    }
+  }
+  return s;
+}
+
+
+Status DBImpl::InstallCompactionResults(CompactionState* compact) {
+  mutex_.AssertHeld();
+  Log(options_.info_log,  "Compacted %d@%d + %d@%d files => %lld bytes",
+      compact->compaction->num_input_files(0),
+      compact->compaction->level(),
+      compact->compaction->num_input_files(1),
+      compact->compaction->level() + 1,
+      static_cast<long long>(compact->total_bytes));
+
+  // Add compaction outputs
+  compact->compaction->AddInputDeletions(compact->compaction->edit());
+  const int level = compact->compaction->level();
+  for (size_t i = 0; i < compact->outputs.size(); i++) {
+    const CompactionState::Output& out = compact->outputs[i];
+    compact->compaction->edit()->AddFile(
+        level + 1,
+        out.number, out.file_size, out.smallest, out.largest);
+  }
+  return versions_->LogAndApply(compact->compaction->edit(), &mutex_);
+}
+
+Status DBImpl::DoCompactionWork(CompactionState* compact) {
+  const uint64_t start_micros = env_->NowMicros();
+  int64_t imm_micros = 0;  // Micros spent doing imm_ compactions
+
+  Log(options_.info_log,  "Compacting %d@%d + %d@%d files",
+      compact->compaction->num_input_files(0),
+      compact->compaction->level(),
+      compact->compaction->num_input_files(1),
+      compact->compaction->level() + 1);
+
+  assert(versions_->NumLevelFiles(compact->compaction->level()) > 0);
+  assert(compact->builder == NULL);
+  assert(compact->outfile == NULL);
+  if (snapshots_.empty()) {
+    compact->smallest_snapshot = versions_->LastSequence();
+  } else {
+    compact->smallest_snapshot = snapshots_.oldest()->number_;
+  }
+
+  // Release mutex while we're actually doing the compaction work
+  mutex_.Unlock();
+
+  Iterator* input = versions_->MakeInputIterator(compact->compaction);
+  input->SeekToFirst();
+  Status status;
+  ParsedInternalKey ikey;
+  std::string current_user_key;
+  bool has_current_user_key = false;
+  SequenceNumber last_sequence_for_key = kMaxSequenceNumber;
+  for (; input->Valid() && !shutting_down_.Acquire_Load(); ) {
+    // Prioritize immutable compaction work
+    if (has_imm_.NoBarrier_Load() != NULL) {
+      const uint64_t imm_start = env_->NowMicros();
+      mutex_.Lock();
+      if (imm_ != NULL) {
+        CompactMemTable();
+        bg_cv_.SignalAll();  // Wakeup MakeRoomForWrite() if necessary
+      }
+      mutex_.Unlock();
+      imm_micros += (env_->NowMicros() - imm_start);
+    }
+
+    Slice key = input->key();
+    if (compact->compaction->ShouldStopBefore(key) &&
+        compact->builder != NULL) {
+      status = FinishCompactionOutputFile(compact, input);
+      if (!status.ok()) {
+        break;
+      }
+    }
+
+    // Handle key/value, add to state, etc.
+    bool drop = false;
+    if (!ParseInt
