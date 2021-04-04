@@ -715,4 +715,107 @@ void DBImpl::BackgroundCompaction() {
 
   if (status.ok()) {
     // Done
-  } else if (shutting_down_.Acquire_Loa
+  } else if (shutting_down_.Acquire_Load()) {
+    // Ignore compaction errors found during shutting down
+  } else {
+    Log(options_.info_log,
+        "Compaction error: %s", status.ToString().c_str());
+  }
+
+  if (is_manual) {
+    ManualCompaction* m = manual_compaction_;
+    if (!status.ok()) {
+      m->done = true;
+    }
+    if (!m->done) {
+      // We only compacted part of the requested range.  Update *m
+      // to the range that is left to be compacted.
+      m->tmp_storage = manual_end;
+      m->begin = &m->tmp_storage;
+    }
+    manual_compaction_ = NULL;
+  }
+}
+
+void DBImpl::CleanupCompaction(CompactionState* compact) {
+  mutex_.AssertHeld();
+  if (compact->builder != NULL) {
+    // May happen if we get a shutdown call in the middle of compaction
+    compact->builder->Abandon();
+    delete compact->builder;
+  } else {
+    assert(compact->outfile == NULL);
+  }
+  delete compact->outfile;
+  for (size_t i = 0; i < compact->outputs.size(); i++) {
+    const CompactionState::Output& out = compact->outputs[i];
+    pending_outputs_.erase(out.number);
+  }
+  delete compact;
+}
+
+Status DBImpl::OpenCompactionOutputFile(CompactionState* compact) {
+  assert(compact != NULL);
+  assert(compact->builder == NULL);
+  uint64_t file_number;
+  {
+    mutex_.Lock();
+    file_number = versions_->NewFileNumber();
+    pending_outputs_.insert(file_number);
+    CompactionState::Output out;
+    out.number = file_number;
+    out.smallest.Clear();
+    out.largest.Clear();
+    compact->outputs.push_back(out);
+    mutex_.Unlock();
+  }
+
+  // Make the output file
+  std::string fname = TableFileName(dbname_, file_number);
+  Status s = env_->NewWritableFile(fname, &compact->outfile);
+  if (s.ok()) {
+    compact->builder = new TableBuilder(options_, compact->outfile);
+  }
+  return s;
+}
+
+Status DBImpl::FinishCompactionOutputFile(CompactionState* compact,
+                                          Iterator* input) {
+  assert(compact != NULL);
+  assert(compact->outfile != NULL);
+  assert(compact->builder != NULL);
+
+  const uint64_t output_number = compact->current_output()->number;
+  assert(output_number != 0);
+
+  // Check for iterator errors
+  Status s = input->status();
+  const uint64_t current_entries = compact->builder->NumEntries();
+  if (s.ok()) {
+    s = compact->builder->Finish();
+  } else {
+    compact->builder->Abandon();
+  }
+  const uint64_t current_bytes = compact->builder->FileSize();
+  compact->current_output()->file_size = current_bytes;
+  compact->total_bytes += current_bytes;
+  delete compact->builder;
+  compact->builder = NULL;
+
+  // Finish and check for file errors
+  if (s.ok()) {
+    s = compact->outfile->Sync();
+  }
+  if (s.ok()) {
+    s = compact->outfile->Close();
+  }
+  delete compact->outfile;
+  compact->outfile = NULL;
+
+  if (s.ok() && current_entries > 0) {
+    // Verify that the table is usable
+    Iterator* iter = table_cache_->NewIterator(ReadOptions(),
+                                               output_number,
+                                               current_bytes);
+    s = iter->status();
+    delete iter
