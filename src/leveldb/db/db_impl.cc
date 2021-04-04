@@ -994,4 +994,114 @@ Status DBImpl::DoCompactionWork(CompactionState* compact) {
       stats.bytes_read += compact->compaction->input(which, i)->file_size;
     }
   }
-  for
+  for (size_t i = 0; i < compact->outputs.size(); i++) {
+    stats.bytes_written += compact->outputs[i].file_size;
+  }
+
+  mutex_.Lock();
+  stats_[compact->compaction->level() + 1].Add(stats);
+
+  if (status.ok()) {
+    status = InstallCompactionResults(compact);
+  }
+  if (!status.ok()) {
+    RecordBackgroundError(status);
+  }
+  VersionSet::LevelSummaryStorage tmp;
+  Log(options_.info_log,
+      "compacted to: %s", versions_->LevelSummary(&tmp));
+  return status;
+}
+
+namespace {
+struct IterState {
+  port::Mutex* mu;
+  Version* version;
+  MemTable* mem;
+  MemTable* imm;
+};
+
+static void CleanupIteratorState(void* arg1, void* arg2) {
+  IterState* state = reinterpret_cast<IterState*>(arg1);
+  state->mu->Lock();
+  state->mem->Unref();
+  if (state->imm != NULL) state->imm->Unref();
+  state->version->Unref();
+  state->mu->Unlock();
+  delete state;
+}
+}  // namespace
+
+Iterator* DBImpl::NewInternalIterator(const ReadOptions& options,
+                                      SequenceNumber* latest_snapshot,
+                                      uint32_t* seed) {
+  IterState* cleanup = new IterState;
+  mutex_.Lock();
+  *latest_snapshot = versions_->LastSequence();
+
+  // Collect together all needed child iterators
+  std::vector<Iterator*> list;
+  list.push_back(mem_->NewIterator());
+  mem_->Ref();
+  if (imm_ != NULL) {
+    list.push_back(imm_->NewIterator());
+    imm_->Ref();
+  }
+  versions_->current()->AddIterators(options, &list);
+  Iterator* internal_iter =
+      NewMergingIterator(&internal_comparator_, &list[0], list.size());
+  versions_->current()->Ref();
+
+  cleanup->mu = &mutex_;
+  cleanup->mem = mem_;
+  cleanup->imm = imm_;
+  cleanup->version = versions_->current();
+  internal_iter->RegisterCleanup(CleanupIteratorState, cleanup, NULL);
+
+  *seed = ++seed_;
+  mutex_.Unlock();
+  return internal_iter;
+}
+
+Iterator* DBImpl::TEST_NewInternalIterator() {
+  SequenceNumber ignored;
+  uint32_t ignored_seed;
+  return NewInternalIterator(ReadOptions(), &ignored, &ignored_seed);
+}
+
+int64_t DBImpl::TEST_MaxNextLevelOverlappingBytes() {
+  MutexLock l(&mutex_);
+  return versions_->MaxNextLevelOverlappingBytes();
+}
+
+Status DBImpl::Get(const ReadOptions& options,
+                   const Slice& key,
+                   std::string* value) {
+  Status s;
+  MutexLock l(&mutex_);
+  SequenceNumber snapshot;
+  if (options.snapshot != NULL) {
+    snapshot = reinterpret_cast<const SnapshotImpl*>(options.snapshot)->number_;
+  } else {
+    snapshot = versions_->LastSequence();
+  }
+
+  MemTable* mem = mem_;
+  MemTable* imm = imm_;
+  Version* current = versions_->current();
+  mem->Ref();
+  if (imm != NULL) imm->Ref();
+  current->Ref();
+
+  bool have_stat_update = false;
+  Version::GetStats stats;
+
+  // Unlock while reading from files and memtables
+  {
+    mutex_.Unlock();
+    // First look in the memtable, then in the immutable memtable (if any).
+    LookupKey lkey(key, snapshot);
+    if (mem->Get(lkey, value, &s)) {
+      // Done
+    } else if (imm != NULL && imm->Get(lkey, value, &s)) {
+    
