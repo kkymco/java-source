@@ -1206,4 +1206,105 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* my_batch) {
         // just added may or may not show up when the DB is re-opened.
         // So we force the DB into a mode where all future writes fail.
         RecordBackgroundError(status);
-   
+      }
+    }
+    if (updates == tmp_batch_) tmp_batch_->Clear();
+
+    versions_->SetLastSequence(last_sequence);
+  }
+
+  while (true) {
+    Writer* ready = writers_.front();
+    writers_.pop_front();
+    if (ready != &w) {
+      ready->status = status;
+      ready->done = true;
+      ready->cv.Signal();
+    }
+    if (ready == last_writer) break;
+  }
+
+  // Notify new head of write queue
+  if (!writers_.empty()) {
+    writers_.front()->cv.Signal();
+  }
+
+  return status;
+}
+
+// REQUIRES: Writer list must be non-empty
+// REQUIRES: First writer must have a non-NULL batch
+WriteBatch* DBImpl::BuildBatchGroup(Writer** last_writer) {
+  assert(!writers_.empty());
+  Writer* first = writers_.front();
+  WriteBatch* result = first->batch;
+  assert(result != NULL);
+
+  size_t size = WriteBatchInternal::ByteSize(first->batch);
+
+  // Allow the group to grow up to a maximum size, but if the
+  // original write is small, limit the growth so we do not slow
+  // down the small write too much.
+  size_t max_size = 1 << 20;
+  if (size <= (128<<10)) {
+    max_size = size + (128<<10);
+  }
+
+  *last_writer = first;
+  std::deque<Writer*>::iterator iter = writers_.begin();
+  ++iter;  // Advance past "first"
+  for (; iter != writers_.end(); ++iter) {
+    Writer* w = *iter;
+    if (w->sync && !first->sync) {
+      // Do not include a sync write into a batch handled by a non-sync write.
+      break;
+    }
+
+    if (w->batch != NULL) {
+      size += WriteBatchInternal::ByteSize(w->batch);
+      if (size > max_size) {
+        // Do not make batch too big
+        break;
+      }
+
+      // Append to *reuslt
+      if (result == first->batch) {
+        // Switch to temporary batch instead of disturbing caller's batch
+        result = tmp_batch_;
+        assert(WriteBatchInternal::Count(result) == 0);
+        WriteBatchInternal::Append(result, first->batch);
+      }
+      WriteBatchInternal::Append(result, w->batch);
+    }
+    *last_writer = w;
+  }
+  return result;
+}
+
+// REQUIRES: mutex_ is held
+// REQUIRES: this thread is currently at the front of the writer queue
+Status DBImpl::MakeRoomForWrite(bool force) {
+  mutex_.AssertHeld();
+  assert(!writers_.empty());
+  bool allow_delay = !force;
+  Status s;
+  while (true) {
+    if (!bg_error_.ok()) {
+      // Yield previous error
+      s = bg_error_;
+      break;
+    } else if (
+        allow_delay &&
+        versions_->NumLevelFiles(0) >= config::kL0_SlowdownWritesTrigger) {
+      // We are getting close to hitting a hard limit on the number of
+      // L0 files.  Rather than delaying a single write by several
+      // seconds when we hit the hard limit, start delaying each
+      // individual write by 1ms to reduce latency variance.  Also,
+      // this delay hands over some CPU to the compaction thread in
+      // case it is sharing the same core as the writer.
+      mutex_.Unlock();
+      env_->SleepForMicroseconds(1000);
+      allow_delay = false;  // Do not delay a single write more than once
+      mutex_.Lock();
+    } else if (!force &&
+               (
