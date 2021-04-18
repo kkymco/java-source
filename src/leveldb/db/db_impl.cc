@@ -1503,4 +1503,11 @@ Status DestroyDB(const std::string& dbname, const Options& options) {
         }
       }
     }
-    env->UnlockFile(lock);  // Igno
+    env->UnlockFile(lock);  // Ignore error since state is already gone
+    env->DeleteFile(lockname);
+    env->DeleteDir(dbname);  // Ignore error in case dir contains other files
+  }
+  return result;
+}
+
+}  // namespace leveldb
