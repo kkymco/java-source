@@ -312,3 +312,6 @@ Iterator* NewDBIterator(
     SequenceNumber sequence,
     uint32_t seed) {
   return new DBIter(db, user_key_comparator, internal_iter, sequence, seed);
+}
+
+}  // namespace leveldb
