@@ -179,4 +179,137 @@ class SpecialEnv : public EnvWrapper {
     };
 
     Status s = target()->NewRandomAccessFile(f, r);
-    if (s.ok() &&
+    if (s.ok() && count_random_reads_) {
+      *r = new CountingFile(*r, &random_read_counter_);
+    }
+    return s;
+  }
+};
+
+class DBTest {
+ private:
+  const FilterPolicy* filter_policy_;
+
+  // Sequence of option configurations to try
+  enum OptionConfig {
+    kDefault,
+    kFilter,
+    kUncompressed,
+    kEnd
+  };
+  int option_config_;
+
+ public:
+  std::string dbname_;
+  SpecialEnv* env_;
+  DB* db_;
+
+  Options last_options_;
+
+  DBTest() : option_config_(kDefault),
+             env_(new SpecialEnv(Env::Default())) {
+    filter_policy_ = NewBloomFilterPolicy(10);
+    dbname_ = test::TmpDir() + "/db_test";
+    DestroyDB(dbname_, Options());
+    db_ = NULL;
+    Reopen();
+  }
+
+  ~DBTest() {
+    delete db_;
+    DestroyDB(dbname_, Options());
+    delete env_;
+    delete filter_policy_;
+  }
+
+  // Switch to a fresh database with the next option configuration to
+  // test.  Return false if there are no more configurations to test.
+  bool ChangeOptions() {
+    option_config_++;
+    if (option_config_ >= kEnd) {
+      return false;
+    } else {
+      DestroyAndReopen();
+      return true;
+    }
+  }
+
+  // Return the current option configuration.
+  Options CurrentOptions() {
+    Options options;
+    switch (option_config_) {
+      case kFilter:
+        options.filter_policy = filter_policy_;
+        break;
+      case kUncompressed:
+        options.compression = kNoCompression;
+        break;
+      default:
+        break;
+    }
+    return options;
+  }
+
+  DBImpl* dbfull() {
+    return reinterpret_cast<DBImpl*>(db_);
+  }
+
+  void Reopen(Options* options = NULL) {
+    ASSERT_OK(TryReopen(options));
+  }
+
+  void Close() {
+    delete db_;
+    db_ = NULL;
+  }
+
+  void DestroyAndReopen(Options* options = NULL) {
+    delete db_;
+    db_ = NULL;
+    DestroyDB(dbname_, Options());
+    ASSERT_OK(TryReopen(options));
+  }
+
+  Status TryReopen(Options* options) {
+    delete db_;
+    db_ = NULL;
+    Options opts;
+    if (options != NULL) {
+      opts = *options;
+    } else {
+      opts = CurrentOptions();
+      opts.create_if_missing = true;
+    }
+    last_options_ = opts;
+
+    return DB::Open(opts, dbname_, &db_);
+  }
+
+  Status Put(const std::string& k, const std::string& v) {
+    return db_->Put(WriteOptions(), k, v);
+  }
+
+  Status Delete(const std::string& k) {
+    return db_->Delete(WriteOptions(), k);
+  }
+
+  std::string Get(const std::string& k, const Snapshot* snapshot = NULL) {
+    ReadOptions options;
+    options.snapshot = snapshot;
+    std::string result;
+    Status s = db_->Get(options, k, &result);
+    if (s.IsNotFound()) {
+      result = "NOT_FOUND";
+    } else if (!s.ok()) {
+      result = s.ToString();
+    }
+    return result;
+  }
+
+  // Return a string that contains all key,value pairs in order,
+  // formatted like "(k1->v1)(k2->v2)".
+  std::string Contents() {
+    std::vector<std::string> forward;
+    std::string result;
+    Iterator* iter = db_->NewIterator(ReadOptions());
+    for (iter->SeekToFirst(); i
