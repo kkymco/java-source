@@ -422,4 +422,108 @@ class DBTest {
   }
 
   void Compact(const Slice& start, const Slice& limit) {
-    db_-
+    db_->CompactRange(&start, &limit);
+  }
+
+  // Do n memtable compactions, each of which produces an sstable
+  // covering the range [small,large].
+  void MakeTables(int n, const std::string& small, const std::string& large) {
+    for (int i = 0; i < n; i++) {
+      Put(small, "begin");
+      Put(large, "end");
+      dbfull()->TEST_CompactMemTable();
+    }
+  }
+
+  // Prevent pushing of new sstables into deeper levels by adding
+  // tables that cover a specified range to all levels.
+  void FillLevels(const std::string& smallest, const std::string& largest) {
+    MakeTables(config::kNumLevels, smallest, largest);
+  }
+
+  void DumpFileCounts(const char* label) {
+    fprintf(stderr, "---\n%s:\n", label);
+    fprintf(stderr, "maxoverlap: %lld\n",
+            static_cast<long long>(
+                dbfull()->TEST_MaxNextLevelOverlappingBytes()));
+    for (int level = 0; level < config::kNumLevels; level++) {
+      int num = NumTableFilesAtLevel(level);
+      if (num > 0) {
+        fprintf(stderr, "  level %3d : %d files\n", level, num);
+      }
+    }
+  }
+
+  std::string DumpSSTableList() {
+    std::string property;
+    db_->GetProperty("leveldb.sstables", &property);
+    return property;
+  }
+
+  std::string IterStatus(Iterator* iter) {
+    std::string result;
+    if (iter->Valid()) {
+      result = iter->key().ToString() + "->" + iter->value().ToString();
+    } else {
+      result = "(invalid)";
+    }
+    return result;
+  }
+
+  bool DeleteAnSSTFile() {
+    std::vector<std::string> filenames;
+    ASSERT_OK(env_->GetChildren(dbname_, &filenames));
+    uint64_t number;
+    FileType type;
+    for (size_t i = 0; i < filenames.size(); i++) {
+      if (ParseFileName(filenames[i], &number, &type) && type == kTableFile) {
+        ASSERT_OK(env_->DeleteFile(TableFileName(dbname_, number)));
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Returns number of files renamed.
+  int RenameLDBToSST() {
+    std::vector<std::string> filenames;
+    ASSERT_OK(env_->GetChildren(dbname_, &filenames));
+    uint64_t number;
+    FileType type;
+    int files_renamed = 0;
+    for (size_t i = 0; i < filenames.size(); i++) {
+      if (ParseFileName(filenames[i], &number, &type) && type == kTableFile) {
+        const std::string from = TableFileName(dbname_, number);
+        const std::string to = SSTTableFileName(dbname_, number);
+        ASSERT_OK(env_->RenameFile(from, to));
+        files_renamed++;
+      }
+    }
+    return files_renamed;
+  }
+};
+
+TEST(DBTest, Empty) {
+  do {
+    ASSERT_TRUE(db_ != NULL);
+    ASSERT_EQ("NOT_FOUND", Get("foo"));
+  } while (ChangeOptions());
+}
+
+TEST(DBTest, ReadWrite) {
+  do {
+    ASSERT_OK(Put("foo", "v1"));
+    ASSERT_EQ("v1", Get("foo"));
+    ASSERT_OK(Put("bar", "v2"));
+    ASSERT_OK(Put("foo", "v3"));
+    ASSERT_EQ("v3", Get("foo"));
+    ASSERT_EQ("v2", Get("bar"));
+  } while (ChangeOptions());
+}
+
+TEST(DBTest, PutDeleteGet) {
+  do {
+    ASSERT_OK(db_->Put(WriteOptions(), "foo", "v1"));
+    ASSERT_EQ("v1", Get("foo"));
+    ASSERT_OK(db_->Put(WriteOptions(), "foo", "v2"));
+    ASSERT_EQ("v2", Get("foo")
