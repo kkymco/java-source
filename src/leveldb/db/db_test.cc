@@ -526,4 +526,103 @@ TEST(DBTest, PutDeleteGet) {
     ASSERT_OK(db_->Put(WriteOptions(), "foo", "v1"));
     ASSERT_EQ("v1", Get("foo"));
     ASSERT_OK(db_->Put(WriteOptions(), "foo", "v2"));
-    ASSERT_EQ("v2", Get("foo")
+    ASSERT_EQ("v2", Get("foo"));
+    ASSERT_OK(db_->Delete(WriteOptions(), "foo"));
+    ASSERT_EQ("NOT_FOUND", Get("foo"));
+  } while (ChangeOptions());
+}
+
+TEST(DBTest, GetFromImmutableLayer) {
+  do {
+    Options options = CurrentOptions();
+    options.env = env_;
+    options.write_buffer_size = 100000;  // Small write buffer
+    Reopen(&options);
+
+    ASSERT_OK(Put("foo", "v1"));
+    ASSERT_EQ("v1", Get("foo"));
+
+    env_->delay_data_sync_.Release_Store(env_);      // Block sync calls
+    Put("k1", std::string(100000, 'x'));             // Fill memtable
+    Put("k2", std::string(100000, 'y'));             // Trigger compaction
+    ASSERT_EQ("v1", Get("foo"));
+    env_->delay_data_sync_.Release_Store(NULL);      // Release sync calls
+  } while (ChangeOptions());
+}
+
+TEST(DBTest, GetFromVersions) {
+  do {
+    ASSERT_OK(Put("foo", "v1"));
+    dbfull()->TEST_CompactMemTable();
+    ASSERT_EQ("v1", Get("foo"));
+  } while (ChangeOptions());
+}
+
+TEST(DBTest, GetSnapshot) {
+  do {
+    // Try with both a short key and a long key
+    for (int i = 0; i < 2; i++) {
+      std::string key = (i == 0) ? std::string("foo") : std::string(200, 'x');
+      ASSERT_OK(Put(key, "v1"));
+      const Snapshot* s1 = db_->GetSnapshot();
+      ASSERT_OK(Put(key, "v2"));
+      ASSERT_EQ("v2", Get(key));
+      ASSERT_EQ("v1", Get(key, s1));
+      dbfull()->TEST_CompactMemTable();
+      ASSERT_EQ("v2", Get(key));
+      ASSERT_EQ("v1", Get(key, s1));
+      db_->ReleaseSnapshot(s1);
+    }
+  } while (ChangeOptions());
+}
+
+TEST(DBTest, GetLevel0Ordering) {
+  do {
+    // Check that we process level-0 files in correct order.  The code
+    // below generates two level-0 files where the earlier one comes
+    // before the later one in the level-0 file list since the earlier
+    // one has a smaller "smallest" key.
+    ASSERT_OK(Put("bar", "b"));
+    ASSERT_OK(Put("foo", "v1"));
+    dbfull()->TEST_CompactMemTable();
+    ASSERT_OK(Put("foo", "v2"));
+    dbfull()->TEST_CompactMemTable();
+    ASSERT_EQ("v2", Get("foo"));
+  } while (ChangeOptions());
+}
+
+TEST(DBTest, GetOrderedByLevels) {
+  do {
+    ASSERT_OK(Put("foo", "v1"));
+    Compact("a", "z");
+    ASSERT_EQ("v1", Get("foo"));
+    ASSERT_OK(Put("foo", "v2"));
+    ASSERT_EQ("v2", Get("foo"));
+    dbfull()->TEST_CompactMemTable();
+    ASSERT_EQ("v2", Get("foo"));
+  } while (ChangeOptions());
+}
+
+TEST(DBTest, GetPicksCorrectFile) {
+  do {
+    // Arrange to have multiple files in a non-level-0 level.
+    ASSERT_OK(Put("a", "va"));
+    Compact("a", "b");
+    ASSERT_OK(Put("x", "vx"));
+    Compact("x", "y");
+    ASSERT_OK(Put("f", "vf"));
+    Compact("f", "g");
+    ASSERT_EQ("va", Get("a"));
+    ASSERT_EQ("vf", Get("f"));
+    ASSERT_EQ("vx", Get("x"));
+  } while (ChangeOptions());
+}
+
+TEST(DBTest, GetEncountersEmptyLevel) {
+  do {
+    // Arrange for the following to happen:
+    //   * sstable A in level 0
+    //   * nothing in level 1
+    //   * sstable B in level 2
+    // Then do enough Get() calls to arrange for an automatic compaction
+    // of sstabl
