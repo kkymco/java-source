@@ -312,4 +312,114 @@ class DBTest {
     std::vector<std::string> forward;
     std::string result;
     Iterator* iter = db_->NewIterator(ReadOptions());
-    for (iter->SeekToFirst(); i
+    for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+      std::string s = IterStatus(iter);
+      result.push_back('(');
+      result.append(s);
+      result.push_back(')');
+      forward.push_back(s);
+    }
+
+    // Check reverse iteration results are the reverse of forward results
+    size_t matched = 0;
+    for (iter->SeekToLast(); iter->Valid(); iter->Prev()) {
+      ASSERT_LT(matched, forward.size());
+      ASSERT_EQ(IterStatus(iter), forward[forward.size() - matched - 1]);
+      matched++;
+    }
+    ASSERT_EQ(matched, forward.size());
+
+    delete iter;
+    return result;
+  }
+
+  std::string AllEntriesFor(const Slice& user_key) {
+    Iterator* iter = dbfull()->TEST_NewInternalIterator();
+    InternalKey target(user_key, kMaxSequenceNumber, kTypeValue);
+    iter->Seek(target.Encode());
+    std::string result;
+    if (!iter->status().ok()) {
+      result = iter->status().ToString();
+    } else {
+      result = "[ ";
+      bool first = true;
+      while (iter->Valid()) {
+        ParsedInternalKey ikey;
+        if (!ParseInternalKey(iter->key(), &ikey)) {
+          result += "CORRUPTED";
+        } else {
+          if (last_options_.comparator->Compare(ikey.user_key, user_key) != 0) {
+            break;
+          }
+          if (!first) {
+            result += ", ";
+          }
+          first = false;
+          switch (ikey.type) {
+            case kTypeValue:
+              result += iter->value().ToString();
+              break;
+            case kTypeDeletion:
+              result += "DEL";
+              break;
+          }
+        }
+        iter->Next();
+      }
+      if (!first) {
+        result += " ";
+      }
+      result += "]";
+    }
+    delete iter;
+    return result;
+  }
+
+  int NumTableFilesAtLevel(int level) {
+    std::string property;
+    ASSERT_TRUE(
+        db_->GetProperty("leveldb.num-files-at-level" + NumberToString(level),
+                         &property));
+    return atoi(property.c_str());
+  }
+
+  int TotalTableFiles() {
+    int result = 0;
+    for (int level = 0; level < config::kNumLevels; level++) {
+      result += NumTableFilesAtLevel(level);
+    }
+    return result;
+  }
+
+  // Return spread of files per level
+  std::string FilesPerLevel() {
+    std::string result;
+    int last_non_zero_offset = 0;
+    for (int level = 0; level < config::kNumLevels; level++) {
+      int f = NumTableFilesAtLevel(level);
+      char buf[100];
+      snprintf(buf, sizeof(buf), "%s%d", (level ? "," : ""), f);
+      result += buf;
+      if (f > 0) {
+        last_non_zero_offset = result.size();
+      }
+    }
+    result.resize(last_non_zero_offset);
+    return result;
+  }
+
+  int CountFiles() {
+    std::vector<std::string> files;
+    env_->GetChildren(dbname_, &files);
+    return static_cast<int>(files.size());
+  }
+
+  uint64_t Size(const Slice& start, const Slice& limit) {
+    Range r(start, limit);
+    uint64_t size;
+    db_->GetApproximateSizes(&r, 1, &size);
+    return size;
+  }
+
+  void Compact(const Slice& start, const Slice& limit) {
+    db_-
