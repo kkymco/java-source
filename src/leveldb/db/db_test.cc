@@ -856,4 +856,101 @@ TEST(DBTest, Recover) {
     Reopen();
     ASSERT_EQ("v1", Get("foo"));
 
-    ASSERT_EQ("
+    ASSERT_EQ("v1", Get("foo"));
+    ASSERT_EQ("v5", Get("baz"));
+    ASSERT_OK(Put("bar", "v2"));
+    ASSERT_OK(Put("foo", "v3"));
+
+    Reopen();
+    ASSERT_EQ("v3", Get("foo"));
+    ASSERT_OK(Put("foo", "v4"));
+    ASSERT_EQ("v4", Get("foo"));
+    ASSERT_EQ("v2", Get("bar"));
+    ASSERT_EQ("v5", Get("baz"));
+  } while (ChangeOptions());
+}
+
+TEST(DBTest, RecoveryWithEmptyLog) {
+  do {
+    ASSERT_OK(Put("foo", "v1"));
+    ASSERT_OK(Put("foo", "v2"));
+    Reopen();
+    Reopen();
+    ASSERT_OK(Put("foo", "v3"));
+    Reopen();
+    ASSERT_EQ("v3", Get("foo"));
+  } while (ChangeOptions());
+}
+
+// Check that writes done during a memtable compaction are recovered
+// if the database is shutdown during the memtable compaction.
+TEST(DBTest, RecoverDuringMemtableCompaction) {
+  do {
+    Options options = CurrentOptions();
+    options.env = env_;
+    options.write_buffer_size = 1000000;
+    Reopen(&options);
+
+    // Trigger a long memtable compaction and reopen the database during it
+    ASSERT_OK(Put("foo", "v1"));                         // Goes to 1st log file
+    ASSERT_OK(Put("big1", std::string(10000000, 'x')));  // Fills memtable
+    ASSERT_OK(Put("big2", std::string(1000, 'y')));      // Triggers compaction
+    ASSERT_OK(Put("bar", "v2"));                         // Goes to new log file
+
+    Reopen(&options);
+    ASSERT_EQ("v1", Get("foo"));
+    ASSERT_EQ("v2", Get("bar"));
+    ASSERT_EQ(std::string(10000000, 'x'), Get("big1"));
+    ASSERT_EQ(std::string(1000, 'y'), Get("big2"));
+  } while (ChangeOptions());
+}
+
+static std::string Key(int i) {
+  char buf[100];
+  snprintf(buf, sizeof(buf), "key%06d", i);
+  return std::string(buf);
+}
+
+TEST(DBTest, MinorCompactionsHappen) {
+  Options options = CurrentOptions();
+  options.write_buffer_size = 10000;
+  Reopen(&options);
+
+  const int N = 500;
+
+  int starting_num_tables = TotalTableFiles();
+  for (int i = 0; i < N; i++) {
+    ASSERT_OK(Put(Key(i), Key(i) + std::string(1000, 'v')));
+  }
+  int ending_num_tables = TotalTableFiles();
+  ASSERT_GT(ending_num_tables, starting_num_tables);
+
+  for (int i = 0; i < N; i++) {
+    ASSERT_EQ(Key(i) + std::string(1000, 'v'), Get(Key(i)));
+  }
+
+  Reopen();
+
+  for (int i = 0; i < N; i++) {
+    ASSERT_EQ(Key(i) + std::string(1000, 'v'), Get(Key(i)));
+  }
+}
+
+TEST(DBTest, RecoverWithLargeLog) {
+  {
+    Options options = CurrentOptions();
+    Reopen(&options);
+    ASSERT_OK(Put("big1", std::string(200000, '1')));
+    ASSERT_OK(Put("big2", std::string(200000, '2')));
+    ASSERT_OK(Put("small3", std::string(10, '3')));
+    ASSERT_OK(Put("small4", std::string(10, '4')));
+    ASSERT_EQ(NumTableFilesAtLevel(0), 0);
+  }
+
+  // Make sure that if we re-open with a small write buffer size that
+  // we flush table files in the middle of a large log file.
+  Options options = CurrentOptions();
+  options.write_buffer_size = 100000;
+  Reopen(&options);
+  ASSERT_EQ(NumTableFilesAtLevel(0), 3);
+  ASSERT_EQ(std::string(200000,
