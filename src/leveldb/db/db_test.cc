@@ -953,4 +953,96 @@ TEST(DBTest, RecoverWithLargeLog) {
   options.write_buffer_size = 100000;
   Reopen(&options);
   ASSERT_EQ(NumTableFilesAtLevel(0), 3);
-  ASSERT_EQ(std::string(200000,
+  ASSERT_EQ(std::string(200000, '1'), Get("big1"));
+  ASSERT_EQ(std::string(200000, '2'), Get("big2"));
+  ASSERT_EQ(std::string(10, '3'), Get("small3"));
+  ASSERT_EQ(std::string(10, '4'), Get("small4"));
+  ASSERT_GT(NumTableFilesAtLevel(0), 1);
+}
+
+TEST(DBTest, CompactionsGenerateMultipleFiles) {
+  Options options = CurrentOptions();
+  options.write_buffer_size = 100000000;        // Large write buffer
+  Reopen(&options);
+
+  Random rnd(301);
+
+  // Write 8MB (80 values, each 100K)
+  ASSERT_EQ(NumTableFilesAtLevel(0), 0);
+  std::vector<std::string> values;
+  for (int i = 0; i < 80; i++) {
+    values.push_back(RandomString(&rnd, 100000));
+    ASSERT_OK(Put(Key(i), values[i]));
+  }
+
+  // Reopening moves updates to level-0
+  Reopen(&options);
+  dbfull()->TEST_CompactRange(0, NULL, NULL);
+
+  ASSERT_EQ(NumTableFilesAtLevel(0), 0);
+  ASSERT_GT(NumTableFilesAtLevel(1), 1);
+  for (int i = 0; i < 80; i++) {
+    ASSERT_EQ(Get(Key(i)), values[i]);
+  }
+}
+
+TEST(DBTest, RepeatedWritesToSameKey) {
+  Options options = CurrentOptions();
+  options.env = env_;
+  options.write_buffer_size = 100000;  // Small write buffer
+  Reopen(&options);
+
+  // We must have at most one file per level except for level-0,
+  // which may have up to kL0_StopWritesTrigger files.
+  const int kMaxFiles = config::kNumLevels + config::kL0_StopWritesTrigger;
+
+  Random rnd(301);
+  std::string value = RandomString(&rnd, 2 * options.write_buffer_size);
+  for (int i = 0; i < 5 * kMaxFiles; i++) {
+    Put("key", value);
+    ASSERT_LE(TotalTableFiles(), kMaxFiles);
+    fprintf(stderr, "after %d: %d files\n", int(i+1), TotalTableFiles());
+  }
+}
+
+TEST(DBTest, SparseMerge) {
+  Options options = CurrentOptions();
+  options.compression = kNoCompression;
+  Reopen(&options);
+
+  FillLevels("A", "Z");
+
+  // Suppose there is:
+  //    small amount of data with prefix A
+  //    large amount of data with prefix B
+  //    small amount of data with prefix C
+  // and that recent updates have made small changes to all three prefixes.
+  // Check that we do not do a compaction that merges all of B in one shot.
+  const std::string value(1000, 'x');
+  Put("A", "va");
+  // Write approximately 100MB of "B" values
+  for (int i = 0; i < 100000; i++) {
+    char key[100];
+    snprintf(key, sizeof(key), "B%010d", i);
+    Put(key, value);
+  }
+  Put("C", "vc");
+  dbfull()->TEST_CompactMemTable();
+  dbfull()->TEST_CompactRange(0, NULL, NULL);
+
+  // Make sparse update
+  Put("A",    "va2");
+  Put("B100", "bvalue2");
+  Put("C",    "vc2");
+  dbfull()->TEST_CompactMemTable();
+
+  // Compactions should not cause us to create a situation where
+  // a file overlaps too much data at the next level.
+  ASSERT_LE(dbfull()->TEST_MaxNextLevelOverlappingBytes(), 20*1048576);
+  dbfull()->TEST_CompactRange(0, NULL, NULL);
+  ASSERT_LE(dbfull()->TEST_MaxNextLevelOverlappingBytes(), 20*1048576);
+  dbfull()->TEST_CompactRange(1, NULL, NULL);
+  ASSERT_LE(dbfull()->TEST_MaxNextLevelOverlappingBytes(), 20*1048576);
+}
+
+static bo
