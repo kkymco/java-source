@@ -1230,4 +1230,83 @@ TEST(DBTest, DeletionMarkers1) {
   Put("foo", "v1");
   ASSERT_OK(dbfull()->TEST_CompactMemTable());
   const int last = config::kMaxMemCompactLevel;
-  ASSERT_EQ(NumTableFilesAtLevel(last), 1);   
+  ASSERT_EQ(NumTableFilesAtLevel(last), 1);   // foo => v1 is now in last level
+
+  // Place a table at level last-1 to prevent merging with preceding mutation
+  Put("a", "begin");
+  Put("z", "end");
+  dbfull()->TEST_CompactMemTable();
+  ASSERT_EQ(NumTableFilesAtLevel(last), 1);
+  ASSERT_EQ(NumTableFilesAtLevel(last-1), 1);
+
+  Delete("foo");
+  Put("foo", "v2");
+  ASSERT_EQ(AllEntriesFor("foo"), "[ v2, DEL, v1 ]");
+  ASSERT_OK(dbfull()->TEST_CompactMemTable());  // Moves to level last-2
+  ASSERT_EQ(AllEntriesFor("foo"), "[ v2, DEL, v1 ]");
+  Slice z("z");
+  dbfull()->TEST_CompactRange(last-2, NULL, &z);
+  // DEL eliminated, but v1 remains because we aren't compacting that level
+  // (DEL can be eliminated because v2 hides v1).
+  ASSERT_EQ(AllEntriesFor("foo"), "[ v2, v1 ]");
+  dbfull()->TEST_CompactRange(last-1, NULL, NULL);
+  // Merging last-1 w/ last, so we are the base level for "foo", so
+  // DEL is removed.  (as is v1).
+  ASSERT_EQ(AllEntriesFor("foo"), "[ v2 ]");
+}
+
+TEST(DBTest, DeletionMarkers2) {
+  Put("foo", "v1");
+  ASSERT_OK(dbfull()->TEST_CompactMemTable());
+  const int last = config::kMaxMemCompactLevel;
+  ASSERT_EQ(NumTableFilesAtLevel(last), 1);   // foo => v1 is now in last level
+
+  // Place a table at level last-1 to prevent merging with preceding mutation
+  Put("a", "begin");
+  Put("z", "end");
+  dbfull()->TEST_CompactMemTable();
+  ASSERT_EQ(NumTableFilesAtLevel(last), 1);
+  ASSERT_EQ(NumTableFilesAtLevel(last-1), 1);
+
+  Delete("foo");
+  ASSERT_EQ(AllEntriesFor("foo"), "[ DEL, v1 ]");
+  ASSERT_OK(dbfull()->TEST_CompactMemTable());  // Moves to level last-2
+  ASSERT_EQ(AllEntriesFor("foo"), "[ DEL, v1 ]");
+  dbfull()->TEST_CompactRange(last-2, NULL, NULL);
+  // DEL kept: "last" file overlaps
+  ASSERT_EQ(AllEntriesFor("foo"), "[ DEL, v1 ]");
+  dbfull()->TEST_CompactRange(last-1, NULL, NULL);
+  // Merging last-1 w/ last, so we are the base level for "foo", so
+  // DEL is removed.  (as is v1).
+  ASSERT_EQ(AllEntriesFor("foo"), "[ ]");
+}
+
+TEST(DBTest, OverlapInLevel0) {
+  do {
+    ASSERT_EQ(config::kMaxMemCompactLevel, 2) << "Fix test to match config";
+
+    // Fill levels 1 and 2 to disable the pushing of new memtables to levels > 0.
+    ASSERT_OK(Put("100", "v100"));
+    ASSERT_OK(Put("999", "v999"));
+    dbfull()->TEST_CompactMemTable();
+    ASSERT_OK(Delete("100"));
+    ASSERT_OK(Delete("999"));
+    dbfull()->TEST_CompactMemTable();
+    ASSERT_EQ("0,1,1", FilesPerLevel());
+
+    // Make files spanning the following ranges in level-0:
+    //  files[0]  200 .. 900
+    //  files[1]  300 .. 500
+    // Note that files are sorted by smallest key.
+    ASSERT_OK(Put("300", "v300"));
+    ASSERT_OK(Put("500", "v500"));
+    dbfull()->TEST_CompactMemTable();
+    ASSERT_OK(Put("200", "v200"));
+    ASSERT_OK(Put("600", "v600"));
+    ASSERT_OK(Put("900", "v900"));
+    dbfull()->TEST_CompactMemTable();
+    ASSERT_EQ("2,1,1", FilesPerLevel());
+
+    // Compact away the placeholder files we created initially
+    dbfull()->TEST_CompactRange(1, NULL, NULL);
+    dbfull()->TEST_CompactRange
