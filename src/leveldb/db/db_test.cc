@@ -1045,4 +1045,89 @@ TEST(DBTest, SparseMerge) {
   ASSERT_LE(dbfull()->TEST_MaxNextLevelOverlappingBytes(), 20*1048576);
 }
 
-static bo
+static bool Between(uint64_t val, uint64_t low, uint64_t high) {
+  bool result = (val >= low) && (val <= high);
+  if (!result) {
+    fprintf(stderr, "Value %llu is not in range [%llu, %llu]\n",
+            (unsigned long long)(val),
+            (unsigned long long)(low),
+            (unsigned long long)(high));
+  }
+  return result;
+}
+
+TEST(DBTest, ApproximateSizes) {
+  do {
+    Options options = CurrentOptions();
+    options.write_buffer_size = 100000000;        // Large write buffer
+    options.compression = kNoCompression;
+    DestroyAndReopen();
+
+    ASSERT_TRUE(Between(Size("", "xyz"), 0, 0));
+    Reopen(&options);
+    ASSERT_TRUE(Between(Size("", "xyz"), 0, 0));
+
+    // Write 8MB (80 values, each 100K)
+    ASSERT_EQ(NumTableFilesAtLevel(0), 0);
+    const int N = 80;
+    static const int S1 = 100000;
+    static const int S2 = 105000;  // Allow some expansion from metadata
+    Random rnd(301);
+    for (int i = 0; i < N; i++) {
+      ASSERT_OK(Put(Key(i), RandomString(&rnd, S1)));
+    }
+
+    // 0 because GetApproximateSizes() does not account for memtable space
+    ASSERT_TRUE(Between(Size("", Key(50)), 0, 0));
+
+    // Check sizes across recovery by reopening a few times
+    for (int run = 0; run < 3; run++) {
+      Reopen(&options);
+
+      for (int compact_start = 0; compact_start < N; compact_start += 10) {
+        for (int i = 0; i < N; i += 10) {
+          ASSERT_TRUE(Between(Size("", Key(i)), S1*i, S2*i));
+          ASSERT_TRUE(Between(Size("", Key(i)+".suffix"), S1*(i+1), S2*(i+1)));
+          ASSERT_TRUE(Between(Size(Key(i), Key(i+10)), S1*10, S2*10));
+        }
+        ASSERT_TRUE(Between(Size("", Key(50)), S1*50, S2*50));
+        ASSERT_TRUE(Between(Size("", Key(50)+".suffix"), S1*50, S2*50));
+
+        std::string cstart_str = Key(compact_start);
+        std::string cend_str = Key(compact_start + 9);
+        Slice cstart = cstart_str;
+        Slice cend = cend_str;
+        dbfull()->TEST_CompactRange(0, &cstart, &cend);
+      }
+
+      ASSERT_EQ(NumTableFilesAtLevel(0), 0);
+      ASSERT_GT(NumTableFilesAtLevel(1), 0);
+    }
+  } while (ChangeOptions());
+}
+
+TEST(DBTest, ApproximateSizes_MixOfSmallAndLarge) {
+  do {
+    Options options = CurrentOptions();
+    options.compression = kNoCompression;
+    Reopen();
+
+    Random rnd(301);
+    std::string big1 = RandomString(&rnd, 100000);
+    ASSERT_OK(Put(Key(0), RandomString(&rnd, 10000)));
+    ASSERT_OK(Put(Key(1), RandomString(&rnd, 10000)));
+    ASSERT_OK(Put(Key(2), big1));
+    ASSERT_OK(Put(Key(3), RandomString(&rnd, 10000)));
+    ASSERT_OK(Put(Key(4), big1));
+    ASSERT_OK(Put(Key(5), RandomString(&rnd, 10000)));
+    ASSERT_OK(Put(Key(6), RandomString(&rnd, 300000)));
+    ASSERT_OK(Put(Key(7), RandomString(&rnd, 10000)));
+
+    // Check sizes across recovery by reopening a few times
+    for (int run = 0; run < 3; run++) {
+      Reopen(&options);
+
+      ASSERT_TRUE(Between(Size("", Key(0)), 0, 0));
+      ASSERT_TRUE(Between(Size("", Key(1)), 10000, 11000));
+      ASSERT_TRUE(Between(Size("", Key(2)), 20000, 21000));
+      ASSERT_TRUE(Bet
