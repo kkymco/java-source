@@ -1309,4 +1309,110 @@ TEST(DBTest, OverlapInLevel0) {
 
     // Compact away the placeholder files we created initially
     dbfull()->TEST_CompactRange(1, NULL, NULL);
-    dbfull()->TEST_CompactRange
+    dbfull()->TEST_CompactRange(2, NULL, NULL);
+    ASSERT_EQ("2", FilesPerLevel());
+
+    // Do a memtable compaction.  Before bug-fix, the compaction would
+    // not detect the overlap with level-0 files and would incorrectly place
+    // the deletion in a deeper level.
+    ASSERT_OK(Delete("600"));
+    dbfull()->TEST_CompactMemTable();
+    ASSERT_EQ("3", FilesPerLevel());
+    ASSERT_EQ("NOT_FOUND", Get("600"));
+  } while (ChangeOptions());
+}
+
+TEST(DBTest, L0_CompactionBug_Issue44_a) {
+  Reopen();
+  ASSERT_OK(Put("b", "v"));
+  Reopen();
+  ASSERT_OK(Delete("b"));
+  ASSERT_OK(Delete("a"));
+  Reopen();
+  ASSERT_OK(Delete("a"));
+  Reopen();
+  ASSERT_OK(Put("a", "v"));
+  Reopen();
+  Reopen();
+  ASSERT_EQ("(a->v)", Contents());
+  DelayMilliseconds(1000);  // Wait for compaction to finish
+  ASSERT_EQ("(a->v)", Contents());
+}
+
+TEST(DBTest, L0_CompactionBug_Issue44_b) {
+  Reopen();
+  Put("","");
+  Reopen();
+  Delete("e");
+  Put("","");
+  Reopen();
+  Put("c", "cv");
+  Reopen();
+  Put("","");
+  Reopen();
+  Put("","");
+  DelayMilliseconds(1000);  // Wait for compaction to finish
+  Reopen();
+  Put("d","dv");
+  Reopen();
+  Put("","");
+  Reopen();
+  Delete("d");
+  Delete("b");
+  Reopen();
+  ASSERT_EQ("(->)(c->cv)", Contents());
+  DelayMilliseconds(1000);  // Wait for compaction to finish
+  ASSERT_EQ("(->)(c->cv)", Contents());
+}
+
+TEST(DBTest, ComparatorCheck) {
+  class NewComparator : public Comparator {
+   public:
+    virtual const char* Name() const { return "leveldb.NewComparator"; }
+    virtual int Compare(const Slice& a, const Slice& b) const {
+      return BytewiseComparator()->Compare(a, b);
+    }
+    virtual void FindShortestSeparator(std::string* s, const Slice& l) const {
+      BytewiseComparator()->FindShortestSeparator(s, l);
+    }
+    virtual void FindShortSuccessor(std::string* key) const {
+      BytewiseComparator()->FindShortSuccessor(key);
+    }
+  };
+  NewComparator cmp;
+  Options new_options = CurrentOptions();
+  new_options.comparator = &cmp;
+  Status s = TryReopen(&new_options);
+  ASSERT_TRUE(!s.ok());
+  ASSERT_TRUE(s.ToString().find("comparator") != std::string::npos)
+      << s.ToString();
+}
+
+TEST(DBTest, CustomComparator) {
+  class NumberComparator : public Comparator {
+   public:
+    virtual const char* Name() const { return "test.NumberComparator"; }
+    virtual int Compare(const Slice& a, const Slice& b) const {
+      return ToNumber(a) - ToNumber(b);
+    }
+    virtual void FindShortestSeparator(std::string* s, const Slice& l) const {
+      ToNumber(*s);     // Check format
+      ToNumber(l);      // Check format
+    }
+    virtual void FindShortSuccessor(std::string* key) const {
+      ToNumber(*key);   // Check format
+    }
+   private:
+    static int ToNumber(const Slice& x) {
+      // Check that there are no extra characters.
+      ASSERT_TRUE(x.size() >= 2 && x[0] == '[' && x[x.size()-1] == ']')
+          << EscapeString(x);
+      int val;
+      char ignored;
+      ASSERT_TRUE(sscanf(x.ToString().c_str(), "[%i]%c", &val, &ignored) == 1)
+          << EscapeString(x);
+      return val;
+    }
+  };
+  NumberComparator cmp;
+  
