@@ -1619,4 +1619,115 @@ TEST(DBTest, ManifestWriteError) {
     // Memtable compaction (will succeed)
     dbfull()->TEST_CompactMemTable();
     ASSERT_EQ("bar", Get("foo"));
-    const int last = config::kMaxMemCo
+    const int last = config::kMaxMemCompactLevel;
+    ASSERT_EQ(NumTableFilesAtLevel(last), 1);   // foo=>bar is now in last level
+
+    // Merging compaction (will fail)
+    error_type->Release_Store(env_);
+    dbfull()->TEST_CompactRange(last, NULL, NULL);  // Should fail
+    ASSERT_EQ("bar", Get("foo"));
+
+    // Recovery: should not lose data
+    error_type->Release_Store(NULL);
+    Reopen(&options);
+    ASSERT_EQ("bar", Get("foo"));
+  }
+}
+
+TEST(DBTest, MissingSSTFile) {
+  ASSERT_OK(Put("foo", "bar"));
+  ASSERT_EQ("bar", Get("foo"));
+
+  // Dump the memtable to disk.
+  dbfull()->TEST_CompactMemTable();
+  ASSERT_EQ("bar", Get("foo"));
+
+  Close();
+  ASSERT_TRUE(DeleteAnSSTFile());
+  Options options = CurrentOptions();
+  options.paranoid_checks = true;
+  Status s = TryReopen(&options);
+  ASSERT_TRUE(!s.ok());
+  ASSERT_TRUE(s.ToString().find("issing") != std::string::npos)
+      << s.ToString();
+}
+
+TEST(DBTest, StillReadSST) {
+  ASSERT_OK(Put("foo", "bar"));
+  ASSERT_EQ("bar", Get("foo"));
+
+  // Dump the memtable to disk.
+  dbfull()->TEST_CompactMemTable();
+  ASSERT_EQ("bar", Get("foo"));
+  Close();
+  ASSERT_GT(RenameLDBToSST(), 0);
+  Options options = CurrentOptions();
+  options.paranoid_checks = true;
+  Status s = TryReopen(&options);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ("bar", Get("foo"));
+}
+
+TEST(DBTest, FilesDeletedAfterCompaction) {
+  ASSERT_OK(Put("foo", "v2"));
+  Compact("a", "z");
+  const int num_files = CountFiles();
+  for (int i = 0; i < 10; i++) {
+    ASSERT_OK(Put("foo", "v2"));
+    Compact("a", "z");
+  }
+  ASSERT_EQ(CountFiles(), num_files);
+}
+
+TEST(DBTest, BloomFilter) {
+  env_->count_random_reads_ = true;
+  Options options = CurrentOptions();
+  options.env = env_;
+  options.block_cache = NewLRUCache(0);  // Prevent cache hits
+  options.filter_policy = NewBloomFilterPolicy(10);
+  Reopen(&options);
+
+  // Populate multiple layers
+  const int N = 10000;
+  for (int i = 0; i < N; i++) {
+    ASSERT_OK(Put(Key(i), Key(i)));
+  }
+  Compact("a", "z");
+  for (int i = 0; i < N; i += 100) {
+    ASSERT_OK(Put(Key(i), Key(i)));
+  }
+  dbfull()->TEST_CompactMemTable();
+
+  // Prevent auto compactions triggered by seeks
+  env_->delay_data_sync_.Release_Store(env_);
+
+  // Lookup present keys.  Should rarely read from small sstable.
+  env_->random_read_counter_.Reset();
+  for (int i = 0; i < N; i++) {
+    ASSERT_EQ(Key(i), Get(Key(i)));
+  }
+  int reads = env_->random_read_counter_.Read();
+  fprintf(stderr, "%d present => %d reads\n", N, reads);
+  ASSERT_GE(reads, N);
+  ASSERT_LE(reads, N + 2*N/100);
+
+  // Lookup present keys.  Should rarely read from either sstable.
+  env_->random_read_counter_.Reset();
+  for (int i = 0; i < N; i++) {
+    ASSERT_EQ("NOT_FOUND", Get(Key(i) + ".missing"));
+  }
+  reads = env_->random_read_counter_.Read();
+  fprintf(stderr, "%d missing => %d reads\n", N, reads);
+  ASSERT_LE(reads, 3*N/100);
+
+  env_->delay_data_sync_.Release_Store(NULL);
+  Close();
+  delete options.block_cache;
+  delete options.filter_policy;
+}
+
+// Multi-threaded test:
+namespace {
+
+static const int kNumThreads = 4;
+stat
