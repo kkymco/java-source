@@ -1523,4 +1523,100 @@ TEST(DBTest, Locking) {
 }
 
 // Check that number of files does not grow when we are out of space
-TE
+TEST(DBTest, NoSpace) {
+  Options options = CurrentOptions();
+  options.env = env_;
+  Reopen(&options);
+
+  ASSERT_OK(Put("foo", "v1"));
+  ASSERT_EQ("v1", Get("foo"));
+  Compact("a", "z");
+  const int num_files = CountFiles();
+  env_->no_space_.Release_Store(env_);   // Force out-of-space errors
+  for (int i = 0; i < 10; i++) {
+    for (int level = 0; level < config::kNumLevels-1; level++) {
+      dbfull()->TEST_CompactRange(level, NULL, NULL);
+    }
+  }
+  env_->no_space_.Release_Store(NULL);
+  ASSERT_LT(CountFiles(), num_files + 3);
+}
+
+TEST(DBTest, NonWritableFileSystem) {
+  Options options = CurrentOptions();
+  options.write_buffer_size = 1000;
+  options.env = env_;
+  Reopen(&options);
+  ASSERT_OK(Put("foo", "v1"));
+  env_->non_writable_.Release_Store(env_);  // Force errors for new files
+  std::string big(100000, 'x');
+  int errors = 0;
+  for (int i = 0; i < 20; i++) {
+    fprintf(stderr, "iter %d; errors %d\n", i, errors);
+    if (!Put("foo", big).ok()) {
+      errors++;
+      DelayMilliseconds(100);
+    }
+  }
+  ASSERT_GT(errors, 0);
+  env_->non_writable_.Release_Store(NULL);
+}
+
+TEST(DBTest, WriteSyncError) {
+  // Check that log sync errors cause the DB to disallow future writes.
+
+  // (a) Cause log sync calls to fail
+  Options options = CurrentOptions();
+  options.env = env_;
+  Reopen(&options);
+  env_->data_sync_error_.Release_Store(env_);
+
+  // (b) Normal write should succeed
+  WriteOptions w;
+  ASSERT_OK(db_->Put(w, "k1", "v1"));
+  ASSERT_EQ("v1", Get("k1"));
+
+  // (c) Do a sync write; should fail
+  w.sync = true;
+  ASSERT_TRUE(!db_->Put(w, "k2", "v2").ok());
+  ASSERT_EQ("v1", Get("k1"));
+  ASSERT_EQ("NOT_FOUND", Get("k2"));
+
+  // (d) make sync behave normally
+  env_->data_sync_error_.Release_Store(NULL);
+
+  // (e) Do a non-sync write; should fail
+  w.sync = false;
+  ASSERT_TRUE(!db_->Put(w, "k3", "v3").ok());
+  ASSERT_EQ("v1", Get("k1"));
+  ASSERT_EQ("NOT_FOUND", Get("k2"));
+  ASSERT_EQ("NOT_FOUND", Get("k3"));
+}
+
+TEST(DBTest, ManifestWriteError) {
+  // Test for the following problem:
+  // (a) Compaction produces file F
+  // (b) Log record containing F is written to MANIFEST file, but Sync() fails
+  // (c) GC deletes F
+  // (d) After reopening DB, reads fail since deleted F is named in log record
+
+  // We iterate twice.  In the second iteration, everything is the
+  // same except the log record never makes it to the MANIFEST file.
+  for (int iter = 0; iter < 2; iter++) {
+    port::AtomicPointer* error_type = (iter == 0)
+        ? &env_->manifest_sync_error_
+        : &env_->manifest_write_error_;
+
+    // Insert foo=>bar mapping
+    Options options = CurrentOptions();
+    options.env = env_;
+    options.create_if_missing = true;
+    options.error_if_exists = false;
+    DestroyAndReopen(&options);
+    ASSERT_OK(Put("foo", "bar"));
+    ASSERT_EQ("bar", Get("foo"));
+
+    // Memtable compaction (will succeed)
+    dbfull()->TEST_CompactMemTable();
+    ASSERT_EQ("bar", Get("foo"));
+    const int last = config::kMaxMemCo
