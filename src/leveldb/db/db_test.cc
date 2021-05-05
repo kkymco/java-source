@@ -1415,4 +1415,112 @@ TEST(DBTest, CustomComparator) {
     }
   };
   NumberComparator cmp;
-  
+  Options new_options = CurrentOptions();
+  new_options.create_if_missing = true;
+  new_options.comparator = &cmp;
+  new_options.filter_policy = NULL;     // Cannot use bloom filters
+  new_options.write_buffer_size = 1000;  // Compact more often
+  DestroyAndReopen(&new_options);
+  ASSERT_OK(Put("[10]", "ten"));
+  ASSERT_OK(Put("[0x14]", "twenty"));
+  for (int i = 0; i < 2; i++) {
+    ASSERT_EQ("ten", Get("[10]"));
+    ASSERT_EQ("ten", Get("[0xa]"));
+    ASSERT_EQ("twenty", Get("[20]"));
+    ASSERT_EQ("twenty", Get("[0x14]"));
+    ASSERT_EQ("NOT_FOUND", Get("[15]"));
+    ASSERT_EQ("NOT_FOUND", Get("[0xf]"));
+    Compact("[0]", "[9999]");
+  }
+
+  for (int run = 0; run < 2; run++) {
+    for (int i = 0; i < 1000; i++) {
+      char buf[100];
+      snprintf(buf, sizeof(buf), "[%d]", i*10);
+      ASSERT_OK(Put(buf, buf));
+    }
+    Compact("[0]", "[1000000]");
+  }
+}
+
+TEST(DBTest, ManualCompaction) {
+  ASSERT_EQ(config::kMaxMemCompactLevel, 2)
+      << "Need to update this test to match kMaxMemCompactLevel";
+
+  MakeTables(3, "p", "q");
+  ASSERT_EQ("1,1,1", FilesPerLevel());
+
+  // Compaction range falls before files
+  Compact("", "c");
+  ASSERT_EQ("1,1,1", FilesPerLevel());
+
+  // Compaction range falls after files
+  Compact("r", "z");
+  ASSERT_EQ("1,1,1", FilesPerLevel());
+
+  // Compaction range overlaps files
+  Compact("p1", "p9");
+  ASSERT_EQ("0,0,1", FilesPerLevel());
+
+  // Populate a different range
+  MakeTables(3, "c", "e");
+  ASSERT_EQ("1,1,2", FilesPerLevel());
+
+  // Compact just the new range
+  Compact("b", "f");
+  ASSERT_EQ("0,0,2", FilesPerLevel());
+
+  // Compact all
+  MakeTables(1, "a", "z");
+  ASSERT_EQ("0,1,2", FilesPerLevel());
+  db_->CompactRange(NULL, NULL);
+  ASSERT_EQ("0,0,1", FilesPerLevel());
+}
+
+TEST(DBTest, DBOpen_Options) {
+  std::string dbname = test::TmpDir() + "/db_options_test";
+  DestroyDB(dbname, Options());
+
+  // Does not exist, and create_if_missing == false: error
+  DB* db = NULL;
+  Options opts;
+  opts.create_if_missing = false;
+  Status s = DB::Open(opts, dbname, &db);
+  ASSERT_TRUE(strstr(s.ToString().c_str(), "does not exist") != NULL);
+  ASSERT_TRUE(db == NULL);
+
+  // Does not exist, and create_if_missing == true: OK
+  opts.create_if_missing = true;
+  s = DB::Open(opts, dbname, &db);
+  ASSERT_OK(s);
+  ASSERT_TRUE(db != NULL);
+
+  delete db;
+  db = NULL;
+
+  // Does exist, and error_if_exists == true: error
+  opts.create_if_missing = false;
+  opts.error_if_exists = true;
+  s = DB::Open(opts, dbname, &db);
+  ASSERT_TRUE(strstr(s.ToString().c_str(), "exists") != NULL);
+  ASSERT_TRUE(db == NULL);
+
+  // Does exist, and error_if_exists == false: OK
+  opts.create_if_missing = true;
+  opts.error_if_exists = false;
+  s = DB::Open(opts, dbname, &db);
+  ASSERT_OK(s);
+  ASSERT_TRUE(db != NULL);
+
+  delete db;
+  db = NULL;
+}
+
+TEST(DBTest, Locking) {
+  DB* db2 = NULL;
+  Status s = DB::Open(CurrentOptions(), dbname_, &db2);
+  ASSERT_TRUE(!s.ok()) << "Locking did not prevent re-opening db";
+}
+
+// Check that number of files does not grow when we are out of space
+TE
