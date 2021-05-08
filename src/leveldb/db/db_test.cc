@@ -1837,4 +1837,99 @@ class ModelDB: public DB {
 
   explicit ModelDB(const Options& options): options_(options) { }
   ~ModelDB() { }
-  virtual Status Put(const Wr
+  virtual Status Put(const WriteOptions& o, const Slice& k, const Slice& v) {
+    return DB::Put(o, k, v);
+  }
+  virtual Status Delete(const WriteOptions& o, const Slice& key) {
+    return DB::Delete(o, key);
+  }
+  virtual Status Get(const ReadOptions& options,
+                     const Slice& key, std::string* value) {
+    assert(false);      // Not implemented
+    return Status::NotFound(key);
+  }
+  virtual Iterator* NewIterator(const ReadOptions& options) {
+    if (options.snapshot == NULL) {
+      KVMap* saved = new KVMap;
+      *saved = map_;
+      return new ModelIter(saved, true);
+    } else {
+      const KVMap* snapshot_state =
+          &(reinterpret_cast<const ModelSnapshot*>(options.snapshot)->map_);
+      return new ModelIter(snapshot_state, false);
+    }
+  }
+  virtual const Snapshot* GetSnapshot() {
+    ModelSnapshot* snapshot = new ModelSnapshot;
+    snapshot->map_ = map_;
+    return snapshot;
+  }
+
+  virtual void ReleaseSnapshot(const Snapshot* snapshot) {
+    delete reinterpret_cast<const ModelSnapshot*>(snapshot);
+  }
+  virtual Status Write(const WriteOptions& options, WriteBatch* batch) {
+    class Handler : public WriteBatch::Handler {
+     public:
+      KVMap* map_;
+      virtual void Put(const Slice& key, const Slice& value) {
+        (*map_)[key.ToString()] = value.ToString();
+      }
+      virtual void Delete(const Slice& key) {
+        map_->erase(key.ToString());
+      }
+    };
+    Handler handler;
+    handler.map_ = &map_;
+    return batch->Iterate(&handler);
+  }
+
+  virtual bool GetProperty(const Slice& property, std::string* value) {
+    return false;
+  }
+  virtual void GetApproximateSizes(const Range* r, int n, uint64_t* sizes) {
+    for (int i = 0; i < n; i++) {
+      sizes[i] = 0;
+    }
+  }
+  virtual void CompactRange(const Slice* start, const Slice* end) {
+  }
+
+ private:
+  class ModelIter: public Iterator {
+   public:
+    ModelIter(const KVMap* map, bool owned)
+        : map_(map), owned_(owned), iter_(map_->end()) {
+    }
+    ~ModelIter() {
+      if (owned_) delete map_;
+    }
+    virtual bool Valid() const { return iter_ != map_->end(); }
+    virtual void SeekToFirst() { iter_ = map_->begin(); }
+    virtual void SeekToLast() {
+      if (map_->empty()) {
+        iter_ = map_->end();
+      } else {
+        iter_ = map_->find(map_->rbegin()->first);
+      }
+    }
+    virtual void Seek(const Slice& k) {
+      iter_ = map_->lower_bound(k.ToString());
+    }
+    virtual void Next() { ++iter_; }
+    virtual void Prev() { --iter_; }
+    virtual Slice key() const { return iter_->first; }
+    virtual Slice value() const { return iter_->second; }
+    virtual Status status() const { return Status::OK(); }
+   private:
+    const KVMap* const map_;
+    const bool owned_;  // Do we own map_
+    KVMap::const_iterator iter_;
+  };
+  const Options options_;
+  KVMap map_;
+};
+
+static std::string RandomKey(Random* rnd) {
+  int len = (rnd->OneIn(3)
+             ? 1                // Short sometimes to encourage collis
