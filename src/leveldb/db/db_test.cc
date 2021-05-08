@@ -1932,4 +1932,96 @@ class ModelDB: public DB {
 
 static std::string RandomKey(Random* rnd) {
   int len = (rnd->OneIn(3)
-             ? 1                // Short sometimes to encourage collis
+             ? 1                // Short sometimes to encourage collisions
+             : (rnd->OneIn(100) ? rnd->Skewed(10) : rnd->Uniform(10)));
+  return test::RandomKey(rnd, len);
+}
+
+static bool CompareIterators(int step,
+                             DB* model,
+                             DB* db,
+                             const Snapshot* model_snap,
+                             const Snapshot* db_snap) {
+  ReadOptions options;
+  options.snapshot = model_snap;
+  Iterator* miter = model->NewIterator(options);
+  options.snapshot = db_snap;
+  Iterator* dbiter = db->NewIterator(options);
+  bool ok = true;
+  int count = 0;
+  for (miter->SeekToFirst(), dbiter->SeekToFirst();
+       ok && miter->Valid() && dbiter->Valid();
+       miter->Next(), dbiter->Next()) {
+    count++;
+    if (miter->key().compare(dbiter->key()) != 0) {
+      fprintf(stderr, "step %d: Key mismatch: '%s' vs. '%s'\n",
+              step,
+              EscapeString(miter->key()).c_str(),
+              EscapeString(dbiter->key()).c_str());
+      ok = false;
+      break;
+    }
+
+    if (miter->value().compare(dbiter->value()) != 0) {
+      fprintf(stderr, "step %d: Value mismatch for key '%s': '%s' vs. '%s'\n",
+              step,
+              EscapeString(miter->key()).c_str(),
+              EscapeString(miter->value()).c_str(),
+              EscapeString(miter->value()).c_str());
+      ok = false;
+    }
+  }
+
+  if (ok) {
+    if (miter->Valid() != dbiter->Valid()) {
+      fprintf(stderr, "step %d: Mismatch at end of iterators: %d vs. %d\n",
+              step, miter->Valid(), dbiter->Valid());
+      ok = false;
+    }
+  }
+  fprintf(stderr, "%d entries compared: ok=%d\n", count, ok);
+  delete miter;
+  delete dbiter;
+  return ok;
+}
+
+TEST(DBTest, Randomized) {
+  Random rnd(test::RandomSeed());
+  do {
+    ModelDB model(CurrentOptions());
+    const int N = 10000;
+    const Snapshot* model_snap = NULL;
+    const Snapshot* db_snap = NULL;
+    std::string k, v;
+    for (int step = 0; step < N; step++) {
+      if (step % 100 == 0) {
+        fprintf(stderr, "Step %d of %d\n", step, N);
+      }
+      // TODO(sanjay): Test Get() works
+      int p = rnd.Uniform(100);
+      if (p < 45) {                               // Put
+        k = RandomKey(&rnd);
+        v = RandomString(&rnd,
+                         rnd.OneIn(20)
+                         ? 100 + rnd.Uniform(100)
+                         : rnd.Uniform(8));
+        ASSERT_OK(model.Put(WriteOptions(), k, v));
+        ASSERT_OK(db_->Put(WriteOptions(), k, v));
+
+      } else if (p < 90) {                        // Delete
+        k = RandomKey(&rnd);
+        ASSERT_OK(model.Delete(WriteOptions(), k));
+        ASSERT_OK(db_->Delete(WriteOptions(), k));
+
+
+      } else {                                    // Multi-element batch
+        WriteBatch b;
+        const int num = rnd.Uniform(8);
+        for (int i = 0; i < num; i++) {
+          if (i == 0 || !rnd.OneIn(10)) {
+            k = RandomKey(&rnd);
+          } else {
+            // Periodically re-use the same key from the previous iter, so
+            // we have multiple entries in the write batch for the same key
+          }
+          if (rnd.OneIn(2))
