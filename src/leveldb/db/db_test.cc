@@ -2119,4 +2119,10 @@ int main(int argc, char** argv) {
   if (argc > 1 && std::string(argv[1]) == "--benchmark") {
     leveldb::BM_LogAndApply(1000, 1);
     leveldb::BM_LogAndApply(1000, 100);
-    leveldb::BM_LogAndApply(1000, 10000)
+    leveldb::BM_LogAndApply(1000, 10000);
+    leveldb::BM_LogAndApply(100, 100000);
+    return 0;
+  }
+
+  return leveldb::test::RunAllTests();
+}
