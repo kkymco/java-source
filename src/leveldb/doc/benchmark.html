@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>LevelDB Benchmarks</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style>
+body {
+  font-family:Helvetica,sans-serif;
+  padding:20px;
+}
+
+h2 {
+  padding-top:30px;
+}
+
+table.bn {
+  width:800px;
+  border-collapse:collapse;
+  border:0;
+  padding:0;
+}
+
+table.bnbase {
+  width:650px;
+}
+
+table.bn td {
+  padding:2px 0;
+}
+
+table.bn td.c1 {
+  font-weight:bold;
+  width:150px;
+}
+
+table.bn td.c1 div.e {
+  float:right;
+  font-weight:normal;
+}
+
+table.bn td.c2 {
+  width:150px;
+  text-align:right;
+  padding:2px;
+}
+
+table.bn td.c3 {
+  width:350px;
+}
+
+table.bn td.c4 {
+  width:150px;
+  font-size:small;
+  padding-left:4px;
+}
+
+/* chart bars */
+div.bldb {
+  background-color:#0255df;
+}
+
+div.bkct {
+  background-color:#df5555;
+}
+
+div.bsql {
+  background-color:#aadf55;
+}
+
+.code {
+  font-family:monospace;
+  font-size:large;
+}
+
+.todo {
+  color: red;
+}
+
+</style>
+</head>
+<body>
+<h1>LevelDB Benchmarks</h1>
+<p>Google, July 2011</p>
+<hr>
+
+<p>In order to test LevelDB's performance, we 
