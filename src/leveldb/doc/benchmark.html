@@ -109,4 +109,69 @@ parameters are varied.  For the baseline:</p>
 <ul>
 	<li> Each database is allowed 4 MB of cache memory.</li>
         <li> Databases are opened in <em>asynchronous</em> write mode.
-             (LevelDB's sync 
+             (LevelDB's sync option, TreeDB's OAUTOSYNC option, and
+             SQLite3's synchronous options are all turned off).  I.e.,
+             every write is pushed to the operating system, but the
+             benchmark does not wait for the write to reach the disk.</li>
+	<li> Keys are 16 bytes each.</li>
+        <li> Value are 100 bytes each (with enough redundancy so that
+             a simple compressor shrinks them to 50% of their original
+             size).</li>
+	<li> Sequential reads/writes traverse the key space in increasing order.</li>
+	<li> Random reads/writes traverse the key space in random order.</li>
+</ul>
+
+<h3>A. Sequential Reads</h3>
+<table class="bn bnbase">
+<tr><td class="c1">LevelDB</td>
+    <td class="c2">4,030,000 ops/sec</td>
+    <td class="c3"><div class="bldb" style="width:350px">&nbsp;</div></td>
+<tr><td class="c1">Kyoto TreeDB</td>
+    <td class="c2">1,010,000 ops/sec</td>
+    <td class="c3"><div class="bkct" style="width:95px">&nbsp;</div></td>
+<tr><td class="c1">SQLite3</td>
+    <td class="c2">383,000 ops/sec</td>
+    <td class="c3"><div class="bsql" style="width:33px">&nbsp;</div></td>
+</table>
+<h3>B. Random Reads</h3>
+<table class="bn bnbase">
+<tr><td class="c1">LevelDB</td>
+    <td class="c2">129,000 ops/sec</td>
+    <td class="c3"><div class="bldb" style="width:298px">&nbsp;</div></td>
+<tr><td class="c1">Kyoto TreeDB</td>
+    <td class="c2">151,000 ops/sec</td>
+    <td class="c3"><div class="bkct" style="width:350px">&nbsp;</div></td>
+<tr><td class="c1">SQLite3</td>
+    <td class="c2">134,000 ops/sec</td>
+    <td class="c3"><div class="bsql" style="width:310px">&nbsp;</div></td>
+</table>
+<h3>C. Sequential Writes</h3>
+<table class="bn bnbase">
+<tr><td class="c1">LevelDB</td>
+    <td class="c2">779,000 ops/sec</td>
+    <td class="c3"><div class="bldb" style="width:350px">&nbsp;</div></td>
+<tr><td class="c1">Kyoto TreeDB</td>
+    <td class="c2">342,000 ops/sec</td>
+    <td class="c3"><div class="bkct" style="width:154px">&nbsp;</div></td>
+<tr><td class="c1">SQLite3</td>
+    <td class="c2">48,600 ops/sec</td>
+    <td class="c3"><div class="bsql" style="width:22px">&nbsp;</div></td>
+</table>
+<h3>D. Random Writes</h3>
+<table class="bn bnbase">
+<tr><td class="c1">LevelDB</td>
+    <td class="c2">164,000 ops/sec</td>
+    <td class="c3"><div class="bldb" style="width:350px">&nbsp;</div></td>
+<tr><td class="c1">Kyoto TreeDB</td>
+    <td class="c2">88,500 ops/sec</td>
+    <td class="c3"><div class="bkct" style="width:188px">&nbsp;</div></td>
+<tr><td class="c1">SQLite3</td>
+    <td class="c2">9,860 ops/sec</td>
+    <td class="c3"><div class="bsql" style="width:21px">&nbsp;</div></td>
+</table>
+
+<p>LevelDB outperforms both SQLite3 and TreeDB in sequential and random write operations and sequential read operations. Kyoto Cabinet has the fastest random read operations.</p>
+
+<h2>2. Write Performance under Different Configurations</h2>
+<h3>A. Large Values </h3>
+<p>For this benchmark, we start with an empty database, and write 100,000 byte values (~50% compressible). To keep the benchmark runn
