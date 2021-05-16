@@ -148,4 +148,73 @@ extern void leveldb_repair_db(
 
 /* Iterator */
 
-extern void le
+extern void leveldb_iter_destroy(leveldb_iterator_t*);
+extern unsigned char leveldb_iter_valid(const leveldb_iterator_t*);
+extern void leveldb_iter_seek_to_first(leveldb_iterator_t*);
+extern void leveldb_iter_seek_to_last(leveldb_iterator_t*);
+extern void leveldb_iter_seek(leveldb_iterator_t*, const char* k, size_t klen);
+extern void leveldb_iter_next(leveldb_iterator_t*);
+extern void leveldb_iter_prev(leveldb_iterator_t*);
+extern const char* leveldb_iter_key(const leveldb_iterator_t*, size_t* klen);
+extern const char* leveldb_iter_value(const leveldb_iterator_t*, size_t* vlen);
+extern void leveldb_iter_get_error(const leveldb_iterator_t*, char** errptr);
+
+/* Write batch */
+
+extern leveldb_writebatch_t* leveldb_writebatch_create();
+extern void leveldb_writebatch_destroy(leveldb_writebatch_t*);
+extern void leveldb_writebatch_clear(leveldb_writebatch_t*);
+extern void leveldb_writebatch_put(
+    leveldb_writebatch_t*,
+    const char* key, size_t klen,
+    const char* val, size_t vlen);
+extern void leveldb_writebatch_delete(
+    leveldb_writebatch_t*,
+    const char* key, size_t klen);
+extern void leveldb_writebatch_iterate(
+    leveldb_writebatch_t*,
+    void* state,
+    void (*put)(void*, const char* k, size_t klen, const char* v, size_t vlen),
+    void (*deleted)(void*, const char* k, size_t klen));
+
+/* Options */
+
+extern leveldb_options_t* leveldb_options_create();
+extern void leveldb_options_destroy(leveldb_options_t*);
+extern void leveldb_options_set_comparator(
+    leveldb_options_t*,
+    leveldb_comparator_t*);
+extern void leveldb_options_set_filter_policy(
+    leveldb_options_t*,
+    leveldb_filterpolicy_t*);
+extern void leveldb_options_set_create_if_missing(
+    leveldb_options_t*, unsigned char);
+extern void leveldb_options_set_error_if_exists(
+    leveldb_options_t*, unsigned char);
+extern void leveldb_options_set_paranoid_checks(
+    leveldb_options_t*, unsigned char);
+extern void leveldb_options_set_env(leveldb_options_t*, leveldb_env_t*);
+extern void leveldb_options_set_info_log(leveldb_options_t*, leveldb_logger_t*);
+extern void leveldb_options_set_write_buffer_size(leveldb_options_t*, size_t);
+extern void leveldb_options_set_max_open_files(leveldb_options_t*, int);
+extern void leveldb_options_set_cache(leveldb_options_t*, leveldb_cache_t*);
+extern void leveldb_options_set_block_size(leveldb_options_t*, size_t);
+extern void leveldb_options_set_block_restart_interval(leveldb_options_t*, int);
+
+enum {
+  leveldb_no_compression = 0,
+  leveldb_snappy_compression = 1
+};
+extern void leveldb_options_set_compression(leveldb_options_t*, int);
+
+/* Comparator */
+
+extern leveldb_comparator_t* leveldb_comparator_create(
+    void* state,
+    void (*destructor)(void*),
+    int (*compare)(
+        void*,
+        const char* a, size_t alen,
+        const char* b, size_t blen),
+    const char* (*name)(void*));
+extern void leveldb_comparator_destroy(le
