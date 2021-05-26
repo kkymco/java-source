@@ -173,4 +173,23 @@ struct WriteOptions {
   // slower.
   //
   // If this flag is false, and the machine crashes, some recent
-  // writes may be lost.  Note that if it is just the process th
+  // writes may be lost.  Note that if it is just the process that
+  // crashes (i.e., the machine does not reboot), no writes will be
+  // lost even if sync==false.
+  //
+  // In other words, a DB write with sync==false has similar
+  // crash semantics as the "write()" system call.  A DB write
+  // with sync==true has similar crash semantics to a "write()"
+  // system call followed by "fsync()".
+  //
+  // Default: false
+  bool sync;
+
+  WriteOptions()
+      : sync(false) {
+  }
+};
+
+}  // namespace leveldb
+
+#endif  // STORAGE_LEVELDB_INCLUDE_OPTIONS_H_
