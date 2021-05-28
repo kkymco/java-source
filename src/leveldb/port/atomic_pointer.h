@@ -185,4 +185,40 @@ class AtomicPointer {
  public:
   AtomicPointer() { }
   explicit AtomicPointer(void* v) : rep_(v) { }
-  in
+  inline void* Acquire_Load() const {
+    void* val    ;
+    __asm__ __volatile__ (
+        "ld8.acq %[val] = [%[rep_]] \n\t"
+        : [val] "=r" (val)
+        : [rep_] "r" (&rep_)
+        : "memory"
+        );
+    return val;
+  }
+  inline void Release_Store(void* v) {
+    __asm__ __volatile__ (
+        "st8.rel [%[rep_]] = %[v]  \n\t"
+        :
+        : [rep_] "r" (&rep_), [v] "r" (v)
+        : "memory"
+        );
+  }
+  inline void* NoBarrier_Load() const { return rep_; }
+  inline void NoBarrier_Store(void* v) { rep_ = v; }
+};
+
+// We have neither MemoryBarrier(), nor <cstdatomic>
+#else
+#error Please implement AtomicPointer for this platform.
+
+#endif
+
+#undef LEVELDB_HAVE_MEMORY_BARRIER
+#undef ARCH_CPU_X86_FAMILY
+#undef ARCH_CPU_ARM_FAMILY
+#undef ARCH_CPU_PPC_FAMILY
+
+}  // namespace port
+}  // namespace leveldb
+
+#endif  // PORT_ATOMIC_POINTER_H_
