@@ -157,4 +157,18 @@ inline bool Snappy_GetUncompressedLength(const char* input, size_t length,
 
 inline bool Snappy_Uncompress(const char* input, size_t length,
                               char* output) {
-#
+#ifdef SNAPPY
+  return snappy::RawUncompress(input, length, output);
+#else
+  return false;
+#endif
+}
+
+inline bool GetHeapProfile(void (*func)(void*, const char*, int), void* arg) {
+  return false;
+}
+
+}
+}
+
+#endif  // STORAGE_LEVELDB_PORT_PORT_WIN_H_
