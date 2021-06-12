@@ -131,4 +131,64 @@ const char* GetVarint32PtrFallback(const char* p,
 bool GetVarint32(Slice* input, uint32_t* value) {
   const char* p = input->data();
   const char* limit = p + input->size();
-  cons
+  const char* q = GetVarint32Ptr(p, limit, value);
+  if (q == NULL) {
+    return false;
+  } else {
+    *input = Slice(q, limit - q);
+    return true;
+  }
+}
+
+const char* GetVarint64Ptr(const char* p, const char* limit, uint64_t* value) {
+  uint64_t result = 0;
+  for (uint32_t shift = 0; shift <= 63 && p < limit; shift += 7) {
+    uint64_t byte = *(reinterpret_cast<const unsigned char*>(p));
+    p++;
+    if (byte & 128) {
+      // More bytes are present
+      result |= ((byte & 127) << shift);
+    } else {
+      result |= (byte << shift);
+      *value = result;
+      return reinterpret_cast<const char*>(p);
+    }
+  }
+  return NULL;
+}
+
+bool GetVarint64(Slice* input, uint64_t* value) {
+  const char* p = input->data();
+  const char* limit = p + input->size();
+  const char* q = GetVarint64Ptr(p, limit, value);
+  if (q == NULL) {
+    return false;
+  } else {
+    *input = Slice(q, limit - q);
+    return true;
+  }
+}
+
+const char* GetLengthPrefixedSlice(const char* p, const char* limit,
+                                   Slice* result) {
+  uint32_t len;
+  p = GetVarint32Ptr(p, limit, &len);
+  if (p == NULL) return NULL;
+  if (p + len > limit) return NULL;
+  *result = Slice(p, len);
+  return p + len;
+}
+
+bool GetLengthPrefixedSlice(Slice* input, Slice* result) {
+  uint32_t len;
+  if (GetVarint32(input, &len) &&
+      input->size() >= len) {
+    *result = Slice(input->data(), len);
+    input->remove_prefix(len);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+}  // namespace leveldb
