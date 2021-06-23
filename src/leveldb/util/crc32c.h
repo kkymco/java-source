@@ -34,4 +34,12 @@ inline uint32_t Mask(uint32_t crc) {
 }
 
 // Return the crc whose masked representation is masked_crc.
-inline uint32_t Unmask(uint32_t 
+inline uint32_t Unmask(uint32_t masked_crc) {
+  uint32_t rot = masked_crc - kMaskDelta;
+  return ((rot >> 17) | (rot << 15));
+}
+
+}  // namespace crc32c
+}  // namespace leveldb
+
+#endif  // STORAGE_LEVELDB_UTIL_CRC32C_H_
