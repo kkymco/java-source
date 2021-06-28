@@ -310,4 +310,141 @@ WorkItemWrapper::WorkItemWrapper( ScheduleProc proc_,void* content_ ) :
 DWORD WINAPI WorkItemWrapperProc(LPVOID pContent)
 {
     WorkItemWrapper* item = static_cast<WorkItemWrapper*>(pContent);
-    S
+    ScheduleProc TempProc = item->proc;
+    void* arg = item->pContent;
+    delete item;
+    TempProc(arg);
+    return 0;
+}
+
+size_t GetPageSize()
+{
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return std::max(si.dwPageSize,si.dwAllocationGranularity);
+}
+
+const size_t g_PageSize = GetPageSize();
+
+
+Win32SequentialFile::Win32SequentialFile( const std::string& fname ) :
+    _filename(fname),_hFile(NULL)
+{
+    _Init();
+}
+
+Win32SequentialFile::~Win32SequentialFile()
+{
+    _CleanUp();
+}
+
+Status Win32SequentialFile::Read( size_t n, Slice* result, char* scratch )
+{
+    Status sRet;
+    DWORD hasRead = 0;
+    if(_hFile && ReadFile(_hFile,scratch,n,&hasRead,NULL) ){
+        *result = Slice(scratch,hasRead);
+    } else {
+        sRet = Status::IOError(_filename, Win32::GetLastErrSz() );
+    }
+    return sRet;
+}
+
+Status Win32SequentialFile::Skip( uint64_t n )
+{
+    Status sRet;
+    LARGE_INTEGER Move,NowPointer;
+    Move.QuadPart = n;
+    if(!SetFilePointerEx(_hFile,Move,&NowPointer,FILE_CURRENT)){
+        sRet = Status::IOError(_filename,Win32::GetLastErrSz());
+    }
+    return sRet;
+}
+
+BOOL Win32SequentialFile::isEnable()
+{
+    return _hFile ? TRUE : FALSE;
+}
+
+BOOL Win32SequentialFile::_Init()
+{
+	std::wstring path;
+	ToWidePath(_filename, path);
+	_hFile = CreateFileW(path.c_str(),
+                         GENERIC_READ,
+                         FILE_SHARE_READ,
+                         NULL,
+                         OPEN_EXISTING,
+                         FILE_ATTRIBUTE_NORMAL,
+                         NULL);
+    return _hFile ? TRUE : FALSE;
+}
+
+void Win32SequentialFile::_CleanUp()
+{
+    if(_hFile){
+        CloseHandle(_hFile);
+        _hFile = NULL;
+    }
+}
+
+Win32RandomAccessFile::Win32RandomAccessFile( const std::string& fname ) :
+    _filename(fname),_hFile(NULL)
+{
+	std::wstring path;
+	ToWidePath(fname, path);
+    _Init( path.c_str() );
+}
+
+Win32RandomAccessFile::~Win32RandomAccessFile()
+{
+    _CleanUp();
+}
+
+Status Win32RandomAccessFile::Read(uint64_t offset,size_t n,Slice* result,char* scratch) const
+{
+    Status sRet;
+    OVERLAPPED ol = {0};
+    ZeroMemory(&ol,sizeof(ol));
+    ol.Offset = (DWORD)offset;
+    ol.OffsetHigh = (DWORD)(offset >> 32);
+    DWORD hasRead = 0;
+    if(!ReadFile(_hFile,scratch,n,&hasRead,&ol))
+        sRet = Status::IOError(_filename,Win32::GetLastErrSz());
+    else
+        *result = Slice(scratch,hasRead);
+    return sRet;
+}
+
+BOOL Win32RandomAccessFile::_Init( LPCWSTR path )
+{
+    BOOL bRet = FALSE;
+    if(!_hFile)
+        _hFile = ::CreateFileW(path,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,NULL);
+    if(!_hFile || _hFile == INVALID_HANDLE_VALUE )
+        _hFile = NULL;
+    else
+        bRet = TRUE;
+    return bRet;
+}
+
+BOOL Win32RandomAccessFile::isEnable()
+{
+    return _hFile ? TRUE : FALSE;
+}
+
+void Win32RandomAccessFile::_CleanUp()
+{
+    if(_hFile){
+        ::CloseHandle(_hFile);
+        _hFile = NULL;
+    }
+}
+
+size_t Win32MapFile::_Roundup( size_t x, size_t y )
+{
+    return ((x + y - 1) / y) * y;
+}
+
+size_t Win32
