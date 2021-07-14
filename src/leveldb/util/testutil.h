@@ -30,4 +30,24 @@ extern Slice CompressibleString(Random* rnd, double compressed_fraction,
 class ErrorEnv : public EnvWrapper {
  public:
   bool writable_file_error_;
-  int num_writ
+  int num_writable_file_errors_;
+
+  ErrorEnv() : EnvWrapper(Env::Default()),
+               writable_file_error_(false),
+               num_writable_file_errors_(0) { }
+
+  virtual Status NewWritableFile(const std::string& fname,
+                                 WritableFile** result) {
+    if (writable_file_error_) {
+      ++num_writable_file_errors_;
+      *result = NULL;
+      return Status::IOError(fname, "fake error");
+    }
+    return target()->NewWritableFile(fname, result);
+  }
+};
+
+}  // namespace test
+}  // namespace leveldb
+
+#endif  // STORAGE_LEVELDB_UTIL_TESTUTIL_H_
