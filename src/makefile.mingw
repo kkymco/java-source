@@ -82,3 +82,88 @@ OBJS= \
     obj/skein.o \
     obj/keccak.o \
     obj/shavite.o \
+    obj/jh.o \
+    obj/luffa.o \
+    obj/cubehash.o \
+    obj/echo.o \
+    obj/simd.o \
+    obj/alert.o \
+    obj/version.o \
+    obj/checkpoints.o \
+    obj/netbase.o \
+    obj/addrman.o \
+    obj/crypter.o \
+    obj/key.o \
+    obj/db.o \
+    obj/init.o \
+    obj/irc.o \
+    obj/keystore.o \
+    obj/main.o \
+    obj/miner.o \
+    obj/net.o \
+    obj/protocol.o \
+    obj/bitcoinrpc.o \
+    obj/rpcdump.o \
+    obj/rpcnet.o \
+    obj/rpcmining.o \
+    obj/rpcwallet.o \
+    obj/rpcblockchain.o \
+    obj/rpcrawtransaction.o \
+    obj/script.o \
+    obj/sync.o \
+    obj/util.o \
+    obj/wallet.o \
+    obj/walletdb.o \
+    obj/noui.o \
+    obj/kernel.o \
+    obj/pbkdf2.o \
+    obj/scrypt.o \
+    obj/scrypt-arm.o \
+    obj/scrypt-x86.o \
+    obj/scrypt-x86_64.o 
+
+all: SuperCoind.exe
+
+LIBS += $(CURDIR)/leveldb/libleveldb.a $(CURDIR)/leveldb/libmemenv.a
+DEFS += $(addprefix -I,$(CURDIR)/leveldb/include)
+DEFS += $(addprefix -I,$(CURDIR)/leveldb/helpers)
+OBJS += obj/txdb-leveldb.o
+leveldb/libleveldb.a:
+	cd leveldb; make; cd ..
+obj/txdb-leveldb.o: leveldb/libleveldb.a
+
+obj/%.o: %.cpp $(HEADERS)
+	g++ -c $(CFLAGS) -o $@ $<
+
+
+obj/scrypt-x86.o: scrypt-x86.S
+	$(CXX) -c $(xCXXFLAGS) -MMD -o $@ $<
+
+obj/scrypt-x86_64.o: scrypt-x86_64.S
+	$(CXX) -c $(xCXXFLAGS) -MMD -o $@ $<
+
+obj/scrypt-arm.o: scrypt-arm.S
+	$(CXX) -c $(xCXXFLAGS) -MMD -o $@ $<
+	
+obj/%.o: %.c
+	$(CXX) -c $(xCXXFLAGS) -fpermissive -MMD -MF $(@:%.o=%.d) -o $@ $<
+	@cp $(@:%.o=%.d) $(@:%.o=%.P); \
+	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
+              -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
+	      
+	rm -f $(@:%.o=%.d)
+obj/%.o: %.cpp
+	$(CXX) -c $(xCXXFLAGS) -MMD -MF $(@:%.o=%.d) -o $@ $<
+	@cp $(@:%.o=%.d) $(@:%.o=%.P); \
+	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
+	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
+	  rm -f $(@:%.o=%.d)
+
+SuperCoind.exe: $(OBJS:obj/%=obj/%)
+	g++ $(CFLAGS) $(LDFLAGS) -o $@ $(LIBPATHS) $^ $(LIBS)
+
+clean:
+	-del /Q SuperCoind
+	-del /Q obj\*
+
+FORCE:
