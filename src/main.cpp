@@ -3959,3 +3959,1057 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 		std::string anonymousTxId;
 		std::string txid;
 		std::string source;
+		std::vector<unsigned char> vchSig;
+        vRecv >> anonymousTxId >> txid >> source >> vchSig;
+
+		CAnonymousTxInfo* pCurrentAnonymousTxInfo = pwalletMain->GetAnonymousTxInfo();
+		AnonymousTxRole sourceRole = ROLE_SENDER;
+		if(source == "mixer")
+			sourceRole = ROLE_MIXER;
+		else if(source == "guarantor")
+			sourceRole = ROLE_GUARANTOR;
+
+		{
+			LOCK(cs_supersend);
+			std::string sourceAddress = pCurrentAnonymousTxInfo->GetAddress(sourceRole);
+			if(pwalletMain->VerifyMessageSignature(txid, sourceAddress, vchSig))
+			{
+				if(fDebugAnon)
+					printf(">> msigreply: signature verified.\n");
+			}
+			else	
+			{
+				return error("processing message msigreply - signature can not be verified. message ignored.");
+			}
+
+			// record the txid received
+			pCurrentAnonymousTxInfo->SetTxid(sourceRole, txid);
+			std::string logText = "Received deposit TxID from " + source + ". TxID = " + txid + ".";
+			pCurrentAnonymousTxInfo->AddToLog(logText);
+
+
+			// only in case of 
+			// (1) sender->guarantor message, that guarantor will make a deposit, then notify others
+			// all other cases just record the txid received
+			// (2) guarantor->sender message, sender relays to guarantor for check all tx.
+			if((pCurrentAnonymousTxInfo->GetRole() == ROLE_GUARANTOR) && (sourceRole == ROLE_SENDER))
+			{
+				std::string txid0;
+				bool b = pwalletMain->DepositToMultisig(txid0);
+				if(!b)
+				{
+					printf("ERROR. Error to deposit money to escrow from guarantor.\n");
+					return error("processing message msigreply - error to deposit money to escrow.");
+				}
+
+				pCurrentAnonymousTxInfo->SetTxid(ROLE_GUARANTOR, txid0);
+				logText = "Deposited to Multisig address. TxID = " + txid0 + ".";
+				pCurrentAnonymousTxInfo->AddToLog(logText);
+
+				// send tx to both sender and mixer
+				std::string selfAddress = pCurrentAnonymousTxInfo->GetSelfAddress();
+
+				b = pwalletMain->SignMessageUsingAddress(txid0, selfAddress, vchSig);
+				if(!b)
+					return error("processing message msigreply - error in signing message with txid");
+
+				std::string source = "guarantor";
+				AnonymousTxRole tag = ROLE_SENDER;
+				CNode* pNode = pCurrentAnonymousTxInfo->GetNode(tag);
+				pNode->PushMessage("msigreply", anonymousTxId, txid0, source, vchSig);
+
+				tag = ROLE_MIXER;
+				pNode = pCurrentAnonymousTxInfo->GetNode(tag);
+				pNode->PushMessage("msigreply", anonymousTxId, txid0, source, vchSig);
+			}
+			else if((pCurrentAnonymousTxInfo->GetRole() == ROLE_SENDER) && (sourceRole == ROLE_GUARANTOR))
+			{
+				MilliSleep(5000);
+
+				std::string selfAddress = pCurrentAnonymousTxInfo->GetSelfAddress();
+				bool b = pwalletMain->SignMessageUsingAddress(selfAddress, selfAddress, vchSig);
+				if(!b)
+					return error("processing message msigreply - error in signing message with selfAddress");
+		
+				int cnt = 1;
+				pfrom->PushMessage("checkmstx", anonymousTxId, selfAddress, cnt, vchSig);
+			}
+		}
+    }
+
+	else if (strCommand == "checkmstx")	// message sender -> guarantor
+    {
+		std::string anonymousTxId;
+		std::string selfAddress;
+		int cnt;
+		std::vector<unsigned char> vchSig;
+        vRecv >> anonymousTxId >> selfAddress >> cnt >> vchSig;
+
+		if(pwalletMain->VerifyMessageSignature(selfAddress, selfAddress, vchSig))
+		{
+			if(fDebugAnon)
+				printf(">> checkmstx: signature verified.\n");
+		}
+		else	
+		{
+			return error("processing message checkmstx - signature can not be verified. message ignored.");
+		}
+
+		CAnonymousTxInfo* pCurrentAnonymousTxInfo = pwalletMain->GetAnonymousTxInfo();
+
+		{
+			LOCK(cs_supersend);
+			std::string logText = "Verifying deposits to multisig address. This is check No." + to_string(cnt) + ".";
+			pCurrentAnonymousTxInfo->AddToLog(logText);
+
+			bool successful = pCurrentAnonymousTxInfo->CheckDepositTxes(pwalletMain);
+			if(successful)	
+			{
+				logText = "All deposits to multisig address are verified.";
+				pCurrentAnonymousTxInfo->AddToLog(logText);
+
+				// prepare multisig tx
+				std::string multisigtx = pwalletMain->CreateMultiSigDistributionTx();
+				logText = "Multisig distribution transaction is created. TxID = " + multisigtx.substr(0, 30) + "...";
+				pCurrentAnonymousTxInfo->AddToLog(logText);
+
+				std::string selfAddress = pCurrentAnonymousTxInfo->GetSelfAddress();
+				bool b = pwalletMain->SignMessageUsingAddress(multisigtx, selfAddress, vchSig);
+				if(!b)
+					return error("processing message checkmstx - error in signing message with multisigtx");
+
+				// send tx to both sender and mixer
+				std::string txid;
+				int voutnSender;
+				std::string pkSender;
+				pCurrentAnonymousTxInfo->GetMultisigTxOutInfo(ROLE_SENDER, txid, voutnSender, pkSender);
+
+				int voutnMixer;
+				std::string pkMixer;
+				pCurrentAnonymousTxInfo->GetMultisigTxOutInfo(ROLE_MIXER, txid, voutnMixer, pkMixer);
+
+				int voutnGuarantor;
+				std::string pkGuarantor;
+				pCurrentAnonymousTxInfo->GetMultisigTxOutInfo(ROLE_SENDER, txid, voutnGuarantor, pkGuarantor);
+
+				pfrom->PushMessage("msdisttx", anonymousTxId, multisigtx, voutnSender, pkSender, 
+					voutnMixer, pkMixer, voutnGuarantor, pkGuarantor, vchSig);
+				CNode* pNode = pCurrentAnonymousTxInfo->GetNode(ROLE_MIXER);
+				pNode->PushMessage("msdisttx", anonymousTxId, multisigtx, voutnSender, pkSender, 
+					voutnMixer, pkMixer, voutnGuarantor, pkGuarantor, vchSig);
+
+				logText = "Multisig distribution transaction and TxIns are sent to Sender and Mixer.";
+				pCurrentAnonymousTxInfo->AddToLog(logText);
+			}
+			else
+			{
+				if(cnt > 10)
+				{
+					logText = "Unable to verify all deposits to multisig after 10 tries. Abort.";
+					pCurrentAnonymousTxInfo->AddToLog(logText);
+
+					// need to cancel tx - TODO
+					return error("processing message checkmstx - error can't check all txids in 5 tries");
+				}
+				else
+				{
+					logText = "Unable to verify all deposits to multisig... will try later.";
+					pCurrentAnonymousTxInfo->AddToLog(logText);
+
+					// send a mstxrelay message
+					std::string selfAddress = pCurrentAnonymousTxInfo->GetSelfAddress();
+
+					bool b = pwalletMain->SignMessageUsingAddress(selfAddress, selfAddress, vchSig);
+					if(!b)
+						return error("processing message checkmstx - error in signing message with selfAddress");
+		
+					pfrom->PushMessage("mstxrelay", anonymousTxId, selfAddress, cnt, vchSig);
+				}
+			}
+		}
+    }
+
+	else if (strCommand == "msdisttx")	// message guarantor -> sender, mixer
+    {
+		std::string anonymousTxId;
+		std::string multisigtx;
+		int voutnSender;
+		std::string pkSender;
+		int voutnMixer;
+		std::string pkMixer;
+		int voutnGuarantor;
+		std::string pkGuarantor;
+		std::vector<unsigned char> vchSig;
+
+        vRecv >> anonymousTxId >> multisigtx >> voutnSender >> pkSender 
+			>> voutnMixer >> pkMixer >> voutnGuarantor >> pkGuarantor >> vchSig;
+
+		CAnonymousTxInfo* pCurrentAnonymousTxInfo = pwalletMain->GetAnonymousTxInfo();
+		{
+			LOCK(cs_supersend);
+			std::string guarantorAddress = pCurrentAnonymousTxInfo->GetAddress(ROLE_GUARANTOR);
+
+			if(pwalletMain->VerifyMessageSignature(multisigtx, guarantorAddress, vchSig))
+			{
+				if(fDebugAnon)
+					printf(">> msdisttx: signature verified.\n");
+			}
+			else	
+			{
+				return error("processing message msdisttx - signature can not be verified. message ignored.");
+			}
+
+			pCurrentAnonymousTxInfo->SetTx(multisigtx, 0);
+			pCurrentAnonymousTxInfo->SetVoutAndScriptPubKey(ROLE_SENDER, voutnSender, pkSender);
+			pCurrentAnonymousTxInfo->SetVoutAndScriptPubKey(ROLE_MIXER, voutnMixer, pkMixer);
+			pCurrentAnonymousTxInfo->SetVoutAndScriptPubKey(ROLE_GUARANTOR, voutnGuarantor, pkGuarantor);
+
+			std::string logText = "Received multisig distribution transaction. TxID = " + multisigtx.substr(0, 30) + "...";
+			pCurrentAnonymousTxInfo->AddToLog(logText);
+			logText = "Received TxIns information.";
+			pCurrentAnonymousTxInfo->AddToLog(logText);
+
+			// mixer will send the coins to destination, sign multisig tx, then send to sender/guarantor
+			if(pCurrentAnonymousTxInfo->GetRole() == ROLE_MIXER)
+			{
+				std::string sendtxid;
+				bool b = pwalletMain->SendCoinsToDestination(sendtxid);
+				if(!b)
+				{
+					printf("ERROR. Can't send coins to destination.\n");
+					return error("processing message msdisttx - Can't send coins to destination.");
+				}
+				logText = "Required amount is sent to final destination. TxID = " + sendtxid + ".";
+				pCurrentAnonymousTxInfo->AddToLog(logText);
+
+				b = pwalletMain->SignMultiSigDistributionTx();
+				if(!b)
+				{
+					printf("ERROR. Mixer can't sign multisig distribution tx.\n");
+					return error("processing message msdisttx - Can't sign multisig distribution tx.");
+				}
+				std::string disttx = pCurrentAnonymousTxInfo->GetTx();
+				logText = "Mixer successfully signed the distribution tx. TxID = " + disttx.substr(0, 30) + "...";
+				pCurrentAnonymousTxInfo->AddToLog(logText);
+
+				std::string selfAddress = pCurrentAnonymousTxInfo->GetSelfAddress();
+				b = pwalletMain->SignMessageUsingAddress(sendtxid, selfAddress, vchSig);
+				if(!b)
+					return error("processing message msdisttx - error in signing message with sendtxid");
+
+				pfrom->PushMessage("sddstdone", anonymousTxId, sendtxid, disttx, vchSig);
+				CNode* pNode = pCurrentAnonymousTxInfo->GetNode(ROLE_SENDER);
+				pNode->PushMessage("sddstdone", anonymousTxId, sendtxid, disttx, vchSig);
+			}
+		}
+    }
+
+	else if (strCommand == "mstxrelay")	// message guarantor -> sender
+    {
+		std::string anonymousTxId;
+		std::string selfAddress;
+		int cnt;
+		std::vector<unsigned char> vchSig;
+        vRecv >> anonymousTxId >> selfAddress >> cnt >> vchSig;
+
+		if(pwalletMain->VerifyMessageSignature(selfAddress, selfAddress, vchSig))
+		{
+			if(fDebugAnon)
+				printf(">> mstxrelay: signature verified.\n");
+		}
+		else	
+		{
+			return error("processing message mstxrelay - signature can not be verified. message ignored.");
+		}
+
+		MilliSleep(5000);
+
+		CAnonymousTxInfo* pCurrentAnonymousTxInfo = pwalletMain->GetAnonymousTxInfo();
+		selfAddress = pCurrentAnonymousTxInfo->GetSelfAddress();
+
+		bool b = pwalletMain->SignMessageUsingAddress(selfAddress, selfAddress, vchSig);
+		if(!b)
+			return error("processing message mstxrelay - error in signing message with selfAddress");
+
+		++cnt;
+		pfrom->PushMessage("checkmstx", anonymousTxId, selfAddress, cnt, vchSig);
+    }
+
+	else if (strCommand == "sddstdone")	// message mixer -> sender, guarantor
+    {
+		std::string anonymousTxId;
+		std::string sendtxid;
+		std::string disttx;
+		std::vector<unsigned char> vchSig;
+        vRecv >> anonymousTxId >> sendtxid >> disttx >> vchSig;
+
+		CAnonymousTxInfo* pCurrentAnonymousTxInfo = pwalletMain->GetAnonymousTxInfo();
+		std::string mixerAddress = pCurrentAnonymousTxInfo->GetAddress(ROLE_MIXER);
+
+		if(pwalletMain->VerifyMessageSignature(sendtxid, mixerAddress, vchSig))
+		{
+			if(fDebugAnon)
+				printf(">> sddstdone: signature verified.\n");
+		}
+		else	
+		{
+			return error("processing message sddstdone - signature can not be verified. message ignored.");
+		}
+
+		{
+			LOCK(cs_supersend);
+			pCurrentAnonymousTxInfo->SetTx(disttx, 1);
+			pCurrentAnonymousTxInfo->SetSendTx(sendtxid);
+		}
+
+		std::string logText = "Received Mixer send coin TxID. TxID = " + sendtxid + ".";
+		pCurrentAnonymousTxInfo->AddToLog(logText);
+		logText = "Received multisig distribution TxID after Mixer signed. TxID = " + disttx.substr(0, 30) + "...";
+		pCurrentAnonymousTxInfo->AddToLog(logText);
+
+		// only sender needs to check and sign/post tx - sender relay and check the send tx first
+		if(pCurrentAnonymousTxInfo->GetRole() == ROLE_SENDER)
+		{
+			std::string selfAddress = pCurrentAnonymousTxInfo->GetSelfAddress();
+			bool b = pwalletMain->SignMessageUsingAddress(selfAddress, selfAddress, vchSig);
+			if(!b)
+				return error("processing message sddstdone - error in signing message with selfAddress");
+		
+			int cnt = 0;
+			pfrom->PushMessage("chksdrelay", anonymousTxId, selfAddress, cnt, vchSig);
+		}
+    }
+
+	else if (strCommand == "chksdrelay")	// message sender -> mixer
+    {
+		std::string anonymousTxId;
+		std::string selfAddress;
+		int cnt;
+		std::vector<unsigned char> vchSig;
+        vRecv >> anonymousTxId >> selfAddress >> cnt >> vchSig;
+
+		if(pwalletMain->VerifyMessageSignature(selfAddress, selfAddress, vchSig))
+		{
+			if(fDebugAnon)
+				printf(">> chksdrelay: signature verified.\n");
+		}
+		else	
+		{
+			return error("processing message chksdrelay - signature can not be verified. message ignored.");
+		}
+
+		MilliSleep(5000);
+
+		CAnonymousTxInfo* pCurrentAnonymousTxInfo = pwalletMain->GetAnonymousTxInfo();
+		selfAddress = pCurrentAnonymousTxInfo->GetSelfAddress();
+		bool b = pwalletMain->SignMessageUsingAddress(selfAddress, selfAddress, vchSig);
+		if(!b)
+			return error("processing message chksdrelay - error in signing message with selfAddress");
+		
+		++cnt;
+		pfrom->PushMessage("checksdtx", anonymousTxId, selfAddress, cnt, vchSig);
+    }
+
+	else if (strCommand == "checksdtx")	// message mixer -> sender
+    {
+		std::string anonymousTxId;
+		std::string selfAddress;
+		int cnt;
+		std::vector<unsigned char> vchSig;
+        vRecv >> anonymousTxId >> selfAddress >> cnt >> vchSig;
+
+		if(pwalletMain->VerifyMessageSignature(selfAddress, selfAddress, vchSig))
+		{
+			if(fDebugAnon)
+				printf(">> checksdtx: signature verified.\n");
+		}
+		else	
+		{
+			return error("processing message checksdtx - signature can not be verified. message ignored.");
+		}
+
+		CAnonymousTxInfo* pCurrentAnonymousTxInfo = pwalletMain->GetAnonymousTxInfo();
+
+		{
+			LOCK(cs_supersend);
+			std::string logText = "Verify Mixer's sendcoin TxID. This is verification No." + to_string(cnt) + ".";
+			pCurrentAnonymousTxInfo->AddToLog(logText);
+
+			bool successful = pCurrentAnonymousTxInfo->CheckSendTx(pwalletMain);
+
+			if(successful)	
+			{
+				logText = "Mixer's sendcoin transaction is verified.";
+				pCurrentAnonymousTxInfo->AddToLog(logText);
+
+				// sign mutlsig tx
+				bool b = pwalletMain->SignMultiSigDistributionTx();
+				if(!b)
+				{
+					printf("ERROR. Sender can't sign multisig distribution tx.\n");
+					return error("processing message checksdtx - Can't sign multisig distribution tx.");
+				}
+				std::string disttx = pCurrentAnonymousTxInfo->GetTx();
+				pCurrentAnonymousTxInfo->SetTx(disttx, 2);
+
+				logText = "Sender successfully signed the multisig distribution transaction. TxID = " + disttx.substr(0, 30) + "...";
+				pCurrentAnonymousTxInfo->AddToLog(logText);
+				logText = "Multisig distribution transaction is fully signed.";
+				pCurrentAnonymousTxInfo->AddToLog(logText);
+
+				// now send the signed tx
+				b = pwalletMain->SendMultiSigDistributionTx();
+				if(!b)
+				{
+					printf("ERROR. Sender can't send multisig distribution tx.\n");
+					return error("processing message checksdtx - Can't send multisig distribution tx.");
+				}
+				std::string selfAddress = pCurrentAnonymousTxInfo->GetSelfAddress();
+				std::string committedTx = pCurrentAnonymousTxInfo->GetCommittedMsTx();
+
+				logText = "Multisig distribution transaction is successfully posted to the network. TxID = " + committedTx + ".";
+				pCurrentAnonymousTxInfo->AddToLog(logText);
+				logText = "Escrow's fund is refunded to each parties.";
+				pCurrentAnonymousTxInfo->AddToLog(logText);
+				logText = "Anonymous Send is successful.";
+				pCurrentAnonymousTxInfo->AddToLog(logText);
+
+				b = pwalletMain->SignMessageUsingAddress(committedTx, selfAddress, vchSig);
+				if(!b)
+					return error("processing message checkmstx - error in signing message with multisigtx");
+
+				// send tx to both mixer and guarantor
+				pfrom->PushMessage("sendcmplt", anonymousTxId, committedTx, vchSig);
+				CNode* pNode = pCurrentAnonymousTxInfo->GetNode(ROLE_GUARANTOR);
+				pNode->PushMessage("sendcmplt", anonymousTxId, committedTx, vchSig);
+			}
+			else
+			{
+				if(cnt > 10)
+				{
+					logText = "Unable to verify Mixer's sendcoin transaction after 10 tries. Abort.";
+					pCurrentAnonymousTxInfo->AddToLog(logText);
+
+					// need to cancel tx - TODO
+					return error("processing message checksdtx - error can't verify all txids in 10 tries");
+				}
+				else
+				{
+					logText = "Unable to verify Mixer's sendcoin transaction... will try later.";
+					pCurrentAnonymousTxInfo->AddToLog(logText);
+
+					// send a chksdrelay message
+					std::string selfAddress = pCurrentAnonymousTxInfo->GetSelfAddress();
+
+					bool b = pwalletMain->SignMessageUsingAddress(selfAddress, selfAddress, vchSig);
+					if(!b)
+						return error("processing message checksdtx - error in signing message with selfAddress");
+		
+					pfrom->PushMessage("chksdrelay", anonymousTxId, selfAddress, cnt, vchSig);
+				}
+			}
+		}
+    }
+
+	else if (strCommand == "sendcmplt")		// message sender -> guarantor, mixer
+    {
+		std::string anonymousTxId;
+		std::string committedTx;
+		std::vector<unsigned char> vchSig;
+        vRecv >> anonymousTxId >> committedTx >> vchSig;
+		CAnonymousTxInfo* pCurrentAnonymousTxInfo = pwalletMain->GetAnonymousTxInfo();
+				
+		{
+			LOCK(cs_supersend);
+
+			std::string senderAddress = pCurrentAnonymousTxInfo->GetAddress(ROLE_SENDER);
+
+			if(pwalletMain->VerifyMessageSignature(committedTx, senderAddress, vchSig))
+			{
+				if(fDebugAnon)
+					printf(">> sendcmplt: signature verified.\n");
+			}
+			else	
+			{
+				return error("processing message sendcmplt - signature can not be verified. message ignored.");
+			}
+
+			pCurrentAnonymousTxInfo->SetCommittedMsTx(committedTx);
+			std::string logText = "Received multisig distribution tx execution. TxID = " + committedTx + ".";
+			pCurrentAnonymousTxInfo->AddToLog(logText);
+			logText = "Escrow's fund is refunded to each parties.";
+			pCurrentAnonymousTxInfo->AddToLog(logText);
+			logText = "Anonymous Send is successful and completed.";
+			pCurrentAnonymousTxInfo->AddToLog(logText);
+
+			// cleanup 
+			pCurrentAnonymousTxInfo->clean(false);
+		}
+	}
+
+	else if (strCommand == "mixservice")
+    {
+		std::string status;
+		std::string keyAddress;
+        vRecv >> keyAddress >> status;
+		pwalletMain->UpdateAnonymousServiceList(pfrom, keyAddress, status);
+	}
+
+    else if (strCommand == "getheaders")
+    {
+        CBlockLocator locator;
+        uint256 hashStop;
+        vRecv >> locator >> hashStop;
+
+        CBlockIndex* pindex = NULL;
+        if (locator.IsNull())
+        {
+            // If locator is null, return the hashStop block
+            map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.find(hashStop);
+            if (mi == mapBlockIndex.end())
+                return true;
+            pindex = (*mi).second;
+        }
+        else
+        {
+            // Find the last block the caller has in the main chain
+            pindex = locator.GetBlockIndex();
+            if (pindex)
+                pindex = pindex->pnext;
+        }
+
+        vector<CBlock> vHeaders;
+        int nLimit = 2000;
+        printf("getheaders %d to %s\n", (pindex ? pindex->nHeight : -1), hashStop.ToString().substr(0,20).c_str());
+        for (; pindex; pindex = pindex->pnext)
+        {
+            vHeaders.push_back(pindex->GetBlockHeader());
+            if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
+                break;
+        }
+        pfrom->PushMessage("headers", vHeaders);
+    }
+
+
+    else if (strCommand == "tx")
+    {
+        vector<uint256> vWorkQueue;
+        vector<uint256> vEraseQueue;
+        CDataStream vMsg(vRecv);
+        CTxDB txdb("r");
+        CTransaction tx;
+        vRecv >> tx;
+
+        CInv inv(MSG_TX, tx.GetHash());
+        pfrom->AddInventoryKnown(inv);
+
+        bool fMissingInputs = false;
+        if (tx.AcceptToMemoryPool(txdb, true, &fMissingInputs))
+        {
+            SyncWithWallets(tx, NULL, true);
+            RelayTransaction(tx, inv.hash);
+            mapAlreadyAskedFor.erase(inv);
+            vWorkQueue.push_back(inv.hash);
+            vEraseQueue.push_back(inv.hash);
+
+            // Recursively process any orphan transactions that depended on this one
+            for (unsigned int i = 0; i < vWorkQueue.size(); i++)
+            {
+                uint256 hashPrev = vWorkQueue[i];
+                for (set<uint256>::iterator mi = mapOrphanTransactionsByPrev[hashPrev].begin();
+                     mi != mapOrphanTransactionsByPrev[hashPrev].end();
+                     ++mi)
+                {
+                    const uint256& orphanTxHash = *mi;
+                    CTransaction& orphanTx = mapOrphanTransactions[orphanTxHash];
+                    bool fMissingInputs2 = false;
+
+                    if (orphanTx.AcceptToMemoryPool(txdb, true, &fMissingInputs2))
+                    {
+                        printf("   accepted orphan tx %s\n", orphanTxHash.ToString().substr(0,10).c_str());
+                        SyncWithWallets(tx, NULL, true);
+                        RelayTransaction(orphanTx, orphanTxHash);
+                        mapAlreadyAskedFor.erase(CInv(MSG_TX, orphanTxHash));
+                        vWorkQueue.push_back(orphanTxHash);
+                        vEraseQueue.push_back(orphanTxHash);
+                    }
+                    else if (!fMissingInputs2)
+                    {
+                        // invalid orphan
+                        vEraseQueue.push_back(orphanTxHash);
+                        printf("   removed invalid orphan tx %s\n", orphanTxHash.ToString().substr(0,10).c_str());
+                    }
+                }
+            }
+
+            BOOST_FOREACH(uint256 hash, vEraseQueue)
+                EraseOrphanTx(hash);
+        }
+        else if (fMissingInputs)
+        {
+            AddOrphanTx(tx);
+
+            // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
+            unsigned int nEvicted = LimitOrphanTxSize(MAX_ORPHAN_TRANSACTIONS);
+            if (nEvicted > 0)
+                printf("mapOrphan overflow, removed %u tx\n", nEvicted);
+        }
+        if (tx.nDoS) pfrom->Misbehaving(tx.nDoS);
+    }
+
+
+    else if (strCommand == "block")
+    {
+        CBlock block;
+        vRecv >> block;
+        uint256 hashBlock = block.GetHash();
+
+        printf("received block %s\n", hashBlock.ToString().substr(0,20).c_str());
+        // block.print();
+
+        CInv inv(MSG_BLOCK, hashBlock);
+        pfrom->AddInventoryKnown(inv);
+
+        if (ProcessBlock(pfrom, &block))
+            mapAlreadyAskedFor.erase(inv);
+        if (block.nDoS) pfrom->Misbehaving(block.nDoS);
+    }
+
+
+    else if (strCommand == "getaddr")
+    {
+        // Don't return addresses older than nCutOff timestamp
+        int64_t nCutOff = GetTime() - (nNodeLifespan * 24 * 60 * 60);
+        pfrom->vAddrToSend.clear();
+        vector<CAddress> vAddr = addrman.GetAddr();
+        BOOST_FOREACH(const CAddress &addr, vAddr)
+            if(addr.nTime > nCutOff)
+                pfrom->PushAddress(addr);
+    }
+
+
+    else if (strCommand == "mempool")
+    {
+        std::vector<uint256> vtxid;
+        mempool.queryHashes(vtxid);
+        vector<CInv> vInv;
+        for (unsigned int i = 0; i < vtxid.size(); i++) {
+            CInv inv(MSG_TX, vtxid[i]);
+            vInv.push_back(inv);
+            if (i == (MAX_INV_SZ - 1))
+                    break;
+        }
+        if (vInv.size() > 0)
+            pfrom->PushMessage("inv", vInv);
+    }
+
+
+    else if (strCommand == "checkorder")
+    {
+        uint256 hashReply;
+        vRecv >> hashReply;
+
+        if (!GetBoolArg("-allowreceivebyip"))
+        {
+            pfrom->PushMessage("reply", hashReply, (int)2, string(""));
+            return true;
+        }
+
+        CWalletTx order;
+        vRecv >> order;
+
+        /// we have a chance to check the order here
+
+        // Keep giving the same key to the same ip until they use it
+        if (!mapReuseKey.count(pfrom->addr))
+            pwalletMain->GetKeyFromPool(mapReuseKey[pfrom->addr], true);
+
+        // Send back approval of order and pubkey to use
+        CScript scriptPubKey;
+        scriptPubKey << mapReuseKey[pfrom->addr] << OP_CHECKSIG;
+        pfrom->PushMessage("reply", hashReply, (int)0, scriptPubKey);
+    }
+
+
+    else if (strCommand == "reply")
+    {
+        uint256 hashReply;
+        vRecv >> hashReply;
+
+        CRequestTracker tracker;
+        {
+            LOCK(pfrom->cs_mapRequests);
+            map<uint256, CRequestTracker>::iterator mi = pfrom->mapRequests.find(hashReply);
+            if (mi != pfrom->mapRequests.end())
+            {
+                tracker = (*mi).second;
+                pfrom->mapRequests.erase(mi);
+            }
+        }
+        if (!tracker.IsNull())
+            tracker.fn(tracker.param1, vRecv);
+    }
+
+
+    else if (strCommand == "ping")
+    {
+        if (pfrom->nVersion > BIP0031_VERSION)
+        {
+            uint64_t nonce = 0;
+            vRecv >> nonce;
+            // Echo the message back with the nonce. This allows for two useful features:
+            //
+            // 1) A remote node can quickly check if the connection is operational
+            // 2) Remote nodes can measure the latency of the network thread. If this node
+            //    is overloaded it won't respond to pings quickly and the remote node can
+            //    avoid sending us more work, like chain download requests.
+            //
+            // The nonce stops the remote getting confused between different pings: without
+            // it, if the remote node sends a ping once per second and this node takes 5
+            // seconds to respond to each, the 5th ping the remote sends would appear to
+            // return very quickly.
+            pfrom->PushMessage("pong", nonce);
+        }
+    }
+
+
+    else if (strCommand == "alert")
+    {
+        CAlert alert;
+        vRecv >> alert;
+
+        uint256 alertHash = alert.GetHash();
+        if (pfrom->setKnown.count(alertHash) == 0)
+        {
+            if (alert.ProcessAlert())
+            {
+                // Relay
+                pfrom->setKnown.insert(alertHash);
+                {
+                    LOCK(cs_vNodes);
+                    BOOST_FOREACH(CNode* pnode, vNodes)
+                        alert.RelayTo(pnode);
+                }
+            }
+            else {
+                // Small DoS penalty so peers that send us lots of
+                // duplicate/expired/invalid-signature/whatever alerts
+                // eventually get banned.
+                // This isn't a Misbehaving(100) (immediate ban) because the
+                // peer might be an older or different implementation with
+                // a different signature key, etc.
+                pfrom->Misbehaving(10);
+            }
+        }
+    }
+
+
+    else
+    {
+        // Ignore unknown commands for extensibility
+    }
+
+
+    // Update the last seen time for this node's address
+    if (pfrom->fNetworkNode)
+        if (strCommand == "version" || strCommand == "addr" || strCommand == "inv" || strCommand == "getdata" || strCommand == "ping")
+            AddressCurrentlyConnected(pfrom->addr);
+
+
+    return true;
+}
+
+bool ProcessMessages(CNode* pfrom)
+{
+    CDataStream& vRecv = pfrom->vRecv;
+    if (vRecv.empty())
+        return true;
+    //if (fDebug)
+    //    printf("ProcessMessages(%u bytes)\n", vRecv.size());
+
+    //
+    // Message format
+    //  (4) message start
+    //  (12) command
+    //  (4) size
+    //  (4) checksum
+    //  (x) data
+    //
+
+    while (true)
+    {
+        // Don't bother if send buffer is too full to respond anyway
+        if (pfrom->vSend.size() >= SendBufferSize())
+            break;
+
+        // Scan for message start
+        CDataStream::iterator pstart = search(vRecv.begin(), vRecv.end(), BEGIN(pchMessageStart), END(pchMessageStart));
+        int nHeaderSize = vRecv.GetSerializeSize(CMessageHeader());
+        if (vRecv.end() - pstart < nHeaderSize)
+        {
+            if ((int)vRecv.size() > nHeaderSize)
+            {
+                printf("\n\nPROCESSMESSAGE MESSAGESTART NOT FOUND\n\n");
+                vRecv.erase(vRecv.begin(), vRecv.end() - nHeaderSize);
+            }
+            break;
+        }
+        if (pstart - vRecv.begin() > 0)
+            printf("\n\nPROCESSMESSAGE SKIPPED %"PRIpdd" BYTES\n\n", pstart - vRecv.begin());
+        vRecv.erase(vRecv.begin(), pstart);
+
+        // Read header
+        vector<char> vHeaderSave(vRecv.begin(), vRecv.begin() + nHeaderSize);
+        CMessageHeader hdr;
+        vRecv >> hdr;
+        if (!hdr.IsValid())
+        {
+            printf("\n\nPROCESSMESSAGE: ERRORS IN HEADER %s\n\n\n", hdr.GetCommand().c_str());
+            continue;
+        }
+        string strCommand = hdr.GetCommand();
+
+        // Message size
+        unsigned int nMessageSize = hdr.nMessageSize;
+        if (nMessageSize > MAX_SIZE)
+        {
+            printf("ProcessMessages(%s, %u bytes) : nMessageSize > MAX_SIZE\n", strCommand.c_str(), nMessageSize);
+            continue;
+        }
+        if (nMessageSize > vRecv.size())
+        {
+            // Rewind and wait for rest of message
+            vRecv.insert(vRecv.begin(), vHeaderSave.begin(), vHeaderSave.end());
+            break;
+        }
+
+        // Checksum
+        uint256 hash = Hash(vRecv.begin(), vRecv.begin() + nMessageSize);
+        unsigned int nChecksum = 0;
+        memcpy(&nChecksum, &hash, sizeof(nChecksum));
+        if (nChecksum != hdr.nChecksum)
+        {
+            printf("ProcessMessages(%s, %u bytes) : CHECKSUM ERROR nChecksum=%08x hdr.nChecksum=%08x\n",
+               strCommand.c_str(), nMessageSize, nChecksum, hdr.nChecksum);
+            continue;
+        }
+
+        // Copy message to its own buffer
+        CDataStream vMsg(vRecv.begin(), vRecv.begin() + nMessageSize, vRecv.nType, vRecv.nVersion);
+        vRecv.ignore(nMessageSize);
+
+        // Process message
+        bool fRet = false;
+        try
+        {
+            {
+                LOCK(cs_main);
+                fRet = ProcessMessage(pfrom, strCommand, vMsg);
+            }
+            if (fShutdown)
+                return true;
+        }
+        catch (std::ios_base::failure& e)
+        {
+            if (strstr(e.what(), "end of data"))
+            {
+                // Allow exceptions from under-length message on vRecv
+                printf("ProcessMessages(%s, %u bytes) : Exception '%s' caught, normally caused by a message being shorter than its stated length\n", strCommand.c_str(), nMessageSize, e.what());
+            }
+            else if (strstr(e.what(), "size too large"))
+            {
+                // Allow exceptions from over-long size
+                printf("ProcessMessages(%s, %u bytes) : Exception '%s' caught\n", strCommand.c_str(), nMessageSize, e.what());
+            }
+            else
+            {
+                PrintExceptionContinue(&e, "ProcessMessages()");
+            }
+        }
+        catch (std::exception& e) {
+            PrintExceptionContinue(&e, "ProcessMessages()");
+        } catch (...) {
+            PrintExceptionContinue(NULL, "ProcessMessages()");
+        }
+
+        if (!fRet)
+            printf("ProcessMessage(%s, %u bytes) FAILED\n", strCommand.c_str(), nMessageSize);
+    }
+
+    vRecv.Compact();
+    return true;
+}
+
+
+bool SendMessages(CNode* pto, bool fSendTrickle)
+{
+    TRY_LOCK(cs_main, lockMain);
+    if (lockMain) {
+        // Don't send anything until we get their version message
+        if (pto->nVersion == 0)
+            return true;
+
+        // Keep-alive ping. We send a nonce of zero because we don't use it anywhere
+        // right now.
+        if (pto->nLastSend && GetTime() - pto->nLastSend > 30 * 60 && pto->vSend.empty()) {
+            uint64_t nonce = 0;
+            if (pto->nVersion > BIP0031_VERSION)
+                pto->PushMessage("ping", nonce);
+            else
+                pto->PushMessage("ping");
+        }
+
+        // Resend wallet transactions that haven't gotten in a block yet
+        ResendWalletTransactions();
+
+        // Address refresh broadcast
+        static int64_t nLastRebroadcast;
+        if (!IsInitialBlockDownload() && (GetTime() - nLastRebroadcast > 24 * 60 * 60))
+        {
+            {
+                LOCK(cs_vNodes);
+                BOOST_FOREACH(CNode* pnode, vNodes)
+                {
+                    // Periodically clear setAddrKnown to allow refresh broadcasts
+                    if (nLastRebroadcast)
+                        pnode->setAddrKnown.clear();
+
+                    // Rebroadcast our address
+                    if (!fNoListen)
+                    {
+                        CAddress addr = GetLocalAddress(&pnode->addr);
+                        if (addr.IsRoutable())
+                            pnode->PushAddress(addr);
+                    }
+                }
+            }
+            nLastRebroadcast = GetTime();
+        }
+
+        //
+        // Message: addr
+        //
+        if (fSendTrickle)
+        {
+            vector<CAddress> vAddr;
+            vAddr.reserve(pto->vAddrToSend.size());
+            BOOST_FOREACH(const CAddress& addr, pto->vAddrToSend)
+            {
+                // returns true if wasn't already contained in the set
+                if (pto->setAddrKnown.insert(addr).second)
+                {
+                    vAddr.push_back(addr);
+                    // receiver rejects addr messages larger than 1000
+                    if (vAddr.size() >= 1000)
+                    {
+                        pto->PushMessage("addr", vAddr);
+                        vAddr.clear();
+                    }
+                }
+            }
+            pto->vAddrToSend.clear();
+            if (!vAddr.empty())
+                pto->PushMessage("addr", vAddr);
+        }
+
+
+        //
+        // Message: inventory
+        //
+        vector<CInv> vInv;
+        vector<CInv> vInvWait;
+        {
+            LOCK(pto->cs_inventory);
+            vInv.reserve(pto->vInventoryToSend.size());
+            vInvWait.reserve(pto->vInventoryToSend.size());
+            BOOST_FOREACH(const CInv& inv, pto->vInventoryToSend)
+            {
+                if (pto->setInventoryKnown.count(inv))
+                    continue;
+
+                // trickle out tx inv to protect privacy
+                if (inv.type == MSG_TX && !fSendTrickle)
+                {
+                    // 1/4 of tx invs blast to all immediately
+                    static uint256 hashSalt;
+                    if (hashSalt == 0)
+                        hashSalt = GetRandHash();
+                    uint256 hashRand = inv.hash ^ hashSalt;
+                    hashRand = Hash(BEGIN(hashRand), END(hashRand));
+                    bool fTrickleWait = ((hashRand & 3) != 0);
+
+                    // always trickle our own transactions
+                    if (!fTrickleWait)
+                    {
+                        CWalletTx wtx;
+                        if (GetTransaction(inv.hash, wtx))
+                            if (wtx.fFromMe)
+                                fTrickleWait = true;
+                    }
+
+                    if (fTrickleWait)
+                    {
+                        vInvWait.push_back(inv);
+                        continue;
+                    }
+                }
+
+                // returns true if wasn't already contained in the set
+                if (pto->setInventoryKnown.insert(inv).second)
+                {
+                    vInv.push_back(inv);
+                    if (vInv.size() >= 1000)
+                    {
+                        pto->PushMessage("inv", vInv);
+                        vInv.clear();
+                    }
+                }
+            }
+            pto->vInventoryToSend = vInvWait;
+        }
+        if (!vInv.empty())
+            pto->PushMessage("inv", vInv);
+
+
+        //
+        // Message: getdata
+        //
+        vector<CInv> vGetData;
+        int64_t nNow = GetTime() * 1000000;
+        CTxDB txdb("r");
+        while (!pto->mapAskFor.empty() && (*pto->mapAskFor.begin()).first <= nNow)
+        {
+            const CInv& inv = (*pto->mapAskFor.begin()).second;
+            if (!AlreadyHave(txdb, inv))
+            {
+                if (fDebugNet)
+                    printf("sending getdata: %s\n", inv.ToString().c_str());
+                vGetData.push_back(inv);
+                if (vGetData.size() >= 1000)
+                {
+                    pto->PushMessage("getdata", vGetData);
+                    vGetData.clear();
+                }
+                mapAlreadyAskedFor[inv] = nNow;
+            }
+            pto->mapAskFor.erase(pto->mapAskFor.begin());
+        }
+        if (!vGetData.empty())
+            pto->PushMessage("getdata", vGetData);
+
+    }
+    return true;
+}
+
+std::string GetLastAnonymousTxLog()
+{
+	CAnonymousTxInfo* pCurrentAnonymousTxInfo = pwalletMain->GetAnonymousTxInfo();
+
+	return pCurrentAnonymousTxInfo->GetLastAnonymousTxLog();
+}
+
+
+std::string GetCurrentServiceNodeList()
+{
+	return pwalletMain->ListCurrentServiceNodes();
+}
