@@ -53,4 +53,12 @@ public:
         if (s)
             while (queue.size() > s)
             {
-            
+                set.erase(queue.front());
+                queue.pop_front();
+            }
+        nMaxSize = s;
+        return nMaxSize;
+    }
+};
+
+#endif
