@@ -261,4 +261,11 @@ int main(int argc, char *argv[])
         {
             return 1;
         }
-    } catch (std::exceptio
+    } catch (std::exception& e) {
+        handleRunawayException(&e);
+    } catch (...) {
+        handleRunawayException(NULL);
+    }
+    return 0;
+}
+#endif // BITCOIN_QT_TEST
