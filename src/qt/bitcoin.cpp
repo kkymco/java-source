@@ -170,4 +170,95 @@ int main(int argc, char *argv[])
         app.installTranslator(&qtTranslatorBase);
 
     // Load e.g. qt_de_DE.qm
-    if (qtTranslator.load("q
+    if (qtTranslator.load("qt_" + lang_territory, QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
+        app.installTranslator(&qtTranslator);
+
+    // Load e.g. bitcoin_de.qm (shortcut "de" needs to be defined in bitcoin.qrc)
+    if (translatorBase.load(lang, ":/translations/"))
+        app.installTranslator(&translatorBase);
+
+    // Load e.g. bitcoin_de_DE.qm (shortcut "de_DE" needs to be defined in bitcoin.qrc)
+    if (translator.load(lang_territory, ":/translations/"))
+        app.installTranslator(&translator);
+
+    // Subscribe to global signals from core
+    uiInterface.ThreadSafeMessageBox.connect(ThreadSafeMessageBox);
+    uiInterface.ThreadSafeAskFee.connect(ThreadSafeAskFee);
+    uiInterface.ThreadSafeHandleURI.connect(ThreadSafeHandleURI);
+    uiInterface.InitMessage.connect(InitMessage);
+    uiInterface.QueueShutdown.connect(QueueShutdown);
+    uiInterface.Translate.connect(Translate);
+
+    // Show help message immediately after parsing command-line options (for "-lang") and setting locale,
+    // but before showing splash screen.
+    if (mapArgs.count("-?") || mapArgs.count("--help"))
+    {
+        GUIUtil::HelpMessageBox help;
+        help.showOrPrint();
+        return 1;
+    }
+
+    QSplashScreen splash(QPixmap(":/images/splash"), 0);
+    if (GetBoolArg("-splash", true) && !GetBoolArg("-min"))
+    {
+        splash.show();
+        splashref = &splash;
+    }
+
+    app.processEvents();
+
+    app.setQuitOnLastWindowClosed(false);
+
+    try
+    {
+        // Regenerate startup link, to fix links to old versions
+        if (GUIUtil::GetStartOnSystemStartup())
+            GUIUtil::SetStartOnSystemStartup(true);
+
+        BitcoinGUI window;
+        guiref = &window;
+        if(AppInit2())
+        {
+            {
+                // Put this in a block, so that the Model objects are cleaned up before
+                // calling Shutdown().
+
+                optionsModel.Upgrade(); // Must be done after AppInit2
+
+                if (splashref)
+                    splash.finish(&window);
+
+                ClientModel clientModel(&optionsModel);
+                WalletModel walletModel(pwalletMain, &optionsModel);
+
+                window.setClientModel(&clientModel);
+                window.setWalletModel(&walletModel);
+
+                // If -min option passed, start window minimized.
+                if(GetBoolArg("-min"))
+                {
+                    window.showMinimized();
+                }
+                else
+                {
+                    window.show();
+                }
+
+                // Place this here as guiref has to be defined if we don't want to lose URIs
+                ipcInit(argc, argv);
+
+                app.exec();
+
+                window.hide();
+                window.setClientModel(0);
+                window.setWalletModel(0);
+                guiref = 0;
+            }
+            // Shutdown the core and its threads, but don't exit Bitcoin-Qt here
+            Shutdown(NULL);
+        }
+        else
+        {
+            return 1;
+        }
+    } catch (std::exceptio
