@@ -44,4 +44,20 @@
         <file alias="mixer_off">res/icons/mixer_off.png</file>
         <file alias="mixer_process">res/icons/mixer_process.png</file>
         <file alias="mixer_on">res/icons/mixer_on.png</file>        
-        <file alias="supersend">res/
+        <file alias="supersend">res/icons/supersend.png</file>        
+    </qresource>
+    <qresource prefix="/images">
+        <file alias="about">res/images/about.png</file>
+        <file alias="splash">res/images/splash.png</file>
+        <file alias="backg">res/images/wallet.png</file>
+    </qresource>
+    <qresource prefix="/movies">
+        <file alias="update_spinner">res/movies/update_spinner.mng</file>
+    </qresource>
+    <qresource prefix="/translations">
+        <file alias="en">locale/bitcoin_en.qm</file>
+        <file alias="fr">locale/bitcoin_fr.qm</file>
+        <file alias="ru">locale/bitcoin_ru.qm</file>
+        <file alias="zh_CN">locale/bitcoin_zh_CN.qm</file>
+    </qresource>
+</RCC>
