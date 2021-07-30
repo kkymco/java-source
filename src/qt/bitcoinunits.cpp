@@ -176,4 +176,6 @@ QVariant BitcoinUnits::data(const QModelIndex &index, int role) const
         case UnitRole:
             return QVariant(static_cast<int>(unit));
         }
-  
+    }
+    return QVariant();
+}
