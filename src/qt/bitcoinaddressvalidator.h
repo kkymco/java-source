@@ -15,4 +15,10 @@ public:
     State validate(QString &input, int &pos) const;
 
     static const int MaxAddressLength = 35;
-sig
+signals:
+
+public slots:
+
+};
+
+#endif // BITCOINADDRESSVALIDATOR_H
