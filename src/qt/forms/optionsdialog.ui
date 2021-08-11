@@ -633,4 +633,11 @@ QPushButton:pressed {
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class
+   <class>QValueComboBox</class>
+   <extends>QComboBox</extends>
+   <header>qvaluecombobox.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
