@@ -254,4 +254,97 @@
          </property>
         </widget>
        </item>
-       <item row=
+       <item row="11" column="1">
+        <widget class="QLabel" name="totalBlocks">
+         <property name="cursor">
+          <cursorShape>IBeamCursor</cursorShape>
+         </property>
+         <property name="text">
+          <string>N/A</string>
+         </property>
+         <property name="textFormat">
+          <enum>Qt::PlainText</enum>
+         </property>
+         <property name="textInteractionFlags">
+          <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="0">
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Last block time</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="1">
+        <widget class="QLabel" name="lastBlockTime">
+         <property name="cursor">
+          <cursorShape>IBeamCursor</cursorShape>
+         </property>
+         <property name="text">
+          <string>N/A</string>
+         </property>
+         <property name="textFormat">
+          <enum>Qt::PlainText</enum>
+         </property>
+         <property name="textInteractionFlags">
+          <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0">
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="14" column="0">
+        <widget class="QLabel" name="labelDebugLogfile">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Debug log file</string>
+         </property>
+        </widget>
+       </item>
+       <item row="15" column="0">
+        <widget class="QPushButton" name="openDebugLogfileButton">
+         <property name="toolTip">
+          <string>Open the SuperCoin debug log file from the current data directory. This can take a few seconds for large log files.</string>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QPushButton {
+     
+	color : rgb(0,0,0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 8px;
+     border-color: rgb(160, 46, 47);
+     font: bold 10px;
+     min-width: 6em;
+     padding: 6px;
+ }
+QPushButton:pressed {
+     background-color: rgb(160, 46, 47);
+     border-style: inset;
+ }</string>
+         </property>
+         <property name="text">
+          <string>&amp;Open</string>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
+         </property>
+        </widg
