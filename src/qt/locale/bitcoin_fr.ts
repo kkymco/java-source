@@ -438,4 +438,93 @@ This product includes software developed by the OpenSSL Project for use in the O
     <message>
         <location line="+18"/>
         <source>Export the data in the current tab to a file</source>
-        <translation>Export des données de l&apos;o
+        <translation>Export des données de l&apos;onglet courant vers un fichier</translation>
+    </message>
+    <message>
+        <location line="-14"/>
+        <source>Encrypt or decrypt wallet</source>
+        <translation>Chiffrer ou déchiffrer le portefeuille</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Backup wallet to another location</source>
+        <translation>Sauvegarder le portefeuille vers un autre emplacement</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Change the passphrase used for wallet encryption</source>
+        <translation>Modifier la phrase de passe utilisée pour le chiffrement du portefeuille</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>&amp;Debug window</source>
+        <translation>&amp;Fenêtre de débogage</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Open debugging and diagnostic console</source>
+        <translation>Ouvrir la console de débogage et de diagnostic</translation>
+    </message>
+    <message>
+        <location line="-5"/>
+        <source>&amp;Verify message...</source>
+        <translation>&amp;Vérifier un message...</translation>
+    </message>
+    <message>
+        <location line="-202"/>
+        <source>SuperCoin</source>
+        <translation>SuperCoin</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Wallet</source>
+        <translation>Portefeuille</translation>
+    </message>
+    <message>
+        <location line="+180"/>
+        <source>&amp;About SuperCoin</source>
+        <translation>&amp;Au sujet de SuperCoin</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>&amp;Show / Hide</source>
+        <translation>&amp;Montrer / Masquer</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Unlock wallet</source>
+        <translation>Déverrouiller le portefeuille</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&amp;Lock Wallet</source>
+        <translation>&amp;Verrouiller le portefeuille</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Lock wallet</source>
+        <translation>Verrouiller le portefeuille</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>&amp;File</source>
+        <translation>&amp;Fichier</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>&amp;Settings</source>
+        <translation>&amp;Paramètres</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>&amp;Help</source>
+        <translation>&amp;Aide</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Tabs toolbar</source>
+        <translation>Barre d&apos;onglets</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Actions t
