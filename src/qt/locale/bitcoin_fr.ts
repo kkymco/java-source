@@ -527,4 +527,76 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+8"/>
-        <source>Actions t
+        <source>Actions toolbar</source>
+        <translation>Barre d&apos;actions</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <location line="+9"/>
+        <source>[testnet]</source>
+        <translation>[testnet]</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <location line="+60"/>
+        <source>SuperCoin client</source>
+        <translation>Client SuperCoin</translation>
+    </message>
+    <message numerus="yes">
+        <location line="+75"/>
+        <source>%n active connection(s) to SuperCoin network</source>
+        <translation><numerusform>%n connexion active au réseau SuperCoin</numerusform><numerusform>%n connexions actives au réseau SuperCoin</numerusform></translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>Downloaded %1 blocks of transaction history.</source>
+        <translation>Téléchargement de blocs de l&apos;historique de transactions : 1% blocks</translation>
+    </message>
+    <message>
+        <location line="+413"/>
+        <source>Staking.&lt;br&gt;Your weight is %1&lt;br&gt;Network weight is %2&lt;br&gt;Expected time to earn reward is %3</source>
+        <translation>Staking.&lt;br&gt;Votre poids est de  %1&lt;br&gt;Le poids du réseau est de %2&lt;br&gt;Temps estimé avant récompense %3</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Not staking because wallet is locked</source>
+        <translation>Pas de staking car votre portefeuille est verouillé</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Not staking because wallet is offline</source>
+        <translation> Pas de staking car votre portefeuille est hors ligne</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Not staking because wallet is syncing</source>
+        <translation>Pas de staking car votre portefeuille est en cours de synchronisation</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Not staking because you don&apos;t have mature coins</source>
+        <translation>Pas de staking car vos monnaies ne sont pas encore matures</translation>
+    </message>
+    <message numerus="yes">
+        <location line="-403"/>
+        <source>%n second(s) ago</source>
+        <translation><numerusform>il y a %n seconde</numerusform><numerusform>il y a %n secondes</numerusform></translation>
+    </message>
+    <message>
+        <location line="-312"/>
+        <source>About SuperCoin card</source>
+        <translation>Au sujet de la carte SuperCoin</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Show information about SuperCoin card</source>
+        <translation>Informations sur la carte SuperCoin</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>&amp;Unlock Wallet...</source>
+        <translation>&amp;Déverrouiller le portefeuille</translation>
+    </message>
+    <message numerus="yes">
+        <location line="+297"/>
+        <sourc
