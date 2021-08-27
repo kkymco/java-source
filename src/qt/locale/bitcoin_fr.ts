@@ -599,4 +599,75 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message numerus="yes">
         <location line="+297"/>
-        <sourc
+        <source>%n minute(s) ago</source>
+        <translation><numerusform>il y a %n minute</numerusform><numerusform>il y a %n minutes</numerusform></translation>
+    </message>
+    <message numerus="yes">
+        <location line="+4"/>
+        <source>%n hour(s) ago</source>
+        <translation><numerusform>il y a %n heure</numerusform><numerusform>il y a %n heures</numerusform></translation>
+    </message>
+    <message numerus="yes">
+        <location line="+4"/>
+        <source>%n day(s) ago</source>
+        <translation><numerusform>il y a %n jour</numerusform><numerusform>il y a %n jours</numerusform></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Up to date</source>
+        <translation>À jour</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Catching up...</source>
+        <translation>Rattrapage en cours…</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Last received block was generated %1.</source>
+        <translation>Le dernier block reçu à été généré %1.</translation>
+    </message>
+    <message>
+        <location line="+59"/>
+        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
+        <translation>Cette transaction dépasse la limite autorisée. Vous pouvez tout de même effectuer cette opération, moyennant %1 de frais, qui seront envoyés aux noeuds qui valideront cette transaction, et dont l&apos;objectif vise à supporter le réseau. Souhaitez-vous payer ces frais ?</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Confirm transaction fee</source>
+        <translation>Confirmer le paiement des frais de transaction</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>Sent transaction</source>
+        <translation>Transaction envoyée</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Incoming transaction</source>
+        <translation>Transaction entrante</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Date: %1
+Amount: %2
+Type: %3
+Address: %4
+</source>
+        <translation>Date : %1
+Montant : %2
+Type : %3
+Adresse : %4
+</translation>
+    </message>
+    <message>
+        <location line="+100"/>
+        <location line="+15"/>
+        <source>URI handling</source>
+        <translation>Prise en charge de l&apos;URL</translation>
+    </message>
+    <message>
+        <location line="-15"/>
+        <location line="+15"/>
+        <source>URI can not be parsed! This can be caused by an invalid SuperCoin address or malformed URI parameters.</source>
+        <translation>L&apos;adresse du portefeuille SuperCoin n&apos;as pas pu être correctement i
