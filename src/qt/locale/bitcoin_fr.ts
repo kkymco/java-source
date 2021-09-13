@@ -1093,4 +1093,76 @@ Cela implique que des frais à hauteur d&apos;au moins %2 seront nécessaires.</
     <message>
         <location line="+2"/>
         <source>Usage:</source>
-        <transl
+        <translation>Utilisation:</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>command-line options</source>
+        <translation>Options de ligne de commande</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>UI options</source>
+        <translation>Options graphiques</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Set language, for example &quot;de_DE&quot; (default: system locale)</source>
+        <translation>Définir la langue, par exemple « fr_FR » (par défaut : la langue du système)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Start minimized</source>
+        <translation>Démarrer en mode réduit</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Show splash screen on startup (default: 1)</source>
+        <translation>Affichage de l&apos;écran de démarrage (défaut: 1)</translation>
+    </message>
+</context>
+<context>
+    <name>OptionsDialog</name>
+    <message>
+        <location filename="../forms/optionsdialog.ui" line="+14"/>
+        <source>Options</source>
+        <translation>Options</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>&amp;Main</source>
+        <translation>Réglages &amp;principaux</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Optional transaction fee per kB that helps make sure your transactions are processed quickly. Most transactions are 1 kB. Fee 0.01 recommended.</source>
+        <translation>Frais de transaction optionnels par kB permettant d&apos;assurer la rapidité de traitement de votre transaction. La plupart des transactions sont de 1 kB. Frais de  0.01 recommandés.</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Pay transaction &amp;fee</source>
+        <translation>Payer des &amp;frais de transaction</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Reserved amount does not participate in staking and is therefore spendable at any time.</source>
+        <translation>Montants réservés ne participant pas au &quot;staking&quot; pouvant être utilisés pour dépensés à tout moment.</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Reserve</source>
+        <translation>Réserve</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Automatically start SuperCoin after logging in to the system.</source>
+        <translation>Démarrage automatique du client SuperCoin lors de la connexion au système</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>&amp;Start SuperCoin on system login</source>
+        <translation>&amp;Démarrage du client SuperCoin à la connexion au système</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Detach block and addr
