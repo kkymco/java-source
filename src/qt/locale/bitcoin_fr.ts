@@ -1455,4 +1455,92 @@ Cela implique que des frais à hauteur d&apos;au moins %2 seront nécessaires.</
     </message>
     <message>
         <location line="+40"/>
-        <sour
+        <source>The entered amount is invalid, please check.</source>
+        <translation>Le montant indiqué est invalide, veuillez vérifier.</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Resulting URI too long, try to reduce the text for label / message.</source>
+        <translation>L&apos;URI résultant est trop long, essayez de réduire le texte d&apos;étiquette / de message.</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Save QR Code</source>
+        <translation>Sauvegarder le QR Code</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>PNG Images (*.png)</source>
+        <translation>Images PNG (*.png)</translation>
+    </message>
+</context>
+<context>
+    <name>RPCConsole</name>
+    <message>
+        <location filename="../forms/rpcconsole.ui" line="+46"/>
+        <source>Client name</source>
+        <translation>Nom du client</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <location line="+23"/>
+        <location line="+26"/>
+        <location line="+23"/>
+        <location line="+23"/>
+        <location line="+36"/>
+        <location line="+53"/>
+        <location line="+23"/>
+        <location line="+23"/>
+        <location filename="../rpcconsole.cpp" line="+348"/>
+        <source>N/A</source>
+        <translation>N.D.</translation>
+    </message>
+    <message>
+        <location line="-217"/>
+        <source>Client version</source>
+        <translation>Version du client</translation>
+    </message>
+    <message>
+        <location line="-45"/>
+        <source>&amp;Information</source>
+        <translation>&amp;Informations</translation>
+    </message>
+    <message>
+        <location line="+68"/>
+        <source>Using OpenSSL version</source>
+        <translation>Version d&apos;OpenSSL utilisée</translation>
+    </message>
+    <message>
+        <location line="+49"/>
+        <source>Startup time</source>
+        <translation>Heure de démarrage</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>Network</source>
+        <translation>Réseau</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Number of connections</source>
+        <translation>Nombre de connexions</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>On testnet</source>
+        <translation>Sur testnet</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Block chain</source>
+        <translation>Chaîne de blocs</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Current number of blocks</source>
+        <translation>Nombre actuel de blocs</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Estimated total blocks</source>
+        <translation>Nombre total de blocs estimé</transl
