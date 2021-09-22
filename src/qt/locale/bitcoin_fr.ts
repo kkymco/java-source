@@ -1617,4 +1617,107 @@ Cela implique que des frais à hauteur d&apos;au moins %2 seront nécessaires.</
     </message>
     <message>
         <location line="+1"/>
-        <source>Type &lt;b&gt;help&lt;/b&gt; for an overview of available comman
+        <source>Type &lt;b&gt;help&lt;/b&gt; for an overview of available commands.</source>
+        <translation>Taper &lt;b&gt;help&lt;/b&gt; pour afficher une vue générale des commandes disponibles.</translation>
+    </message>
+</context>
+<context>
+    <name>SendCoinsDialog</name>
+    <message>
+        <location filename="../forms/sendcoinsdialog.ui" line="+14"/>
+        <location filename="../sendcoinsdialog.cpp" line="+182"/>
+        <location line="+5"/>
+        <location line="+5"/>
+        <location line="+5"/>
+        <location line="+6"/>
+        <location line="+5"/>
+        <location line="+5"/>
+        <source>Send Coins</source>
+        <translation>Envoyer des monnaies</translation>
+    </message>
+    <message>
+        <location line="+76"/>
+        <source>Coin Control Features</source>
+        <translation>Fonctions de contrôle des monnaies</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Inputs...</source>
+        <translation>Entrants...</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>automatically selected</source>
+        <translation>choisi automatiquement</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Insufficient funds!</source>
+        <translation>Fonds insuffisants!</translation>
+    </message>
+    <message>
+        <location line="+77"/>
+        <source>Quantity:</source>
+        <translation>Quantité:</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <location line="+35"/>
+        <source>0</source>
+        <translation>0</translation>
+    </message>
+    <message>
+        <location line="-19"/>
+        <source>Bytes:</source>
+        <translation>Octets:</translation>
+    </message>
+    <message>
+        <location line="+51"/>
+        <source>Amount:</source>
+        <translation>Montant:</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <location line="+86"/>
+        <location line="+86"/>
+        <location line="+32"/>
+        <source>0.00 SUPER</source>
+        <translation>123.456 SUPER {0.00 ?}</translation>
+    </message>
+    <message>
+        <location line="-191"/>
+        <source>Priority:</source>
+        <translation>Priorité:</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>medium</source>
+        <translation>medium</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>Fee:</source>
+        <translation>Frais:</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>Low Output:</source>
+        <translation>Sortie faible</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>no</source>
+        <translation>non</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>After Fee:</source>
+        <translation>Après frais:</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>Change</source>
+        <translation>Monnaie :</translation>
+    </message>
+    <message>
+        <location line="
