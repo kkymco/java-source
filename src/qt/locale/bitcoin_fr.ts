@@ -1807,4 +1807,69 @@ Cela implique que des frais à hauteur d&apos;au moins %2 seront nécessaires.</
     <message>
         <location line="+1"/>
         <source>Copy change</source>
-     
+        <translation>Copier la monnaie</translation>
+    </message>
+    <message>
+        <location line="+86"/>
+        <source>&lt;b&gt;%1&lt;/b&gt; to %2 (%3)</source>
+        <translation>&lt;b&gt;%1&lt;/b&gt; à %2 (%3)</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Confirm send coins</source>
+        <translation>Confirmer l’envoi des pièces</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Are you sure you want to send %1?</source>
+        <translation>Etes-vous sûr de vouloir envoyer %1?</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source> and </source>
+        <translation>et</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>The recipient address is not valid, please recheck.</source>
+        <translation>L&apos;adresse du destinataire n’est pas valide, veuillez la vérifier.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The amount to pay must be larger than 0.</source>
+        <translation>Le montant à payer doit être supérieur à 0.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The amount exceeds your balance.</source>
+        <translation>Le montant dépasse votre solde.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The total exceeds your balance when the %1 transaction fee is included.</source>
+        <translation>Le montant dépasse votre solde lorsque les frais de transaction de %1 sont inclus.</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Duplicate address found, can only send to each address once per send operation.</source>
+        <translation>Adresse indentique trouvée, il n&apos;est possible d&apos;envoyer qu&apos;une fois à chaque adresse par opération d&apos;envoi.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Error: Transaction creation failed.</source>
+        <translation>Erreur: Echec lors de la création de la transaction</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Error: The transaction was rejected. This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
+        <translation>Erreur: La transaction a été rejetée. Cela peut se produire si une quantité d&apos;argent de votre portefeuille a déjà été dépensée, comme dans le cas où une copie du fichier wallet.dat aurait été utilisée afin d&apos;effectuer des dépenses, à la place du fichier courant.</translation>
+    </message>
+    <message>
+        <location line="+251"/>
+        <source>WARNING: Invalid SuperCoin address</source>
+        <translation>AVERTISSEMENT: Adresse SuperCoin Invalide</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>(no label)</source>
+        <translation>(pas
