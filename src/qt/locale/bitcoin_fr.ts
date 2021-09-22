@@ -1720,4 +1720,91 @@ Cela implique que des frais à hauteur d&apos;au moins %2 seront nécessaires.</
         <translation>Monnaie :</translation>
     </message>
     <message>
-        <location line="
+        <location line="+50"/>
+        <source>custom change address</source>
+        <translation>adresse de change personnalisée</translation>
+    </message>
+    <message>
+        <location line="+106"/>
+        <source>Send to multiple recipients at once</source>
+        <translation>Envoyer à plusieurs destinataires à la fois</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Add &amp;Recipient</source>
+        <translation>Ajouter un &amp;Destinataire</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Remove all transaction fields</source>
+        <translation>Réinitialiser tous les champs liés à la transaction</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Clear &amp;All</source>
+        <translation>&amp;Tout nettoyer</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>Balance:</source>
+        <translation>Solde:</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>123.456 SUPER</source>
+        <translation>123.456 SUPER</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Confirm the send action</source>
+        <translation>Confirmer l’action d&apos;envoi</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>S&amp;end</source>
+        <translation>E&amp;nvoyer</translation>
+    </message>
+    <message>
+        <location filename="../sendcoinsdialog.cpp" line="-173"/>
+        <source>Enter a SuperCoin address (e.g. SjBdLvGYLCMi34REta4nEpZp27mLm3uFXn)</source>
+        <translation>Entrer une adresse SuperCoin (par ex: SjBdLvGYLCMi34REta4nEpZp27mLm3uFXn)</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Copy quantity</source>
+        <translation>Copier la quantité</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy amount</source>
+        <translation>Copier le montant</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy fee</source>
+        <translation>Copier les frais</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy after fee</source>
+        <translation>Copier le montant après les frais</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy bytes</source>
+        <translation>Copier les octets</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy priority</source>
+        <translation>Copier la priorité</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy low output</source>
+        <translation>Copier la sortie faible</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy change</source>
+     
