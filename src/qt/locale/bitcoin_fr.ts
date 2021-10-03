@@ -1953,4 +1953,69 @@ Cela implique que des frais à hauteur d&apos;au moins %2 seront nécessaires.</
     </message>
     <message>
         <location line="+13"/>
-        <loc
+        <location line="+124"/>
+        <source>&amp;Sign Message</source>
+        <translation>&amp;Signer un message</translation>
+    </message>
+    <message>
+        <location line="-118"/>
+        <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
+        <translation>Vous pouvez signer des messages avec vos adresses pour prouver que vous les détenez. Faites attention de ne rien signer de suspect car des attaques d&apos;hameçonnage peuvent essayer d&apos;usurper votre identité par votre signature. Ne signez que des déclarations entièrement détaillées et avec lesquelles vous serez d&apos;accord.</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>The address to sign the message with (e.g. SjBdLvGYLCMi34REta4nEpZp27mLm3uFXn)</source>
+        <translation>Entrer une adresse SuperCoin (ex: SjBdLvGYLCMi34REta4nEpZp27mLm3uFXn)</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <location line="+203"/>
+        <source>Choose an address from the address book</source>
+        <translation>Choisir une adresse du carnet d&apos;adresse</translation>
+    </message>
+    <message>
+        <location line="-193"/>
+        <location line="+203"/>
+        <source>Alt+A</source>
+        <translation>Alt+A</translation>
+    </message>
+    <message>
+        <location line="-193"/>
+        <source>Paste address from clipboard</source>
+        <translation>Coller une adresse depuis le presse-papier</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Alt+P</source>
+        <translation>Alt+P</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Enter the message you want to sign here</source>
+        <translation>Saisir ici le message que vous désirez signer</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Copy the current signature to the system clipboard</source>
+        <translation>Copier la signature actuelle dans le presse-papier</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Sign the message to prove you own this SuperCoin address</source>
+        <translation>Signer le message afin de prouver l&apos;identité de votre adresse SuperCoin</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Reset all sign message fields</source>
+        <translation>Réinitialiser tous les champs de signature de message</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+146"/>
+        <source>Clear &amp;All</source>
+        <translation>&amp;Tout nettoyer</translation>
+    </message>
+    <message>
+        <location line="-87"/>
+        <location line="+70"/>
+        <source>&am
