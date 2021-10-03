@@ -2018,4 +2018,60 @@ Cela implique que des frais à hauteur d&apos;au moins %2 seront nécessaires.</
     <message>
         <location line="-87"/>
         <location line="+70"/>
-        <source>&am
+        <source>&amp;Verify Message</source>
+        <translation>&amp;Vérifier un message</translation>
+    </message>
+    <message>
+        <location line="-64"/>
+        <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
+        <translation>Saisir ci-dessous l&apos;adresse de signature, le message (assurez-vous d&apos;avoir copié exactement les retours à la ligne, les espaces, tabulations etc...) et la signature pour vérifier le message. Faire attention à ne pas déduire davantage de la signature que ce qui est contenu dans le message signé lui-même pour éviter d&apos;être trompé par une attaque d&apos;homme du milieu.</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>The address the message was signed with (e.g. SjBdLvGYLCMi34REta4nEpZp27mLm3uFXn)</source>
+        <translation>L&apos;adresse avec laquelle le message à été signé (ex: SjBdLvGYLCMi34REta4nEpZp27mLm3uFXn)</translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>Verify the message to ensure it was signed with the specified SuperCoin address</source>
+        <translation>Vérifier le message afin de vous assurer qu&apos;il provient de l&apos;adresse SuperCoin spécifiée.</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Reset all verify message fields</source>
+        <translation>Réinitialiser tous les champs de vérification de message</translation>
+    </message>
+    <message>
+        <location filename="../signverifymessagedialog.cpp" line="+27"/>
+        <location line="+3"/>
+        <source>Enter a SuperCoin address (e.g. SjBdLvGYLCMi34REta4nEpZp27mLm3uFXn)</source>
+        <translation>Entrer une adresse SuperCoin (e.g. SjBdLvGYLCMi34REta4nEpZp27mLm3uFXn)</translation>
+    </message>
+    <message>
+        <location line="-2"/>
+        <source>Click &quot;Sign Message&quot; to generate signature</source>
+        <translation>Cliquer sur « Signer le message » pour générer la signature</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Enter SuperCoin signature</source>
+        <translation>Entrer une signature SuperCoin</translation>
+    </message>
+    <message>
+        <location line="+82"/>
+        <location line="+81"/>
+        <source>The entered address is invalid.</source>
+        <translation>L&apos;adresse saisie est invalide.</translation>
+    </message>
+    <message>
+        <location line="-81"/>
+        <location line="+8"/>
+        <location line="+73"/>
+        <location line="+8"/>
+        <source>Please check the address and try again.</source>
+        <translation>Veuillez vérifier l&apos;adresse et réessayer.</translation>
+    </message>
+    <message>
+        <location line="-81"/>
+        <location line="+81"/>
+        <sourc
