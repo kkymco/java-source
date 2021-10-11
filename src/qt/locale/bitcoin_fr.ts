@@ -2505,4 +2505,104 @@ Cela implique que des frais à hauteur d&apos;au moins %2 seront nécessaires.</
     <message>
         <location line="+1"/>
         <source>Other</source>
- 
+        <translation>Autres</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Enter address or label to search</source>
+        <translation>Saisir une adresse ou une étiquette à rechercher</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Min amount</source>
+        <translation>Montant min.</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>Copy address</source>
+        <translation>Copier l’adresse</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy label</source>
+        <translation>Copier l’étiquette</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy amount</source>
+        <translation>Copier le montant</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy transaction ID</source>
+        <translation>Copier l&apos;ID de la transaction</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Edit label</source>
+        <translation>Modifier l’étiquette</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Show transaction details</source>
+        <translation>Afficher les détails de la transaction</translation>
+    </message>
+    <message>
+        <location line="+144"/>
+        <source>Export Transaction Data</source>
+        <translation>Exporter les données de la transaction</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Comma separated file (*.csv)</source>
+        <translation>Valeurs séparées par des virgules (*.csv)</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Confirmed</source>
+        <translation>Confirmée</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Date</source>
+        <translation>Date</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Type</source>
+        <translation>Type</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Label</source>
+        <translation>Étiquette</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Address</source>
+        <translation>Adresse</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Amount</source>
+        <translation>Montant</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>ID</source>
+        <translation>ID</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Error exporting</source>
+        <translation>Erreur lors de l&apos;export</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Could not write to file %1.</source>
+        <translation>Impossible d&apos;écrire dans le fichier %1</translation>
+    </message>
+    <message>
+        <location line="+100"/>
+        <source>Range:</source>
+        <translation>I
