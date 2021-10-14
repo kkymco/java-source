@@ -2838,4 +2838,67 @@ Cela implique que des frais à hauteur d&apos;au moins %2 seront nécessaires.</
         <source>Connect only to the specified node(s)</source>
         <translation>Ne se connecter qu&apos;au(x) nœud(s) spécifié(s)</translation>
     </message>
-    <me
+    <message>
+        <location line="+4"/>
+        <source>Discover own IP address (default: 1 when listening and no -externalip)</source>
+        <translation>Découvrir sa propre adresse IP (par défaut: 1 lors de l&apos;écoute et si aucun -externalip)</translation>
+    </message>
+    <message>
+        <location line="+94"/>
+        <source>Failed to listen on any port. Use -listen=0 if you want this.</source>
+        <translation>Échec de l&apos;écoute sur un port quelconque. Utilisez -listen=0 si vous voulez ceci.</translation>
+    </message>
+    <message>
+        <location line="-90"/>
+        <source>Find peers using DNS lookup (default: 1)</source>
+        <translation>Trouvez des peers utilisant DNS lookup (default: 1)</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Sync checkpoints policy (default: strict)</source>
+        <translation>Politique de synchronisation des checkpoints (default: strict)</translation>
+    </message>
+    <message>
+        <location line="+83"/>
+        <source>Invalid -tor address: &apos;%s&apos;</source>
+        <translation>Adresse -tor invalide: &apos;%s&apos;</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Invalid amount for -reservebalance=&lt;amount&gt;</source>
+        <translation>Montant incorrect pour -reservebalance=&lt;montant&gt;</translation>
+    </message>
+    <message>
+        <location line="-82"/>
+        <source>Maximum per-connection receive buffer, &lt;n&gt;*1000 bytes (default: 5000)</source>
+        <translation>Tampon maximal de réception par « -connection » &lt;n&gt;*1 000 octets (par défaut : 5 000)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Maximum per-connection send buffer, &lt;n&gt;*1000 bytes (default: 1000)</source>
+        <translation>Tampon maximal d&apos;envoi par « -connection », &lt;n&gt;*1 000 octets (par défaut : 1 000)</translation>
+    </message>
+    <message>
+        <location line="-16"/>
+        <source>Only connect to nodes in network &lt;net&gt; (IPv4, IPv6 or Tor)</source>
+        <translation>Se connecter uniquement aux nœuds du réseau &lt;net&gt; (IPv4, IPv6 ou Tor)</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>Output extra debugging information. Implies all other -debug* options</source>
+        <translation>Voir les autres informations de débogage. Implique toutes les autres options -debug*</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Output extra network debugging information</source>
+        <translation>Voir les autres informations de débogage du réseau</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Prepend debug output with timestamp</source>
+        <translation>Horodater les messages de debug</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
+        <
