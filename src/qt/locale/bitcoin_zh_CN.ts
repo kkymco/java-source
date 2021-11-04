@@ -276,4 +276,97 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="-56"/>
-        <source>Wallet encryption 
+        <source>Wallet encryption failed due to an internal error. Your wallet was not encrypted.</source>
+        <translation>由于一个本地错误，加密钱包的操作已经失败。您的钱包没能被加密。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <location line="+50"/>
+        <source>The supplied passphrases do not match.</source>
+        <translation>密码不匹配。</translation>
+    </message>
+    <message>
+        <location line="-38"/>
+        <source>Wallet unlock failed</source>
+        <translation>钱包解锁失败</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+12"/>
+        <location line="+19"/>
+        <source>The passphrase entered for the wallet decryption was incorrect.</source>
+        <translation>用于解密钱包的密码不正确。</translation>
+    </message>
+    <message>
+        <location line="-20"/>
+        <source>Wallet decryption failed</source>
+        <translation>钱包解密失败。</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Wallet passphrase was successfully changed.</source>
+        <translation>修改钱包密码成功。</translation>
+    </message>
+</context>
+<context>
+    <name>BitcoinGUI</name>
+    <message>
+        <location filename="../bitcoingui.cpp" line="+282"/>
+        <source>Sign &amp;message...</source>
+        <translation>消息签名(&amp;M)...</translation>
+    </message>
+    <message>
+        <location line="+251"/>
+        <source>Synchronizing with network...</source>
+        <translation>正在与网络同步...</translation>
+    </message>
+    <message>
+        <location line="-319"/>
+        <source>&amp;Overview</source>
+        <translation>概况(&amp;O)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Show general overview of wallet</source>
+        <translation>显示钱包概况</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>&amp;Transactions</source>
+        <translation>交易记录(&amp;T)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Browse transaction history</source>
+        <translation>查看交易历史</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>&amp;Address Book</source>
+        <translation>地址簿(&amp;A)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Edit the list of stored addresses and labels</source>
+        <translation>管理已储存的地址和标签</translation>
+    </message>
+    <message>
+        <location line="-13"/>
+        <source>&amp;Receive coins</source>
+        <translation>接收超级币(&amp;R)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Show the list of addresses for receiving payments</source>
+        <translation>显示用于接收支付的地址列表</translation>
+    </message>
+    <message>
+        <location line="-7"/>
+        <source>&amp;Send coins</source>
+        <translation>发送货币(&amp;S)</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>E&amp;xit</source>
+        <translation>退出(&amp;X)</translation>
+    </me
