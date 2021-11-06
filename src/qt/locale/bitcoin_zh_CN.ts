@@ -461,4 +461,98 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>调试窗口(&amp;D)</translation>
     </message>
     <message>
-    
+        <location line="+1"/>
+        <source>Open debugging and diagnostic console</source>
+        <translation>打开调试和诊断控制台</translation>
+    </message>
+    <message>
+        <location line="-5"/>
+        <source>&amp;Verify message...</source>
+        <translation>验证消息(&amp;V)...</translation>
+    </message>
+    <message>
+        <location line="-202"/>
+        <source>SuperCoin</source>
+        <translation>超级币</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Wallet</source>
+        <translation>钱包</translation>
+    </message>
+    <message>
+        <location line="+180"/>
+        <source>&amp;About SuperCoin</source>
+        <translation>关于超级币(&amp;A)</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>&amp;Show / Hide</source>
+        <translation>显示 / 隐藏(&amp;S)</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Unlock wallet</source>
+        <translation>解锁钱包</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&amp;Lock Wallet</source>
+        <translation>锁定钱包(&amp;L)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Lock wallet</source>
+        <translation>锁定钱包</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>&amp;File</source>
+        <translation>文件(&amp;F)</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>&amp;Settings</source>
+        <translation>设置(&amp;S)</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>&amp;Help</source>
+        <translation>帮助(&amp;H)</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Tabs toolbar</source>
+        <translation>分页工具栏</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Actions toolbar</source>
+        <translation>工具栏</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <location line="+9"/>
+        <source>[testnet]</source>
+        <translation>[测试网络]</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <location line="+60"/>
+        <source>SuperCoin client</source>
+        <translation>超级币客户端</translation>
+    </message>
+    <message numerus="yes">
+        <location line="+75"/>
+        <source>%n active connection(s) to SuperCoin network</source>
+        <translation><numerusform>与超级币网络建立了 %n 个连接</numerusform></translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>Downloaded %1 blocks of transaction history.</source>
+        <translation>已下载 %1 个区块的交易记录</translation>
+    </message>
+    <message>
+        <location line="+413"/>
+        <source>Staking.&lt;br&gt;Your weight is %1&lt;br&gt;Network weight is %2&lt;br&gt;Expected time to earn reward is %3</source>
+       
