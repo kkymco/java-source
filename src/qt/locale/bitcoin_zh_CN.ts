@@ -942,4 +942,98 @@ Address: %4
     <message>
         <location line="+0"/>
         <source>yes</source>
-        <tra
+        <translation>是</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>This label turns red, if the transaction size is bigger than 10000 bytes.
+
+ This means a fee of at least %1 per kb is required.
+
+ Can vary +/- 1 Byte per input.</source>
+        <translation>交易数据量超过10000字节时，该标签变为红色。
+此时每kb数据量将会收取 %1 的手续费。
+可能有+/-1字节的误差。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Transactions with higher priority get more likely into a block.
+
+This label turns red, if the priority is smaller than &quot;medium&quot;.
+
+ This means a fee of at least %1 per kb is required.</source>
+        <translation>优先度较高的交易有更高可能进入到区块中。
+当优先度为中级以下时，该标签变为红色。
+此时需要收取每kb %1 的手续费。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>This label turns red, if any recipient receives an amount smaller than %1.
+
+ This means a fee of at least %2 is required. 
+
+ Amounts below 0.546 times the minimum relay fee are shown as DUST.</source>
+        <translation>如果收款人所收款项少于 %1，该标签变为红色。
+此时需收取 %2 的手续费。
+低于该手续费的0.546倍的款项将被显示为DUST。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>This label turns red, if the change is smaller than %1.
+
+ This means a fee of at least %2 is required.</source>
+        <translation>如果零钱少于 %1，该标签变为红色。
+此时需收取 %2 的手续费。</translation>
+    </message>
+    <message>
+        <location line="+37"/>
+        <location line="+66"/>
+        <source>(no label)</source>
+        <translation>(没有标签)</translation>
+    </message>
+    <message>
+        <location line="-9"/>
+        <source>change from %1 (%2)</source>
+        <translation>来自%1的零钱 (%2)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>(change)</source>
+        <translation>(零钱)</translation>
+    </message>
+</context>
+<context>
+    <name>EditAddressDialog</name>
+    <message>
+        <location filename="../forms/editaddressdialog.ui" line="+14"/>
+        <source>Edit Address</source>
+        <translation>编辑地址</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>&amp;Label</source>
+        <translation>标签(&amp;L)</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>The label associated with this address book entry</source>
+        <translation>地址簿内该项目对应的标签</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>&amp;Address</source>
+        <translation>地址(&amp;A)</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>The address associated with this address book entry. This can only be modified for sending addresses.</source>
+        <translation>地址簿内该项目对应的地址。只有“收款人地址”分类下的地址可以修改。</translation>
+    </message>
+    <message>
+        <location filename="../editaddressdialog.cpp" line="+20"/>
+        <source>New receiving address</source>
+        <translation>新建接收地址</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>New sending address</source>
