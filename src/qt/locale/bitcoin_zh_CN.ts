@@ -1209,4 +1209,85 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location line="+19"/>
         <source>Port of the proxy (e.g. 9050)</source>
-        <translation>代理
+        <translation>代理端口（例如 9050）</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>SOCKS &amp;Version:</source>
+        <translation>Socks 版本(&amp;V)：</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>SOCKS version of the proxy (e.g. 5)</source>
+        <translation>Socks 代理版本（例如 5）</translation>
+    </message>
+    <message>
+        <location line="+36"/>
+        <source>&amp;Window</source>
+        <translation>窗口(&amp;W)</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Show only a tray icon after minimizing the window.</source>
+        <translation>最小化窗口后仅显示托盘图标</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>&amp;Minimize to the tray instead of the taskbar</source>
+        <translation>最小化到托盘(&amp;M)</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Minimize instead of exit the application when the window is closed. When this option is enabled, the application will be closed only after selecting Quit in the menu.</source>
+        <translation>当窗口关闭时程序最小化而不是退出。当使用该选项时，程序只能通过在菜单中选择退出来关闭</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>M&amp;inimize on close</source>
+        <translation>单击关闭按钮最小化(&amp;I)</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>&amp;Display</source>
+        <translation>显示(&amp;D)</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>User Interface &amp;language:</source>
+        <translation>用户界面语言(&amp;L)：</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>The user interface language can be set here. This setting will take effect after restarting SuperCoin.</source>
+        <translation>在此设置用户界面语言。重启超级币客户端后设置生效。</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>&amp;Unit to show amounts in:</source>
+        <translation>超级币金额单位(&amp;U)：</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Choose the default subdivision unit to show in the interface and when sending coins.</source>
+        <translation>选择超级币单位。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Whether to show SuperCoin addresses in the transaction list or not.</source>
+        <translation>是否在交易列表中显示超级币地址</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>&amp;Display addresses in transaction list</source>
+        <translation>在交易清单中显示超级币地址(&amp;D)</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Whether to show coin control features or not.</source>
+        <translation>是否需要交易源地址控制功能。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Display coin &amp;control features (experts only!)</source>
+        <translation>显示超级币控制选项(仅用于专家用户)</translation>
+    
