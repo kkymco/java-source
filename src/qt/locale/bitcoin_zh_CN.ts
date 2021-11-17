@@ -1129,4 +1129,84 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location line="+6"/>
         <source>Optional transaction fee per kB that helps make sure your transactions are processed quickly. Most transactions are 1 kB. Fee 0.01 recommended.</source>
-        <translation>支付可选的交易手续费以加速交易(每kB)。大多数交易的数据量为1kB。
+        <translation>支付可选的交易手续费以加速交易(每kB)。大多数交易的数据量为1kB。推荐额0.01。</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Pay transaction &amp;fee</source>
+        <translation>支付交易费用(&amp;F)</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Reserved amount does not participate in staking and is therefore spendable at any time.</source>
+        <translation>保留金额不参与权益累积，可以随时使用。</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Reserve</source>
+        <translation>保留</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Automatically start SuperCoin after logging in to the system.</source>
+        <translation>开机自动启动超级币客户端</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>&amp;Start SuperCoin on system login</source>
+        <translation>开机时自动启动超级币客户端(&amp;S)</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Detach block and address databases at shutdown. This means they can be moved to another data directory, but it slows down shutdown. The wallet is always detached.</source>
+        <translation>关机时断开区块和地址数据连接使得它们可以被移动到其他目录。这样做会使关机速度变慢。钱包数据总是断开存储的。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>&amp;Detach databases at shutdown</source>
+        <translation>关机时断开区块和地址数据库连接(&amp;D)</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>&amp;Network</source>
+        <translation>网络(&amp;N)</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Automatically open the SuperCoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation>路由器自动打开超级币客户端端口。该功能仅在路由器开启UPnP支持时有效。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Map port using &amp;UPnP</source>
+        <translation>使用 &amp;UPnP 映射端口</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Connect to the SuperCoin network through a SOCKS proxy (e.g. when connecting through Tor).</source>
+        <translation>经SOCKS代理连接到超级币网络(例如使用Tor)</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>&amp;Connect through SOCKS proxy:</source>
+        <translation>经SOCKS代理连接(&amp;C)</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Proxy &amp;IP:</source>
+        <translation>代理服务器 &amp;IP：</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>IP address of the proxy (e.g. 127.0.0.1)</source>
+        <translation>代理地址(如：127.0.0.1)</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>&amp;Port:</source>
+        <translation>端口(&amp;P)：</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Port of the proxy (e.g. 9050)</source>
+        <translation>代理
