@@ -1476,4 +1476,105 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     </message>
     <message>
         <location line="+10"/>
-      
+        <location line="+23"/>
+        <location line="+26"/>
+        <location line="+23"/>
+        <location line="+23"/>
+        <location line="+36"/>
+        <location line="+53"/>
+        <location line="+23"/>
+        <location line="+23"/>
+        <location filename="../rpcconsole.cpp" line="+348"/>
+        <source>N/A</source>
+        <translation>不可用</translation>
+    </message>
+    <message>
+        <location line="-217"/>
+        <source>Client version</source>
+        <translation>客户端版本</translation>
+    </message>
+    <message>
+        <location line="-45"/>
+        <source>&amp;Information</source>
+        <translation>信息(&amp;I)</translation>
+    </message>
+    <message>
+        <location line="+68"/>
+        <source>Using OpenSSL version</source>
+        <translation>使用 OpenSSL 版本</translation>
+    </message>
+    <message>
+        <location line="+49"/>
+        <source>Startup time</source>
+        <translation>启动时间</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>Network</source>
+        <translation>网络</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Number of connections</source>
+        <translation>连接数</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>On testnet</source>
+        <translation>测试网</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Block chain</source>
+        <translation>数据链</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Current number of blocks</source>
+        <translation>当前数据块数量</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Estimated total blocks</source>
+        <translation>预计数据块数量</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Last block time</source>
+        <translation>上一数据块时间</translation>
+    </message>
+    <message>
+        <location line="+52"/>
+        <source>&amp;Open</source>
+        <translation>打开(&amp;O)</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Command-line options</source>
+        <translation>命令行选项</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Show the SuperCoin-Qt help message to get a list with possible SuperCoin command-line options.</source>
+        <translation>显示关于命令行选项的帮助信息。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>&amp;Show</source>
+        <translation>显示(&amp;S)</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>&amp;Console</source>
+        <translation>控制台(&amp;C)</translation>
+    </message>
+    <message>
+        <location line="-260"/>
+        <source>Build date</source>
+        <translation>创建时间</translation>
+    </message>
+    <message>
+        <location line="-104"/>
+        <source>SuperCoin - Debug window</source>
+        <translation>超级币客户端-调试窗口</translation>
+    </me
