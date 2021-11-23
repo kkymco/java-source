@@ -1290,4 +1290,98 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location line="+3"/>
         <source>Display coin &amp;control features (experts only!)</source>
         <translation>显示超级币控制选项(仅用于专家用户)</translation>
-    
+    </message>
+    <message>
+        <location line="+71"/>
+        <source>&amp;OK</source>
+        <translation>确定(&amp;O)</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>&amp;Cancel</source>
+        <translation>取消(&amp;C)</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>&amp;Apply</source>
+        <translation>应用(&amp;A)</translation>
+    </message>
+    <message>
+        <location filename="../optionsdialog.cpp" line="+55"/>
+        <source>default</source>
+        <translation>默认</translation>
+    </message>
+    <message>
+        <location line="+149"/>
+        <location line="+9"/>
+        <source>Warning</source>
+        <translation>警告</translation>
+    </message>
+    <message>
+        <location line="-9"/>
+        <location line="+9"/>
+        <source>This setting will take effect after restarting SuperCoin.</source>
+        <translation>重启客户端后设置生效</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>The supplied proxy address is invalid.</source>
+        <translation>提供的代理服务器地址无效。</translation>
+    </message>
+</context>
+<context>
+    <name>OverviewPage</name>
+    <message>
+        <location filename="../forms/overviewpage.ui" line="+14"/>
+        <source>Form</source>
+        <translation>表单</translation>
+    </message>
+    <message>
+        <location line="+33"/>
+        <location line="+231"/>
+        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the SuperCoin network after a connection is established, but this process has not completed yet.</source>
+        <translation>所显示的信息尚未更新，建立连接后钱包客户端会自动和网络进行同步，但目前该过程尚未完成。</translation>
+    </message>
+    <message>
+        <location line="-160"/>
+        <source>Stake:</source>
+        <translation>用于权益累积：</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>Unconfirmed:</source>
+        <translation>未确认：</translation>
+    </message>
+    <message>
+        <location line="-107"/>
+        <source>Wallet</source>
+        <translation>钱包</translation>
+    </message>
+    <message>
+        <location line="+49"/>
+        <source>Spendable:</source>
+        <translation>可用金额：</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Your current spendable balance</source>
+        <translation>您当前可使用的余额</translation>
+    </message>
+    <message>
+        <location line="+71"/>
+        <source>Immature:</source>
+        <translation>未成熟的：</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Mined balance that has not yet matured</source>
+        <translation>尚未成熟的挖矿收入余额</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Total:</source>
+        <translation>总额：</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Your current 
