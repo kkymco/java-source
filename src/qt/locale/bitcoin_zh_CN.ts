@@ -2603,4 +2603,97 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <message>
         <location line="+8"/>
         <source>to</source>
-        <translation>到</translati
+        <translation>到</translation>
+    </message>
+</context>
+<context>
+    <name>WalletModel</name>
+    <message>
+        <location filename="../walletmodel.cpp" line="+206"/>
+        <source>Sending...</source>
+        <translation>正在发送</translation>
+    </message>
+</context>
+<context>
+    <name>bitcoin-core</name>
+    <message>
+        <location filename="../bitcoinstrings.cpp" line="+33"/>
+        <source>SuperCoin version</source>
+        <translation>超级币客户端 版本</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Usage:</source>
+        <translation>使用：</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Send command to -server or SuperCoind</source>
+        <translation>向-server服务器或SuperCoind发送命令</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>List commands</source>
+        <translation>列出命令
+</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Get help for a command</source>
+        <translation>获得某条命令的帮助
+</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Options:</source>
+        <translation>选项：
+</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Specify configuration file (default: SuperCoin.conf)</source>
+        <translation>指定配置文件(默认: SuperCoin.conf)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Specify pid file (default: SuperCoind.pid)</source>
+        <translation>指定pid文件(默认: SuperCoind.pid)</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Specify wallet file (within data directory)</source>
+        <translation>指定钱包文件（数据目录内）</translation>
+    </message>
+    <message>
+        <location line="-1"/>
+        <source>Specify data directory</source>
+        <translation>指定数据目录
+</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Set database cache size in megabytes (default: 25)</source>
+        <translation>设置数据库缓冲区大小 (缺省: 25MB)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Set database disk log size in megabytes (default: 100)</source>
+        <translation>设置数据库日志文件大小(单位MB，默认值100)</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Listen for connections on &lt;port&gt; (default: 15714 or testnet: 25714)</source>
+        <translation>监听&lt;port&gt;端口的连接 (默认: 15714 测试网: 25714)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Maintain at most &lt;n&gt; connections to peers (default: 125)</source>
+        <translation>最大连接数 &lt;n&gt; （缺省: 125）</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Connect to a node to retrieve peer addresses, and disconnect</source>
+        <translation>连接一个节点并获取对端地址，然后断开连接</translation>
+    </message>
+    <message>
+        <locat
