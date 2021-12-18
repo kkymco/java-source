@@ -2696,4 +2696,72 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <translation>连接一个节点并获取对端地址，然后断开连接</translation>
     </message>
     <message>
-        <locat
+        <location line="+1"/>
+        <source>Specify your own public address</source>
+        <translation>指定您的公共地址</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Bind to given address. Use [host]:port notation for IPv6</source>
+        <translation>以IPv6 [host]:端口绑定给定地址</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Stake your coins to support network and gain reward (default: 1)</source>
+        <translation>进行权益累积以支持超级币网络并获得报酬(默认: 1)</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Threshold for disconnecting misbehaving peers (default: 100)</source>
+        <translation>断开出现问题节点阀值（缺省: 100）</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Number of seconds to keep misbehaving peers from reconnecting (default: 86400)</source>
+        <translation>Number of seconds to keep misbehaving peers from reconnecting (缺省: 86400)</translation>
+    </message>
+    <message>
+        <location line="-44"/>
+        <source>An error occurred while setting up the RPC port %u for listening on IPv4: %s</source>
+        <translation>设置RPC监听端口%u时发生错误, IPv4:%s</translation>
+    </message>
+    <message>
+        <location line="+51"/>
+        <source>Detach block and address databases. Increases shutdown time (default: 0)</source>
+        <translation>离线保存区块和地址数据库. 增加关机时间。 (默认: 0)</translation>
+    </message>
+    <message>
+        <location line="+109"/>
+        <source>Error: The transaction was rejected.  This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
+        <translation>错误：交易被拒绝。可能由于钱包中部分金额已被使用，例如您使用了钱包数据的副本，在副本中某些金额已被使用，但在此处尚未被标记为已使用。</translation>
+    </message>
+    <message>
+        <location line="-5"/>
+        <source>Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds  </source>
+        <translation>错误：该笔交易需至少支付 %s 的手续费。</translation>
+    </message>
+    <message>
+        <location line="-87"/>
+        <source>Listen for JSON-RPC connections on &lt;port&gt; (default: 15715 or testnet: 25715)</source>
+        <translation>监听 &lt;port&gt; 端口的JSON-RPC连接 (默认: 15715 测试网: 25715)</translation>
+    </message>
+    <message>
+        <location line="-11"/>
+        <source>Accept command line and JSON-RPC commands</source>
+        <translation>接受命令行和 JSON-RPC 命令
+</translation>
+    </message>
+    <message>
+        <location line="+101"/>
+        <source>Error: Transaction creation failed  </source>
+        <translation>错误：交易创建失败。</translation>
+    </message>
+    <message>
+        <location line="-5"/>
+        <source>Error: Wallet locked, unable to create transaction  </source>
+        <translation>错误：钱包已锁定，无法创建交易。</translation>
+    </message>
+    <message>
+        <location line="-8"/>
+        <source>Importing blockchain data file.</source>
+        
