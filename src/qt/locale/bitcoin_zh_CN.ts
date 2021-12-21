@@ -3213,4 +3213,91 @@ alertnotify=echo %%s | mail -s &quot;SuperCoin Alert&quot; admin@foo.com
     <message>
         <location line="-1"/>
         <source>Unknown -socks proxy version requested: %i</source>
-        <tran
+        <translation>被指定的是未知socks代理版本: %i</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Cannot resolve -bind address: &apos;%s&apos;</source>
+        <translation>无法解析 -bind 端口地址: &apos;%s&apos;</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Cannot resolve -externalip address: &apos;%s&apos;</source>
+        <translation>无法解析 -externalip 地址: &apos;%s&apos;</translation>
+    </message>
+    <message>
+        <location line="-24"/>
+        <source>Invalid amount for -paytxfee=&lt;amount&gt;: &apos;%s&apos;</source>
+        <translation>非法金额 -paytxfee=&lt;amount&gt;: &apos;%s&apos;</translation>
+    </message>
+    <message>
+        <location line="+44"/>
+        <source>Error: could not start node</source>
+        <translation>错误：无法启动节点</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Sending...</source>
+        <translation>正在发送</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Invalid amount</source>
+        <translation>无效金额</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Insufficient funds</source>
+        <translation>金额不足</translation>
+    </message>
+    <message>
+        <location line="-34"/>
+        <source>Loading block index...</source>
+        <translation>正在加载数据块索引...</translation>
+    </message>
+    <message>
+        <location line="-103"/>
+        <source>Add a node to connect to and attempt to keep the connection open</source>
+        <translation>添加节点并与其保持连接</translation>
+    </message>
+    <message>
+        <location line="+122"/>
+        <source>Unable to bind to %s on this computer. SuperCoin is probably already running.</source>
+        <translation>无法绑定到该计算机上的 %s. 超级币客户端可能已在运行中。</translation>
+    </message>
+    <message>
+        <location line="-97"/>
+        <source>Fee per KB to add to transactions you send</source>
+        <translation>每kB交易所支付的手续费</translation>
+    </message>
+    <message>
+        <location line="+55"/>
+        <source>Invalid amount for -mininput=&lt;amount&gt;: &apos;%s&apos;</source>
+        <translation>无效的数量。 -mininput=&lt;amount&gt;: &apos;%s&apos;</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Loading wallet...</source>
+        <translation>正在加载钱包...</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Cannot downgrade wallet</source>
+        <translation>无法降级钱包</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Cannot initialize keypool</source>
+        <translation>无法初始化密钥池。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Cannot write default address</source>
+        <translation>无法写入默认地址</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Rescanning...</source>
+        <translation>正在重新扫描...</translation>
+    </message>
+ 
