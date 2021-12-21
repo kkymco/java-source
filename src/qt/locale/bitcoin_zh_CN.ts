@@ -3300,4 +3300,29 @@ alertnotify=echo %%s | mail -s &quot;SuperCoin Alert&quot; admin@foo.com
         <source>Rescanning...</source>
         <translation>正在重新扫描...</translation>
     </message>
- 
+    <message>
+        <location line="+5"/>
+        <source>Done loading</source>
+        <translation>加载完成</translation>
+    </message>
+    <message>
+        <location line="-167"/>
+        <source>To use the %s option</source>
+        <translation>使用 %s 选项</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Error</source>
+        <translation>错误</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>You must set rpcpassword=&lt;password&gt; in the configuration file:
+%s
+If the file does not exist, create it with owner-readable-only file permissions.</source>
+        <translation>您必须在配置文件中加入选项 rpcpassword :
+ %s
+如果配置文件不存在，请新建，并将文件权限设置为仅允许文件所有者读取.</translation>
+    </message>
+</context>
+</TS>
