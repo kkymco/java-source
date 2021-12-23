@@ -205,3 +205,11 @@ void OverviewPage::updateDisplayUnit()
         txdelegate->unit = model->getOptionsModel()->getDisplayUnit();
 
         ui->listTransactions->update();
+    }
+}
+
+void OverviewPage::showOutOfSyncWarning(bool fShow)
+{
+    ui->labelWalletStatus->setVisible(fShow);
+    ui->labelTransactionsStatus->setVisible(fShow);
+}
