@@ -46,4 +46,21 @@ public slots:
     /** Set number of blocks shown in the UI */
     void setNumBlocks(int count, int countOfPeers);
     /** Go forward or back in history */
-    void browseHistory(
+    void browseHistory(int offset);
+    /** Scroll console view to end */
+    void scrollToEnd();
+signals:
+    // For RPC command executor
+    void stopExecutor();
+    void cmdRequest(const QString &command);
+
+private:
+    Ui::RPCConsole *ui;
+    ClientModel *clientModel;
+    QStringList history;
+    int historyPtr;
+
+    void startExecutor();
+};
+
+#endif // RPCCONSOLE_H
