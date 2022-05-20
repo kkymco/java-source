@@ -161,3 +161,118 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
                 {
                     if (wallet->IsMine(txout))
                         continue;
+
+                    if (!wtx.mapValue.count("to") || wtx.mapValue["to"].empty())
+                    {
+                        // Offline transaction
+                        CTxDestination address;
+                        if (ExtractDestination(txout.scriptPubKey, address))
+                        {
+                            strHTML += "<b>" + tr("To") + ":</b> ";
+                            if (wallet->mapAddressBook.count(address) && !wallet->mapAddressBook[address].empty())
+                                strHTML += GUIUtil::HtmlEscape(wallet->mapAddressBook[address]) + " ";
+                            strHTML += GUIUtil::HtmlEscape(CBitcoinAddress(address).ToString());
+                            strHTML += "<br>";
+                        }
+                    }
+
+                    strHTML += "<b>" + tr("Debit") + ":</b> " + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, -txout.nValue) + "<br>";
+                }
+
+                if (fAllToMe)
+                {
+                    // Payment to self
+                    int64_t nChange = wtx.GetChange();
+                    int64_t nValue = nCredit - nChange;
+                    strHTML += "<b>" + tr("Debit") + ":</b> " + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, -nValue) + "<br>";
+                    strHTML += "<b>" + tr("Credit") + ":</b> " + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, nValue) + "<br>";
+                }
+
+                int64_t nTxFee = nDebit - wtx.GetValueOut();
+                if (nTxFee > 0)
+                    strHTML += "<b>" + tr("Transaction fee") + ":</b> " + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, -nTxFee) + "<br>";
+            }
+            else
+            {
+                //
+                // Mixed debit transaction
+                //
+                BOOST_FOREACH(const CTxIn& txin, wtx.vin)
+                    if (wallet->IsMine(txin))
+                        strHTML += "<b>" + tr("Debit") + ":</b> " + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, -wallet->GetDebit(txin)) + "<br>";
+                BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+                    if (wallet->IsMine(txout))
+                        strHTML += "<b>" + tr("Credit") + ":</b> " + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, wallet->GetCredit(txout)) + "<br>";
+            }
+        }
+
+        strHTML += "<b>" + tr("Net amount") + ":</b> " + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, nNet, true) + "<br>";
+
+        //
+        // Message
+        //
+        if (wtx.mapValue.count("message") && !wtx.mapValue["message"].empty())
+            strHTML += "<br><b>" + tr("Message") + ":</b><br>" + GUIUtil::HtmlEscape(wtx.mapValue["message"], true) + "<br>";
+        if (wtx.mapValue.count("comment") && !wtx.mapValue["comment"].empty())
+            strHTML += "<br><b>" + tr("Comment") + ":</b><br>" + GUIUtil::HtmlEscape(wtx.mapValue["comment"], true) + "<br>";
+
+        strHTML += "<b>" + tr("Transaction ID") + ":</b> " + wtx.GetHash().ToString().c_str() + "<br>";
+
+        if (wtx.IsCoinBase() || wtx.IsCoinStake())
+            strHTML += "<br>" + tr("Generated coins must mature 50 blocks before they can be spent. When you generated this block, it was broadcast to the network to be added to the block chain. If it fails to get into the chain, its state will change to \"not accepted\" and it won't be spendable. This may occasionally happen if another node generates a block within a few seconds of yours.") + "<br>";
+
+        //
+        // Debug view
+        //
+        if (fDebug)
+        {
+            strHTML += "<hr><br>" + tr("Debug information") + "<br><br>";
+            BOOST_FOREACH(const CTxIn& txin, wtx.vin)
+                if(wallet->IsMine(txin))
+                    strHTML += "<b>" + tr("Debit") + ":</b> " + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, -wallet->GetDebit(txin)) + "<br>";
+            BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+                if(wallet->IsMine(txout))
+                    strHTML += "<b>" + tr("Credit") + ":</b> " + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, wallet->GetCredit(txout)) + "<br>";
+
+            strHTML += "<br><b>" + tr("Transaction") + ":</b><br>";
+            strHTML += GUIUtil::HtmlEscape(wtx.ToString(), true);
+
+            CTxDB txdb("r"); // To fetch source txouts
+
+            strHTML += "<br><b>" + tr("Inputs") + ":</b>";
+            strHTML += "<ul>";
+
+            {
+                LOCK(wallet->cs_wallet);
+                BOOST_FOREACH(const CTxIn& txin, wtx.vin)
+                {
+                    COutPoint prevout = txin.prevout;
+
+                    CTransaction prev;
+                    if(txdb.ReadDiskTx(prevout.hash, prev))
+                    {
+                        if (prevout.n < prev.vout.size())
+                        {
+                            strHTML += "<li>";
+                            const CTxOut &vout = prev.vout[prevout.n];
+                            CTxDestination address;
+                            if (ExtractDestination(vout.scriptPubKey, address))
+                            {
+                                if (wallet->mapAddressBook.count(address) && !wallet->mapAddressBook[address].empty())
+                                    strHTML += GUIUtil::HtmlEscape(wallet->mapAddressBook[address]) + " ";
+                                strHTML += QString::fromStdString(CBitcoinAddress(address).ToString());
+                            }
+                            strHTML = strHTML + " " + tr("Amount") + "=" + BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, vout.nValue);
+                            strHTML = strHTML + " IsMine=" + (wallet->IsMine(vout) ? tr("true") : tr("false")) + "</li>";
+                        }
+                    }
+                }
+            }
+
+            strHTML += "</ul>";
+        }
+
+        strHTML += "</font></html>";
+    }
+    return strHTML;
+}
