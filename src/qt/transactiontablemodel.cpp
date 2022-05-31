@@ -575,3 +575,48 @@ QVariant TransactionTableModel::headerData(int section, Qt::Orientation orientat
     if(orientation == Qt::Horizontal)
     {
         if(role == Qt::DisplayRole)
+        {
+            return columns[section];
+        }
+        else if (role == Qt::TextAlignmentRole)
+        {
+            return column_alignments[section];
+        } else if (role == Qt::ToolTipRole)
+        {
+            switch(section)
+            {
+            case Status:
+                return tr("Transaction status. Hover over this field to show number of confirmations.");
+            case Date:
+                return tr("Date and time that the transaction was received.");
+            case Type:
+                return tr("Type of transaction.");
+            case ToAddress:
+                return tr("Destination address of transaction.");
+            case Amount:
+                return tr("Amount removed from or added to balance.");
+            }
+        }
+    }
+    return QVariant();
+}
+
+QModelIndex TransactionTableModel::index(int row, int column, const QModelIndex &parent) const
+{
+    Q_UNUSED(parent);
+    TransactionRecord *data = priv->index(row);
+    if(data)
+    {
+        return createIndex(row, column, priv->index(row));
+    }
+    else
+    {
+        return QModelIndex();
+    }
+}
+
+void TransactionTableModel::updateDisplayUnit()
+{
+    // emit dataChanged to update Amount column with the current unit
+    emit dataChanged(index(0, Amount), index(priv->size()-1, Amount));
+}
