@@ -1,0 +1,95 @@
+#include "walletmodel.h"
+#include "guiconstants.h"
+#include "optionsmodel.h"
+#include "addresstablemodel.h"
+#include "transactiontablemodel.h"
+#include "donation.h"
+
+#include "ui_interface.h"
+#include "wallet.h"
+#include "walletdb.h" // for BackupWallet
+#include "base58.h"
+
+#include <QSet>
+#include <QTimer>
+
+WalletModel::WalletModel(CWallet *wallet, OptionsModel *optionsModel, QObject *parent) :
+    QObject(parent), wallet(wallet), optionsModel(optionsModel), addressTableModel(0),
+    transactionTableModel(0),
+    cachedBalance(0), cachedStake(0), cachedUnconfirmedBalance(0), cachedImmatureBalance(0),
+    cachedNumTransactions(0),
+    cachedEncryptionStatus(Unencrypted),
+    cachedNumBlocks(0)
+{
+    addressTableModel = new AddressTableModel(wallet, this);
+    transactionTableModel = new TransactionTableModel(wallet, this);
+
+    // This timer will be fired repeatedly to update the balance
+    pollTimer = new QTimer(this);
+    connect(pollTimer, SIGNAL(timeout()), this, SLOT(pollBalanceChanged()));
+    pollTimer->start(MODEL_UPDATE_DELAY);
+
+    subscribeToCoreSignals();
+}
+
+WalletModel::~WalletModel()
+{
+    unsubscribeFromCoreSignals();
+}
+
+qint64 WalletModel::getBalance() const
+{
+    return wallet->GetBalance();
+}
+
+qint64 WalletModel::getUnconfirmedBalance() const
+{
+    return wallet->GetUnconfirmedBalance();
+}
+
+qint64 WalletModel::getStake() const
+{
+    return wallet->GetStake();
+}
+
+qint64 WalletModel::getImmatureBalance() const
+{
+    return wallet->GetImmatureBalance();
+}
+
+int WalletModel::getNumTransactions() const
+{
+    int numTransactions = 0;
+    {
+        LOCK(wallet->cs_wallet);
+        numTransactions = wallet->mapWallet.size();
+    }
+    return numTransactions;
+}
+
+void WalletModel::updateStatus()
+{
+    EncryptionStatus newEncryptionStatus = getEncryptionStatus();
+
+    if(cachedEncryptionStatus != newEncryptionStatus)
+        emit encryptionStatusChanged(newEncryptionStatus);
+}
+
+void WalletModel::pollBalanceChanged()
+{
+    if(nBestHeight != cachedNumBlocks)
+    {
+        // Balance and number of transactions might have changed
+        cachedNumBlocks = nBestHeight;
+        checkBalanceChanged();
+    }
+}
+
+void WalletModel::checkBalanceChanged()
+{
+    qint64 newBalance = getBalance();
+    qint64 newStake = getStake();
+    qint64 newUnconfirmedBalance = getUnconfirmedBalance();
+    qint64 newImmatureBalance = getImmatureBalance();
+
+    if(cachedBalance != newBalance || cachedStake != newStake || cachedUnconfirmedBalance != newUnconfirmedBalance || cache
