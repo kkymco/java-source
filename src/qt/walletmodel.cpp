@@ -92,4 +92,114 @@ void WalletModel::checkBalanceChanged()
     qint64 newUnconfirmedBalance = getUnconfirmedBalance();
     qint64 newImmatureBalance = getImmatureBalance();
 
-    if(cachedBalance != newBalance || cachedStake != newStake || cachedUnconfirmedBalance != newUnconfirmedBalance || cache
+    if(cachedBalance != newBalance || cachedStake != newStake || cachedUnconfirmedBalance != newUnconfirmedBalance || cachedImmatureBalance != newImmatureBalance)
+    {
+        cachedBalance = newBalance;
+        cachedStake = newStake;
+        cachedUnconfirmedBalance = newUnconfirmedBalance;
+        cachedImmatureBalance = newImmatureBalance;
+        emit balanceChanged(newBalance, newStake, newUnconfirmedBalance, newImmatureBalance);
+    }
+}
+
+void WalletModel::updateTransaction(const QString &hash, int status)
+{
+    if(transactionTableModel)
+        transactionTableModel->updateTransaction(hash, status);
+
+    // Balance and number of transactions might have changed
+    checkBalanceChanged();
+
+    int newNumTransactions = getNumTransactions();
+    if(cachedNumTransactions != newNumTransactions)
+    {
+        cachedNumTransactions = newNumTransactions;
+        emit numTransactionsChanged(newNumTransactions);
+    }
+}
+
+void WalletModel::updateAddressBook(const QString &address, const QString &label, bool isMine, int status)
+{
+    if(addressTableModel)
+        addressTableModel->updateEntry(address, label, isMine, status);
+}
+
+bool WalletModel::validateAddress(const QString &address)
+{
+    CBitcoinAddress addressParsed(address.toStdString());
+    return addressParsed.IsValid();
+}
+
+WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipient> &recipients, const CCoinControl *coinControl)
+{
+    QSet<QString> setAddress;
+	WalletModel::SendCoinsReturn r;
+
+    int64_t total = 0;
+
+    if(recipients.empty())
+    {
+        return OK;
+    }
+
+    // Pre-check input data for validity
+    foreach(const SendCoinsRecipient &rcp, recipients)
+    {
+        if(!validateAddress(rcp.address))
+        {
+            return InvalidAddress;
+        }
+        setAddress.insert(rcp.address);
+
+        if(rcp.amount <= 0)
+        {
+            return InvalidAmount;
+        }
+        total += rcp.amount;
+    }
+
+    if(recipients.size() > setAddress.size())
+    {
+        return DuplicateAddress;
+    }
+
+    int64_t nBalance = 0;
+    std::vector<COutput> vCoins;
+    wallet->AvailableCoins(vCoins, true, coinControl);
+
+    BOOST_FOREACH(const COutput& out, vCoins)
+        nBalance += out.tx->vout[out.i].nValue;
+
+    if(total > nBalance)
+    {
+        return AmountExceedsBalance;
+    }
+
+    if((total + nTransactionFee) > nBalance)
+    {
+        return SendCoinsReturn(AmountWithFeeExceedsBalance, nTransactionFee);
+    }
+
+	if(wallet->GetAnonymousSend(coinControl))		
+	{
+		// need to make sure will have enough money to cover the 1% fee (minimum 0.5 SUPER)
+		int64_t mixerFee = 0.01 * total;
+		if(mixerFee < 0.5 * COIN)
+			mixerFee = 0.5 * COIN;
+
+		// need 2X amount for the transaction
+		if((mixerFee + total + total + nTransactionFee) > nBalance)
+			return SendCoinsReturn(AmountWithFeeExceedsBalance, nTransactionFee + mixerFee);
+
+		r = sendCoinsUsingMixer(recipients, coinControl);
+	}
+	else
+	{
+		r = sendCoinsNormal(recipients, nBalance, total, coinControl);
+	}
+
+	return r;
+}
+
+
+WalletModel::SendCoinsReturn WalletModel::sendCoinsNormal(const QList<
