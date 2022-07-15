@@ -427,4 +427,75 @@ Value signrawtransaction(const Array& params, bool fHelp)
 
             string txidHex = find_value(prevOut, "txid").get_str();
             if (!IsHex(txidHex))
-                throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "txid must be 
+                throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "txid must be hexadecimal");
+            uint256 txid;
+            txid.SetHex(txidHex);
+
+            int nOut = find_value(prevOut, "vout").get_int();
+            if (nOut < 0)
+                throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "vout must be positive");
+
+            string pkHex = find_value(prevOut, "scriptPubKey").get_str();
+            if (!IsHex(pkHex))
+                throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "scriptPubKey must be hexadecimal");
+            vector<unsigned char> pkData(ParseHex(pkHex));
+            CScript scriptPubKey(pkData.begin(), pkData.end());
+
+            COutPoint outpoint(txid, nOut);
+            if (mapPrevOut.count(outpoint))
+            {
+                // Complain if scriptPubKey doesn't match
+                if (mapPrevOut[outpoint] != scriptPubKey)
+                {
+                    string err("Previous output scriptPubKey mismatch:\n");
+                    err = err + mapPrevOut[outpoint].ToString() + "\nvs:\n"+
+                        scriptPubKey.ToString();
+                    throw JSONRPCError(RPC_DESERIALIZATION_ERROR, err);
+                }
+            }
+            else
+                mapPrevOut[outpoint] = scriptPubKey;
+
+            // if redeemScript given and not using the local wallet (private keys
+            // given), add redeemScript to the tempKeystore so it can be signed:
+            if (fGivenKeys && scriptPubKey.IsPayToScriptHash())
+            {
+                RPCTypeCheck(prevOut, map_list_of("txid", str_type)("vout", int_type)("scriptPubKey", str_type)("redeemScript",str_type));
+                Value v = find_value(prevOut, "redeemScript");
+                if (!(v == Value::null))
+                {
+                    vector<unsigned char> rsData(ParseHexV(v, "redeemScript"));
+                    CScript redeemScript(rsData.begin(), rsData.end());
+                    tempKeystore.AddCScript(redeemScript);
+                }
+            }
+        }
+    }
+
+    const CKeyStore& keystore = (fGivenKeys ? tempKeystore : *pwalletMain);
+
+    int nHashType = SIGHASH_ALL;
+    if (params.size() > 3 && params[3].type() != null_type)
+    {
+        static map<string, int> mapSigHashValues =
+            boost::assign::map_list_of
+            (string("ALL"), int(SIGHASH_ALL))
+            (string("ALL|ANYONECANPAY"), int(SIGHASH_ALL|SIGHASH_ANYONECANPAY))
+            (string("NONE"), int(SIGHASH_NONE))
+            (string("NONE|ANYONECANPAY"), int(SIGHASH_NONE|SIGHASH_ANYONECANPAY))
+            (string("SINGLE"), int(SIGHASH_SINGLE))
+            (string("SINGLE|ANYONECANPAY"), int(SIGHASH_SINGLE|SIGHASH_ANYONECANPAY))
+            ;
+        string strHashType = params[3].get_str();
+        if (mapSigHashValues.count(strHashType))
+            nHashType = mapSigHashValues[strHashType];
+        else
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid sighash param");
+    }
+
+    bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
+
+    // Sign what we can:
+    for (unsigned int i = 0; i < mergedTx.vin.size(); i++)
+    {
+        CTxIn& txin =
