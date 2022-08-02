@@ -596,4 +596,8 @@ Value listservicenodes(const Array& params, bool fHelp)
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "listservicenodes\n"
-            "Lists the currently connected service 
+            "Lists the currently connected service nodes.");
+
+    return GetCurrentServiceNodeList();
+}
+
