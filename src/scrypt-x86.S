@@ -271,4 +271,160 @@
 	roll	$7, %esi; \
 	xorl	%esi, %ebx; \
 	movl	%ebx, 8(%esp); \
-	movl	
+	movl	12(%esp), %esi; \
+	xorl	%edi, %ebp; \
+	leal	(%edx, %ebx), %edi; \
+	roll	$9, %edi; \
+	xorl	%edi, %esi; \
+	movl	%esi, 12(%esp); \
+	movl	28(%esp), %edi; \
+	movl	%ebp, 52(%esp); \
+	movl	36(%esp), %ebp; \
+	addl	%esi, %ebx; \
+	roll	$13, %ebx; \
+	xorl	%ebx, %ecx; \
+	movl	16(%esp), %ebx; \
+	movl	%ecx, 16(%esp); \
+	addl	%esi, %ecx; \
+	roll	$18, %ecx; \
+	leal	(%edi, %ebp), %esi; \
+	roll	$7, %esi; \
+	xorl	%esi, %ebx; \
+	movl	%ebx, 28(%esp); \
+	movl	32(%esp), %esi; \
+	xorl	%ecx, %edx; \
+	leal	(%ebp, %ebx), %ecx; \
+	roll	$9, %ecx; \
+	xorl	%ecx, %esi; \
+	movl	%esi, 32(%esp); \
+	movl	4(%esp), %ecx; \
+	movl	%edx, 4(%esp); \
+	movl	48(%esp), %edx; \
+	addl	%esi, %ebx; \
+	roll	$13, %ebx; \
+	xorl	%ebx, %edi; \
+	movl	20(%esp), %ebx; \
+	movl	%edi, 20(%esp); \
+	addl	%esi, %edi; \
+	roll	$18, %edi; \
+	leal	(%ecx, %edx), %esi; \
+	roll	$7, %esi; \
+	xorl	%esi, %ebx; \
+	movl	%ebx, 48(%esp); \
+	movl	40(%esp), %esi; \
+	xorl	%edi, %ebp; \
+	leal	(%edx, %ebx), %edi; \
+	roll	$9, %edi; \
+	xorl	%edi, %esi; \
+	movl	%esi, 36(%esp); \
+	movl	60(%esp), %edi; \
+	movl	%ebp, 24(%esp); \
+	movl	52(%esp), %ebp; \
+	addl	%esi, %ebx; \
+	roll	$13, %ebx; \
+	xorl	%ebx, %ecx; \
+	movl	44(%esp), %ebx; \
+	movl	%ecx, 40(%esp); \
+	addl	%esi, %ecx; \
+	roll	$18, %ecx; \
+	leal	(%edi, %ebp), %esi; \
+	roll	$7, %esi; \
+	xorl	%esi, %ebx; \
+	movl	%ebx, 52(%esp); \
+	movl	56(%esp), %esi; \
+	xorl	%ecx, %edx; \
+	leal	(%ebp, %ebx), %ecx; \
+	roll	$9, %ecx; \
+	xorl	%ecx, %esi; \
+	movl	%esi, 56(%esp); \
+	addl	%esi, %ebx; \
+	movl	%edx, 44(%esp); \
+	roll	$13, %ebx; \
+	xorl	%ebx, %edi; \
+	movl	%edi, 60(%esp); \
+	addl	%esi, %edi; \
+	roll	$18, %edi; \
+	xorl	%edi, %ebp; \
+	movl	%ebp, 64(%esp); \
+
+
+	.text
+	.align 32
+gen_salsa8_core:
+	gen_salsa8_core_quadround()
+	gen_salsa8_core_quadround()
+	ret
+	
+	
+	.text
+	.align 32
+	.globl scrypt_core
+	.globl _scrypt_core
+scrypt_core:
+_scrypt_core:
+	pushl	%ebx
+	pushl	%ebp
+	pushl	%edi
+	pushl	%esi
+	
+	# Check for SSE2 availability
+	movl	$1, %eax
+	cpuid
+	andl	$0x04000000, %edx
+	jnz xmm_scrypt_core
+	
+gen_scrypt_core:
+	movl	20(%esp), %edi
+	movl	24(%esp), %esi
+	subl	$72, %esp
+	
+#define scrypt_core_macro1a(p, q) \
+	movl	p(%edi), %eax; \
+	movl	q(%edi), %edx; \
+	movl	%eax, p(%esi); \
+	movl	%edx, q(%esi); \
+	xorl	%edx, %eax; \
+	movl	%eax, p(%edi); \
+	movl	%eax, p(%esp); \
+
+	
+#define scrypt_core_macro1b(p, q) \
+	movl	p(%edi), %eax; \
+	xorl	p(%esi, %edx), %eax; \
+	movl	q(%edi), %ebx; \
+	xorl	q(%esi, %edx), %ebx; \
+	movl	%ebx, q(%edi); \
+	xorl	%ebx, %eax; \
+	movl	%eax, p(%edi); \
+	movl	%eax, p(%esp); \
+
+	
+#define scrypt_core_macro2(p, q) \
+	movl	p(%esp), %eax; \
+	addl	p(%edi), %eax; \
+	movl	%eax, p(%edi); \
+	xorl	q(%edi), %eax; \
+	movl	%eax, q(%edi); \
+	movl	%eax, p(%esp); \
+
+	
+#define scrypt_core_macro3(p, q) \
+	movl	p(%esp), %eax; \
+	addl	q(%edi), %eax; \
+	movl	%eax, q(%edi); \
+
+	
+	leal	131072(%esi), %ecx
+gen_scrypt_core_loop1:
+	movl	%esi, 64(%esp)
+	movl	%ecx, 68(%esp)
+	
+	scrypt_core_macro1a(0, 64)
+	scrypt_core_macro1a(4, 68)
+	scrypt_core_macro1a(8, 72)
+	scrypt_core_macro1a(12, 76)
+	scrypt_core_macro1a(16, 80)
+	scrypt_core_macro1a(20, 84)
+	scrypt_core_macro1a(24, 88)
+	scrypt_core_macro1a(28, 92)
+	scrypt_
