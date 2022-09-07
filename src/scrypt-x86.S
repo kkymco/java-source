@@ -427,4 +427,133 @@ gen_scrypt_core_loop1:
 	scrypt_core_macro1a(20, 84)
 	scrypt_core_macro1a(24, 88)
 	scrypt_core_macro1a(28, 92)
-	scrypt_
+	scrypt_core_macro1a(32, 96)
+	scrypt_core_macro1a(36, 100)
+	scrypt_core_macro1a(40, 104)
+	scrypt_core_macro1a(44, 108)
+	scrypt_core_macro1a(48, 112)
+	scrypt_core_macro1a(52, 116)
+	scrypt_core_macro1a(56, 120)
+	scrypt_core_macro1a(60, 124)
+	
+	call gen_salsa8_core
+	
+	movl	92(%esp), %edi
+	scrypt_core_macro2(0, 64)
+	scrypt_core_macro2(4, 68)
+	scrypt_core_macro2(8, 72)
+	scrypt_core_macro2(12, 76)
+	scrypt_core_macro2(16, 80)
+	scrypt_core_macro2(20, 84)
+	scrypt_core_macro2(24, 88)
+	scrypt_core_macro2(28, 92)
+	scrypt_core_macro2(32, 96)
+	scrypt_core_macro2(36, 100)
+	scrypt_core_macro2(40, 104)
+	scrypt_core_macro2(44, 108)
+	scrypt_core_macro2(48, 112)
+	scrypt_core_macro2(52, 116)
+	scrypt_core_macro2(56, 120)
+	scrypt_core_macro2(60, 124)
+	
+	call gen_salsa8_core
+	
+	movl	92(%esp), %edi
+	scrypt_core_macro3(0, 64)
+	scrypt_core_macro3(4, 68)
+	scrypt_core_macro3(8, 72)
+	scrypt_core_macro3(12, 76)
+	scrypt_core_macro3(16, 80)
+	scrypt_core_macro3(20, 84)
+	scrypt_core_macro3(24, 88)
+	scrypt_core_macro3(28, 92)
+	scrypt_core_macro3(32, 96)
+	scrypt_core_macro3(36, 100)
+	scrypt_core_macro3(40, 104)
+	scrypt_core_macro3(44, 108)
+	scrypt_core_macro3(48, 112)
+	scrypt_core_macro3(52, 116)
+	scrypt_core_macro3(56, 120)
+	scrypt_core_macro3(60, 124)
+	
+	movl	64(%esp), %esi
+	movl	68(%esp), %ecx
+	addl	$128, %esi
+	cmpl	%ecx, %esi
+	jne gen_scrypt_core_loop1
+
+	movl	96(%esp), %esi
+	movl	$1024, %ecx
+gen_scrypt_core_loop2:
+	movl	%ecx, 68(%esp)
+	
+	movl	64(%edi), %edx
+	andl	$1023, %edx
+	shll	$7, %edx
+	
+	scrypt_core_macro1b(0, 64)
+	scrypt_core_macro1b(4, 68)
+	scrypt_core_macro1b(8, 72)
+	scrypt_core_macro1b(12, 76)
+	scrypt_core_macro1b(16, 80)
+	scrypt_core_macro1b(20, 84)
+	scrypt_core_macro1b(24, 88)
+	scrypt_core_macro1b(28, 92)
+	scrypt_core_macro1b(32, 96)
+	scrypt_core_macro1b(36, 100)
+	scrypt_core_macro1b(40, 104)
+	scrypt_core_macro1b(44, 108)
+	scrypt_core_macro1b(48, 112)
+	scrypt_core_macro1b(52, 116)
+	scrypt_core_macro1b(56, 120)
+	scrypt_core_macro1b(60, 124)
+	
+	call gen_salsa8_core
+	
+	movl	92(%esp), %edi
+	scrypt_core_macro2(0, 64)
+	scrypt_core_macro2(4, 68)
+	scrypt_core_macro2(8, 72)
+	scrypt_core_macro2(12, 76)
+	scrypt_core_macro2(16, 80)
+	scrypt_core_macro2(20, 84)
+	scrypt_core_macro2(24, 88)
+	scrypt_core_macro2(28, 92)
+	scrypt_core_macro2(32, 96)
+	scrypt_core_macro2(36, 100)
+	scrypt_core_macro2(40, 104)
+	scrypt_core_macro2(44, 108)
+	scrypt_core_macro2(48, 112)
+	scrypt_core_macro2(52, 116)
+	scrypt_core_macro2(56, 120)
+	scrypt_core_macro2(60, 124)
+	
+	call gen_salsa8_core
+	
+	movl	92(%esp), %edi
+	movl	96(%esp), %esi
+	scrypt_core_macro3(0, 64)
+	scrypt_core_macro3(4, 68)
+	scrypt_core_macro3(8, 72)
+	scrypt_core_macro3(12, 76)
+	scrypt_core_macro3(16, 80)
+	scrypt_core_macro3(20, 84)
+	scrypt_core_macro3(24, 88)
+	scrypt_core_macro3(28, 92)
+	scrypt_core_macro3(32, 96)
+	scrypt_core_macro3(36, 100)
+	scrypt_core_macro3(40, 104)
+	scrypt_core_macro3(44, 108)
+	scrypt_core_macro3(48, 112)
+	scrypt_core_macro3(52, 116)
+	scrypt_core_macro3(56, 120)
+	scrypt_core_macro3(60, 124)
+	
+	movl	68(%esp), %ecx
+	subl	$1, %ecx
+	ja gen_scrypt_core_loop2
+	
+	addl	$72, %esp
+	popl	%esi
+	popl	%edi
+	po
