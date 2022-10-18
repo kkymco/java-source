@@ -556,4 +556,150 @@ gen_scrypt_core_loop2:
 	addl	$72, %esp
 	popl	%esi
 	popl	%edi
-	po
+	popl	%ebp
+	popl	%ebx
+	ret
+
+
+#define xmm_salsa8_core_doubleround() \
+	movdqa	%xmm1, %xmm4; \
+	paddd	%xmm0, %xmm4; \
+	movdqa	%xmm4, %xmm5; \
+	pslld	$7, %xmm4; \
+	psrld	$25, %xmm5; \
+	pxor	%xmm4, %xmm3; \
+	pxor	%xmm5, %xmm3; \
+	movdqa	%xmm0, %xmm4; \
+	paddd	%xmm3, %xmm4; \
+	movdqa	%xmm4, %xmm5; \
+	pslld	$9, %xmm4; \
+	psrld	$23, %xmm5; \
+	pxor	%xmm4, %xmm2; \
+	movdqa	%xmm3, %xmm4; \
+	pshufd	$0x93, %xmm3, %xmm3; \
+	pxor	%xmm5, %xmm2; \
+	paddd	%xmm2, %xmm4; \
+	movdqa	%xmm4, %xmm5; \
+	pslld	$13, %xmm4; \
+	psrld	$19, %xmm5; \
+	pxor	%xmm4, %xmm1; \
+	movdqa	%xmm2, %xmm4; \
+	pshufd	$0x4e, %xmm2, %xmm2; \
+	pxor	%xmm5, %xmm1; \
+	paddd	%xmm1, %xmm4; \
+	movdqa	%xmm4, %xmm5; \
+	pslld	$18, %xmm4; \
+	psrld	$14, %xmm5; \
+	pxor	%xmm4, %xmm0; \
+	pshufd	$0x39, %xmm1, %xmm1; \
+	pxor	%xmm5, %xmm0; \
+	movdqa	%xmm3, %xmm4; \
+	paddd	%xmm0, %xmm4; \
+	movdqa	%xmm4, %xmm5; \
+	pslld	$7, %xmm4; \
+	psrld	$25, %xmm5; \
+	pxor	%xmm4, %xmm1; \
+	pxor	%xmm5, %xmm1; \
+	movdqa	%xmm0, %xmm4; \
+	paddd	%xmm1, %xmm4; \
+	movdqa	%xmm4, %xmm5; \
+	pslld	$9, %xmm4; \
+	psrld	$23, %xmm5; \
+	pxor	%xmm4, %xmm2; \
+	movdqa	%xmm1, %xmm4; \
+	pshufd	$0x93, %xmm1, %xmm1; \
+	pxor	%xmm5, %xmm2; \
+	paddd	%xmm2, %xmm4; \
+	movdqa	%xmm4, %xmm5; \
+	pslld	$13, %xmm4; \
+	psrld	$19, %xmm5; \
+	pxor	%xmm4, %xmm3; \
+	movdqa	%xmm2, %xmm4; \
+	pshufd	$0x4e, %xmm2, %xmm2; \
+	pxor	%xmm5, %xmm3; \
+	paddd	%xmm3, %xmm4; \
+	movdqa	%xmm4, %xmm5; \
+	pslld	$18, %xmm4; \
+	psrld	$14, %xmm5; \
+	pxor	%xmm4, %xmm0; \
+	pshufd	$0x39, %xmm3, %xmm3; \
+	pxor	%xmm5, %xmm0; \
+
+
+#define xmm_salsa8_core() \
+	xmm_salsa8_core_doubleround(); \
+	xmm_salsa8_core_doubleround(); \
+	xmm_salsa8_core_doubleround(); \
+	xmm_salsa8_core_doubleround(); \
+
+	
+	.align 32
+xmm_scrypt_core:
+	movl	20(%esp), %edi
+	movl	24(%esp), %esi
+	movl	%esp, %ebp
+	subl	$128, %esp
+	andl	$-16, %esp
+	
+	# shuffle 1st block to (%esp)
+	movl	60(%edi), %edx
+	movl	44(%edi), %ecx
+	movl	28(%edi), %ebx
+	movl	12(%edi), %eax
+	movl	%edx, 12(%esp)
+	movl	%ecx, 28(%esp)
+	movl	%ebx, 44(%esp)
+	movl	%eax, 60(%esp)
+	movl	40(%edi), %ecx
+	movl	24(%edi), %ebx
+	movl	8(%edi), %eax
+	movl	56(%edi), %edx
+	movl	%ecx, 8(%esp)
+	movl	%ebx, 24(%esp)
+	movl	%eax, 40(%esp)
+	movl	%edx, 56(%esp)
+	movl	20(%edi), %ebx
+	movl	4(%edi), %eax
+	movl	52(%edi), %edx
+	movl	36(%edi), %ecx
+	movl	%ebx, 4(%esp)
+	movl	%eax, 20(%esp)
+	movl	%edx, 36(%esp)
+	movl	%ecx, 52(%esp)
+	movl	0(%edi), %eax
+	movl	48(%edi), %edx
+	movl	32(%edi), %ecx
+	movl	16(%edi), %ebx
+	movl	%eax, 0(%esp)
+	movl	%edx, 16(%esp)
+	movl	%ecx, 32(%esp)
+	movl	%ebx, 48(%esp)
+	
+	# shuffle 2nd block to 64(%esp)
+	movl	124(%edi), %edx
+	movl	108(%edi), %ecx
+	movl	92(%edi), %ebx
+	movl	76(%edi), %eax
+	movl	%edx, 76(%esp)
+	movl	%ecx, 92(%esp)
+	movl	%ebx, 108(%esp)
+	movl	%eax, 124(%esp)
+	movl	104(%edi), %ecx
+	movl	88(%edi), %ebx
+	movl	72(%edi), %eax
+	movl	120(%edi), %edx
+	movl	%ecx, 72(%esp)
+	movl	%ebx, 88(%esp)
+	movl	%eax, 104(%esp)
+	movl	%edx, 120(%esp)
+	movl	84(%edi), %ebx
+	movl	68(%edi), %eax
+	movl	116(%edi), %edx
+	movl	100(%edi), %ecx
+	movl	%ebx, 68(%esp)
+	movl	%eax, 84(%esp)
+	movl	%edx, 100(%esp)
+	movl	%ecx, 116(%esp)
+	movl	64(%edi), %eax
+	movl	112(%edi), %edx
+	movl	96(
