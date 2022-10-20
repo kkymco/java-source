@@ -844,4 +844,69 @@ xmm_scrypt_core_loop2:
 	movl	%ebx, 44(%edi)
 	movl	%eax, 60(%edi)
 	movl	40(%esp), %ecx
-	mo
+	movl	24(%esp), %ebx
+	movl	8(%esp), %eax
+	movl	56(%esp), %edx
+	movl	%ecx, 8(%edi)
+	movl	%ebx, 24(%edi)
+	movl	%eax, 40(%edi)
+	movl	%edx, 56(%edi)
+	movl	20(%esp), %ebx
+	movl	4(%esp), %eax
+	movl	52(%esp), %edx
+	movl	36(%esp), %ecx
+	movl	%ebx, 4(%edi)
+	movl	%eax, 20(%edi)
+	movl	%edx, 36(%edi)
+	movl	%ecx, 52(%edi)
+	movl	0(%esp), %eax
+	movl	48(%esp), %edx
+	movl	32(%esp), %ecx
+	movl	16(%esp), %ebx
+	movl	%eax, 0(%edi)
+	movl	%edx, 16(%edi)
+	movl	%ecx, 32(%edi)
+	movl	%ebx, 48(%edi)
+	
+	# re-shuffle 2nd block back
+	movl	124(%esp), %edx
+	movl	108(%esp), %ecx
+	movl	92(%esp), %ebx
+	movl	76(%esp), %eax
+	movl	%edx, 76(%edi)
+	movl	%ecx, 92(%edi)
+	movl	%ebx, 108(%edi)
+	movl	%eax, 124(%edi)
+	movl	104(%esp), %ecx
+	movl	88(%esp), %ebx
+	movl	72(%esp), %eax
+	movl	120(%esp), %edx
+	movl	%ecx, 72(%edi)
+	movl	%ebx, 88(%edi)
+	movl	%eax, 104(%edi)
+	movl	%edx, 120(%edi)
+	movl	84(%esp), %ebx
+	movl	68(%esp), %eax
+	movl	116(%esp), %edx
+	movl	100(%esp), %ecx
+	movl	%ebx, 68(%edi)
+	movl	%eax, 84(%edi)
+	movl	%edx, 100(%edi)
+	movl	%ecx, 116(%edi)
+	movl	64(%esp), %eax
+	movl	112(%esp), %edx
+	movl	96(%esp), %ecx
+	movl	80(%esp), %ebx
+	movl	%eax, 64(%edi)
+	movl	%edx, 80(%edi)
+	movl	%ecx, 96(%edi)
+	movl	%ebx, 112(%edi)
+	
+	movl	%ebp, %esp
+	popl	%esi
+	popl	%edi
+	popl	%ebp
+	popl	%ebx
+	ret
+
+#endif
