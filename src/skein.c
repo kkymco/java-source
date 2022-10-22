@@ -384,4 +384,114 @@ extern "C"{
 
 #if 0
 /* obsolete */
-#define TFSMALL_KINIT(k0, k1, k2, k3, k4, t0, t1, t2)   do {
+#define TFSMALL_KINIT(k0, k1, k2, k3, k4, t0, t1, t2)   do { \
+		k4 = (k0 ^ k1) ^ (k2 ^ k3) ^ SPH_C64(0x1BD11BDAA9FC1A22); \
+		t2 = t0 ^ t1; \
+	} while (0)
+#endif
+
+#define TFBIG_KINIT(k0, k1, k2, k3, k4, k5, k6, k7, k8, t0, t1, t2)   do { \
+		k8 = ((k0 ^ k1) ^ (k2 ^ k3)) ^ ((k4 ^ k5) ^ (k6 ^ k7)) \
+			^ SPH_C64(0x1BD11BDAA9FC1A22); \
+		t2 = t0 ^ t1; \
+	} while (0)
+
+#if 0
+/* obsolete */
+#define TFSMALL_ADDKEY(w0, w1, w2, w3, k, t, s)   do { \
+		w0 = SPH_T64(w0 + SKSI(k, s, 0)); \
+		w1 = SPH_T64(w1 + SKSI(k, s, 1) + SKST(t, s, 0)); \
+		w2 = SPH_T64(w2 + SKSI(k, s, 2) + SKST(t, s, 1)); \
+		w3 = SPH_T64(w3 + SKSI(k, s, 3) + (sph_u64)s); \
+	} while (0)
+#endif
+
+#if SPH_SMALL_FOOTPRINT_SKEIN
+
+#define TFBIG_ADDKEY(s, tt0, tt1)   do { \
+		p0 = SPH_T64(p0 + h[s + 0]); \
+		p1 = SPH_T64(p1 + h[s + 1]); \
+		p2 = SPH_T64(p2 + h[s + 2]); \
+		p3 = SPH_T64(p3 + h[s + 3]); \
+		p4 = SPH_T64(p4 + h[s + 4]); \
+		p5 = SPH_T64(p5 + h[s + 5] + tt0); \
+		p6 = SPH_T64(p6 + h[s + 6] + tt1); \
+		p7 = SPH_T64(p7 + h[s + 7] + (sph_u64)s); \
+	} while (0)
+
+#else
+
+#define TFBIG_ADDKEY(w0, w1, w2, w3, w4, w5, w6, w7, k, t, s)   do { \
+		w0 = SPH_T64(w0 + SKBI(k, s, 0)); \
+		w1 = SPH_T64(w1 + SKBI(k, s, 1)); \
+		w2 = SPH_T64(w2 + SKBI(k, s, 2)); \
+		w3 = SPH_T64(w3 + SKBI(k, s, 3)); \
+		w4 = SPH_T64(w4 + SKBI(k, s, 4)); \
+		w5 = SPH_T64(w5 + SKBI(k, s, 5) + SKBT(t, s, 0)); \
+		w6 = SPH_T64(w6 + SKBI(k, s, 6) + SKBT(t, s, 1)); \
+		w7 = SPH_T64(w7 + SKBI(k, s, 7) + (sph_u64)s); \
+	} while (0)
+
+#endif
+
+#if 0
+/* obsolete */
+#define TFSMALL_MIX(x0, x1, rc)   do { \
+		x0 = SPH_T64(x0 + x1); \
+		x1 = SPH_ROTL64(x1, rc) ^ x0; \
+	} while (0)
+#endif
+
+#define TFBIG_MIX(x0, x1, rc)   do { \
+		x0 = SPH_T64(x0 + x1); \
+		x1 = SPH_ROTL64(x1, rc) ^ x0; \
+	} while (0)
+
+#if 0
+/* obsolete */
+#define TFSMALL_MIX4(w0, w1, w2, w3, rc0, rc1)  do { \
+		TFSMALL_MIX(w0, w1, rc0); \
+		TFSMALL_MIX(w2, w3, rc1); \
+	} while (0)
+#endif
+
+#define TFBIG_MIX8(w0, w1, w2, w3, w4, w5, w6, w7, rc0, rc1, rc2, rc3)  do { \
+		TFBIG_MIX(w0, w1, rc0); \
+		TFBIG_MIX(w2, w3, rc1); \
+		TFBIG_MIX(w4, w5, rc2); \
+		TFBIG_MIX(w6, w7, rc3); \
+	} while (0)
+
+#if 0
+/* obsolete */
+#define TFSMALL_4e(s)   do { \
+		TFSMALL_ADDKEY(p0, p1, p2, p3, h, t, s); \
+		TFSMALL_MIX4(p0, p1, p2, p3, 14, 16); \
+		TFSMALL_MIX4(p0, p3, p2, p1, 52, 57); \
+		TFSMALL_MIX4(p0, p1, p2, p3, 23, 40); \
+		TFSMALL_MIX4(p0, p3, p2, p1,  5, 37); \
+	} while (0)
+
+#define TFSMALL_4o(s)   do { \
+		TFSMALL_ADDKEY(p0, p1, p2, p3, h, t, s); \
+		TFSMALL_MIX4(p0, p1, p2, p3, 25, 33); \
+		TFSMALL_MIX4(p0, p3, p2, p1, 46, 12); \
+		TFSMALL_MIX4(p0, p1, p2, p3, 58, 22); \
+		TFSMALL_MIX4(p0, p3, p2, p1, 32, 32); \
+	} while (0)
+#endif
+
+#if SPH_SMALL_FOOTPRINT_SKEIN
+
+#define TFBIG_4e(s)   do { \
+		TFBIG_ADDKEY(s, t0, t1); \
+		TFBIG_MIX8(p0, p1, p2, p3, p4, p5, p6, p7, 46, 36, 19, 37); \
+		TFBIG_MIX8(p2, p1, p4, p7, p6, p5, p0, p3, 33, 27, 14, 42); \
+		TFBIG_MIX8(p4, p1, p6, p3, p0, p5, p2, p7, 17, 49, 36, 39); \
+		TFBIG_MIX8(p6, p1, p0, p7, p2, p5, p4, p3, 44,  9, 54, 56); \
+	} while (0)
+
+#define TFBIG_4o(s)   do { \
+		TFBIG_ADDKEY(s, t1, t2); \
+		TFBIG_MIX8(p0, p1, p2, p3, p4, p5, p6, p7, 39, 30, 34, 24); \
+	
