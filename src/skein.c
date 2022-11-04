@@ -494,4 +494,101 @@ extern "C"{
 #define TFBIG_4o(s)   do { \
 		TFBIG_ADDKEY(s, t1, t2); \
 		TFBIG_MIX8(p0, p1, p2, p3, p4, p5, p6, p7, 39, 30, 34, 24); \
-	
+		TFBIG_MIX8(p2, p1, p4, p7, p6, p5, p0, p3, 13, 50, 10, 17); \
+		TFBIG_MIX8(p4, p1, p6, p3, p0, p5, p2, p7, 25, 29, 39, 43); \
+		TFBIG_MIX8(p6, p1, p0, p7, p2, p5, p4, p3,  8, 35, 56, 22); \
+	} while (0)
+
+#else
+
+#define TFBIG_4e(s)   do { \
+		TFBIG_ADDKEY(p0, p1, p2, p3, p4, p5, p6, p7, h, t, s); \
+		TFBIG_MIX8(p0, p1, p2, p3, p4, p5, p6, p7, 46, 36, 19, 37); \
+		TFBIG_MIX8(p2, p1, p4, p7, p6, p5, p0, p3, 33, 27, 14, 42); \
+		TFBIG_MIX8(p4, p1, p6, p3, p0, p5, p2, p7, 17, 49, 36, 39); \
+		TFBIG_MIX8(p6, p1, p0, p7, p2, p5, p4, p3, 44,  9, 54, 56); \
+	} while (0)
+
+#define TFBIG_4o(s)   do { \
+		TFBIG_ADDKEY(p0, p1, p2, p3, p4, p5, p6, p7, h, t, s); \
+		TFBIG_MIX8(p0, p1, p2, p3, p4, p5, p6, p7, 39, 30, 34, 24); \
+		TFBIG_MIX8(p2, p1, p4, p7, p6, p5, p0, p3, 13, 50, 10, 17); \
+		TFBIG_MIX8(p4, p1, p6, p3, p0, p5, p2, p7, 25, 29, 39, 43); \
+		TFBIG_MIX8(p6, p1, p0, p7, p2, p5, p4, p3,  8, 35, 56, 22); \
+	} while (0)
+
+#endif
+
+#if 0
+/* obsolete */
+#define UBI_SMALL(etype, extra)  do { \
+		sph_u64 h4, t0, t1, t2; \
+		sph_u64 m0 = sph_dec64le(buf +  0); \
+		sph_u64 m1 = sph_dec64le(buf +  8); \
+		sph_u64 m2 = sph_dec64le(buf + 16); \
+		sph_u64 m3 = sph_dec64le(buf + 24); \
+		sph_u64 p0 = m0; \
+		sph_u64 p1 = m1; \
+		sph_u64 p2 = m2; \
+		sph_u64 p3 = m3; \
+		t0 = SPH_T64(bcount << 5) + (sph_u64)(extra); \
+		t1 = (bcount >> 59) + ((sph_u64)(etype) << 55); \
+		TFSMALL_KINIT(h0, h1, h2, h3, h4, t0, t1, t2); \
+		TFSMALL_4e(0); \
+		TFSMALL_4o(1); \
+		TFSMALL_4e(2); \
+		TFSMALL_4o(3); \
+		TFSMALL_4e(4); \
+		TFSMALL_4o(5); \
+		TFSMALL_4e(6); \
+		TFSMALL_4o(7); \
+		TFSMALL_4e(8); \
+		TFSMALL_4o(9); \
+		TFSMALL_4e(10); \
+		TFSMALL_4o(11); \
+		TFSMALL_4e(12); \
+		TFSMALL_4o(13); \
+		TFSMALL_4e(14); \
+		TFSMALL_4o(15); \
+		TFSMALL_4e(16); \
+		TFSMALL_4o(17); \
+		TFSMALL_ADDKEY(p0, p1, p2, p3, h, t, 18); \
+		h0 = m0 ^ p0; \
+		h1 = m1 ^ p1; \
+		h2 = m2 ^ p2; \
+		h3 = m3 ^ p3; \
+	} while (0)
+#endif
+
+#if SPH_SMALL_FOOTPRINT_SKEIN
+
+#define UBI_BIG(etype, extra)  do { \
+		sph_u64 t0, t1, t2; \
+		unsigned u; \
+		sph_u64 m0 = sph_dec64le_aligned(buf +  0); \
+		sph_u64 m1 = sph_dec64le_aligned(buf +  8); \
+		sph_u64 m2 = sph_dec64le_aligned(buf + 16); \
+		sph_u64 m3 = sph_dec64le_aligned(buf + 24); \
+		sph_u64 m4 = sph_dec64le_aligned(buf + 32); \
+		sph_u64 m5 = sph_dec64le_aligned(buf + 40); \
+		sph_u64 m6 = sph_dec64le_aligned(buf + 48); \
+		sph_u64 m7 = sph_dec64le_aligned(buf + 56); \
+		sph_u64 p0 = m0; \
+		sph_u64 p1 = m1; \
+		sph_u64 p2 = m2; \
+		sph_u64 p3 = m3; \
+		sph_u64 p4 = m4; \
+		sph_u64 p5 = m5; \
+		sph_u64 p6 = m6; \
+		sph_u64 p7 = m7; \
+		t0 = SPH_T64(bcount << 6) + (sph_u64)(extra); \
+		t1 = (bcount >> 58) + ((sph_u64)(etype) << 55); \
+		TFBIG_KINIT(h[0], h[1], h[2], h[3], h[4], h[5], \
+			h[6], h[7], h[8], t0, t1, t2); \
+		for (u = 0; u <= 15; u += 3) { \
+			h[u +  9] = h[u + 0]; \
+			h[u + 10] = h[u + 1]; \
+			h[u + 11] = h[u + 2]; \
+		} \
+		for (u = 0; u < 9; u ++) { \
+			sph_u64 s 
