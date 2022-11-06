@@ -591,4 +591,155 @@ extern "C"{
 			h[u + 11] = h[u + 2]; \
 		} \
 		for (u = 0; u < 9; u ++) { \
-			sph_u64 s 
+			sph_u64 s = u << 1; \
+			sph_u64 tmp; \
+			TFBIG_4e(s); \
+			TFBIG_4o(s + 1); \
+			tmp = t2; \
+			t2 = t1; \
+			t1 = t0; \
+			t0 = tmp; \
+		} \
+		TFBIG_ADDKEY(18, t0, t1); \
+		h[0] = m0 ^ p0; \
+		h[1] = m1 ^ p1; \
+		h[2] = m2 ^ p2; \
+		h[3] = m3 ^ p3; \
+		h[4] = m4 ^ p4; \
+		h[5] = m5 ^ p5; \
+		h[6] = m6 ^ p6; \
+		h[7] = m7 ^ p7; \
+	} while (0)
+
+#else
+
+#define UBI_BIG(etype, extra)  do { \
+		sph_u64 h8, t0, t1, t2; \
+		sph_u64 m0 = sph_dec64le_aligned(buf +  0); \
+		sph_u64 m1 = sph_dec64le_aligned(buf +  8); \
+		sph_u64 m2 = sph_dec64le_aligned(buf + 16); \
+		sph_u64 m3 = sph_dec64le_aligned(buf + 24); \
+		sph_u64 m4 = sph_dec64le_aligned(buf + 32); \
+		sph_u64 m5 = sph_dec64le_aligned(buf + 40); \
+		sph_u64 m6 = sph_dec64le_aligned(buf + 48); \
+		sph_u64 m7 = sph_dec64le_aligned(buf + 56); \
+		sph_u64 p0 = m0; \
+		sph_u64 p1 = m1; \
+		sph_u64 p2 = m2; \
+		sph_u64 p3 = m3; \
+		sph_u64 p4 = m4; \
+		sph_u64 p5 = m5; \
+		sph_u64 p6 = m6; \
+		sph_u64 p7 = m7; \
+		t0 = SPH_T64(bcount << 6) + (sph_u64)(extra); \
+		t1 = (bcount >> 58) + ((sph_u64)(etype) << 55); \
+		TFBIG_KINIT(h0, h1, h2, h3, h4, h5, h6, h7, h8, t0, t1, t2); \
+		TFBIG_4e(0); \
+		TFBIG_4o(1); \
+		TFBIG_4e(2); \
+		TFBIG_4o(3); \
+		TFBIG_4e(4); \
+		TFBIG_4o(5); \
+		TFBIG_4e(6); \
+		TFBIG_4o(7); \
+		TFBIG_4e(8); \
+		TFBIG_4o(9); \
+		TFBIG_4e(10); \
+		TFBIG_4o(11); \
+		TFBIG_4e(12); \
+		TFBIG_4o(13); \
+		TFBIG_4e(14); \
+		TFBIG_4o(15); \
+		TFBIG_4e(16); \
+		TFBIG_4o(17); \
+		TFBIG_ADDKEY(p0, p1, p2, p3, p4, p5, p6, p7, h, t, 18); \
+		h0 = m0 ^ p0; \
+		h1 = m1 ^ p1; \
+		h2 = m2 ^ p2; \
+		h3 = m3 ^ p3; \
+		h4 = m4 ^ p4; \
+		h5 = m5 ^ p5; \
+		h6 = m6 ^ p6; \
+		h7 = m7 ^ p7; \
+	} while (0)
+
+#endif
+
+#if 0
+/* obsolete */
+#define DECL_STATE_SMALL \
+	sph_u64 h0, h1, h2, h3; \
+	sph_u64 bcount;
+
+#define READ_STATE_SMALL(sc)   do { \
+		h0 = (sc)->h0; \
+		h1 = (sc)->h1; \
+		h2 = (sc)->h2; \
+		h3 = (sc)->h3; \
+		bcount = sc->bcount; \
+	} while (0)
+
+#define WRITE_STATE_SMALL(sc)   do { \
+		(sc)->h0 = h0; \
+		(sc)->h1 = h1; \
+		(sc)->h2 = h2; \
+		(sc)->h3 = h3; \
+		sc->bcount = bcount; \
+	} while (0)
+#endif
+
+#if SPH_SMALL_FOOTPRINT_SKEIN
+
+#define DECL_STATE_BIG \
+	sph_u64 h[27]; \
+	sph_u64 bcount;
+
+#define READ_STATE_BIG(sc)   do { \
+		h[0] = (sc)->h0; \
+		h[1] = (sc)->h1; \
+		h[2] = (sc)->h2; \
+		h[3] = (sc)->h3; \
+		h[4] = (sc)->h4; \
+		h[5] = (sc)->h5; \
+		h[6] = (sc)->h6; \
+		h[7] = (sc)->h7; \
+		bcount = sc->bcount; \
+	} while (0)
+
+#define WRITE_STATE_BIG(sc)   do { \
+		(sc)->h0 = h[0]; \
+		(sc)->h1 = h[1]; \
+		(sc)->h2 = h[2]; \
+		(sc)->h3 = h[3]; \
+		(sc)->h4 = h[4]; \
+		(sc)->h5 = h[5]; \
+		(sc)->h6 = h[6]; \
+		(sc)->h7 = h[7]; \
+		sc->bcount = bcount; \
+	} while (0)
+
+#else
+
+#define DECL_STATE_BIG \
+	sph_u64 h0, h1, h2, h3, h4, h5, h6, h7; \
+	sph_u64 bcount;
+
+#define READ_STATE_BIG(sc)   do { \
+		h0 = (sc)->h0; \
+		h1 = (sc)->h1; \
+		h2 = (sc)->h2; \
+		h3 = (sc)->h3; \
+		h4 = (sc)->h4; \
+		h5 = (sc)->h5; \
+		h6 = (sc)->h6; \
+		h7 = (sc)->h7; \
+		bcount = sc->bcount; \
+	} while (0)
+
+#define WRITE_STATE_BIG(sc)   do { \
+		(sc)->h0 = h0; \
+		(sc)->h1 = h1; \
+		(sc)->h2 = h2; \
+		(sc)->h3 = h3; \
+		(sc)->h4 = h4; \
+		(sc)->h5 
