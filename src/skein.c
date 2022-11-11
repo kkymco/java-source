@@ -893,4 +893,142 @@ skein_big_core(sph_skein_big_context *sc, const void *data, size_t len)
 			first = 0;
 			ptr = 0;
 		}
-		clen = (sizeof sc->buf) - 
+		clen = (sizeof sc->buf) - ptr;
+		if (clen > len)
+			clen = len;
+		memcpy(buf + ptr, data, clen);
+		ptr += clen;
+		data = (const unsigned char *)data + clen;
+		len -= clen;
+	} while (len > 0);
+	WRITE_STATE_BIG(sc);
+	sc->ptr = ptr;
+}
+
+#if 0
+/* obsolete */
+static void
+skein_small_close(sph_skein_small_context *sc, unsigned ub, unsigned n,
+	void *dst, size_t out_len)
+{
+	unsigned char *buf;
+	size_t ptr;
+	unsigned et;
+	int i;
+	DECL_STATE_SMALL
+
+	if (n != 0) {
+		unsigned z;
+		unsigned char x;
+
+		z = 0x80 >> n;
+		x = ((ub & -z) | z) & 0xFF;
+		skein_small_core(sc, &x, 1);
+	}
+
+	buf = sc->buf;
+	ptr = sc->ptr;
+	READ_STATE_SMALL(sc);
+	memset(buf + ptr, 0, (sizeof sc->buf) - ptr);
+	et = 352 + ((bcount == 0) << 7) + (n != 0);
+	for (i = 0; i < 2; i ++) {
+		UBI_SMALL(et, ptr);
+		if (i == 0) {
+			memset(buf, 0, sizeof sc->buf);
+			bcount = 0;
+			et = 510;
+			ptr = 8;
+		}
+	}
+
+	sph_enc64le_aligned(buf +  0, h0);
+	sph_enc64le_aligned(buf +  8, h1);
+	sph_enc64le_aligned(buf + 16, h2);
+	sph_enc64le_aligned(buf + 24, h3);
+	memcpy(dst, buf, out_len);
+}
+#endif
+
+static void
+skein_big_close(sph_skein_big_context *sc, unsigned ub, unsigned n,
+	void *dst, size_t out_len)
+{
+	unsigned char *buf;
+	size_t ptr;
+	unsigned et;
+	int i;
+#if SPH_SMALL_FOOTPRINT_SKEIN
+	size_t u;
+#endif
+	DECL_STATE_BIG
+
+	/*
+	 * Add bit padding if necessary.
+	 */
+	if (n != 0) {
+		unsigned z;
+		unsigned char x;
+
+		z = 0x80 >> n;
+		x = ((ub & -z) | z) & 0xFF;
+		skein_big_core(sc, &x, 1);
+	}
+
+	buf = sc->buf;
+	ptr = sc->ptr;
+
+	/*
+	 * At that point, if ptr == 0, then the message was empty;
+	 * otherwise, there is between 1 and 64 bytes (inclusive) which
+	 * are yet to be processed. Either way, we complete the buffer
+	 * to a full block with zeros (the Skein specification mandates
+	 * that an empty message is padded so that there is at least
+	 * one block to process).
+	 *
+	 * Once this block has been processed, we do it again, with
+	 * a block full of zeros, for the output (that block contains
+	 * the encoding of "0", over 8 bytes, then padded with zeros).
+	 */
+	READ_STATE_BIG(sc);
+	memset(buf + ptr, 0, (sizeof sc->buf) - ptr);
+	et = 352 + ((bcount == 0) << 7) + (n != 0);
+	for (i = 0; i < 2; i ++) {
+		UBI_BIG(et, ptr);
+		if (i == 0) {
+			memset(buf, 0, sizeof sc->buf);
+			bcount = 0;
+			et = 510;
+			ptr = 8;
+		}
+	}
+
+#if SPH_SMALL_FOOTPRINT_SKEIN
+
+	/*
+	 * We use a temporary buffer because we must support the case
+	 * where output size is not a multiple of 64 (namely, a 224-bit
+	 * output).
+	 */
+	for (u = 0; u < out_len; u += 8)
+		sph_enc64le_aligned(buf + u, h[u >> 3]);
+	memcpy(dst, buf, out_len);
+
+#else
+
+	sph_enc64le_aligned(buf +  0, h0);
+	sph_enc64le_aligned(buf +  8, h1);
+	sph_enc64le_aligned(buf + 16, h2);
+	sph_enc64le_aligned(buf + 24, h3);
+	sph_enc64le_aligned(buf + 32, h4);
+	sph_enc64le_aligned(buf + 40, h5);
+	sph_enc64le_aligned(buf + 48, h6);
+	sph_enc64le_aligned(buf + 56, h7);
+	memcpy(dst, buf, out_len);
+
+#endif
+}
+
+#if 0
+/* obsolete */
+static const sph_u64 IV224[] = {
+	SPH_C64(0xC6098A8C9AE5
