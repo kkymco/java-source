@@ -742,4 +742,155 @@ extern "C"{
 		(sc)->h2 = h2; \
 		(sc)->h3 = h3; \
 		(sc)->h4 = h4; \
-		(sc)->h5 
+		(sc)->h5 = h5; \
+		(sc)->h6 = h6; \
+		(sc)->h7 = h7; \
+		sc->bcount = bcount; \
+	} while (0)
+
+#endif
+
+#if 0
+/* obsolete */
+static void
+skein_small_init(sph_skein_small_context *sc, const sph_u64 *iv)
+{
+	sc->h0 = iv[0];
+	sc->h1 = iv[1];
+	sc->h2 = iv[2];
+	sc->h3 = iv[3];
+	sc->bcount = 0;
+	sc->ptr = 0;
+}
+#endif
+
+static void
+skein_big_init(sph_skein_big_context *sc, const sph_u64 *iv)
+{
+	sc->h0 = iv[0];
+	sc->h1 = iv[1];
+	sc->h2 = iv[2];
+	sc->h3 = iv[3];
+	sc->h4 = iv[4];
+	sc->h5 = iv[5];
+	sc->h6 = iv[6];
+	sc->h7 = iv[7];
+	sc->bcount = 0;
+	sc->ptr = 0;
+}
+
+#if 0
+/* obsolete */
+static void
+skein_small_core(sph_skein_small_context *sc, const void *data, size_t len)
+{
+	unsigned char *buf;
+	size_t ptr, clen;
+	unsigned first;
+	DECL_STATE_SMALL
+
+	buf = sc->buf;
+	ptr = sc->ptr;
+	clen = (sizeof sc->buf) - ptr;
+	if (len <= clen) {
+		memcpy(buf + ptr, data, len);
+		sc->ptr = ptr + len;
+		return;
+	}
+	if (clen != 0) {
+		memcpy(buf + ptr, data, clen);
+		data = (const unsigned char *)data + clen;
+		len -= clen;
+	}
+
+#if SPH_SMALL_FOOTPRINT_SKEIN
+
+	READ_STATE_SMALL(sc);
+	first = (bcount == 0) << 7;
+	for (;;) {
+		bcount ++;
+		UBI_SMALL(96 + first, 0);
+		if (len <= sizeof sc->buf)
+			break;
+		first = 0;
+		memcpy(buf, data, sizeof sc->buf);
+		data = (const unsigned char *)data + sizeof sc->buf;
+		len -= sizeof sc->buf;
+	}
+	WRITE_STATE_SMALL(sc);
+	sc->ptr = len;
+	memcpy(buf, data, len);
+
+#else
+
+	/*
+	 * Unrolling the loop yields a slight performance boost, while
+	 * keeping the code size aorund 24 kB on 32-bit x86.
+	 */
+	READ_STATE_SMALL(sc);
+	first = (bcount == 0) << 7;
+	for (;;) {
+		bcount ++;
+		UBI_SMALL(96 + first, 0);
+		if (len <= sizeof sc->buf)
+			break;
+		buf = (unsigned char *)data;
+		bcount ++;
+		UBI_SMALL(96, 0);
+		if (len <= 2 * sizeof sc->buf) {
+			data = buf + sizeof sc->buf;
+			len -= sizeof sc->buf;
+			break;
+		}
+		buf += sizeof sc->buf;
+		data = buf + sizeof sc->buf;
+		first = 0;
+		len -= 2 * sizeof sc->buf;
+	}
+	WRITE_STATE_SMALL(sc);
+	sc->ptr = len;
+	memcpy(sc->buf, data, len);
+
+#endif
+}
+#endif
+
+static void
+skein_big_core(sph_skein_big_context *sc, const void *data, size_t len)
+{
+	/*
+	 * The Skein "final bit" in the tweak is troublesome here,
+	 * because if the input has a length which is a multiple of the
+	 * block size (512 bits) then that bit must be set for the
+	 * final block, which is full of message bits (padding in
+	 * Skein can be reduced to no extra bit at all). However, this
+	 * function cannot know whether it processes the last chunks of
+	 * the message or not. Hence we may keep a full block of buffered
+	 * data (64 bytes).
+	 */
+	unsigned char *buf;
+	size_t ptr;
+	unsigned first;
+	DECL_STATE_BIG
+
+	buf = sc->buf;
+	ptr = sc->ptr;
+	if (len <= (sizeof sc->buf) - ptr) {
+		memcpy(buf + ptr, data, len);
+		ptr += len;
+		sc->ptr = ptr;
+		return;
+	}
+
+	READ_STATE_BIG(sc);
+	first = (bcount == 0) << 7;
+	do {
+		size_t clen;
+
+		if (ptr == sizeof sc->buf) {
+			bcount ++;
+			UBI_BIG(96 + first, 0);
+			first = 0;
+			ptr = 0;
+		}
+		clen = (sizeof sc->buf) - 
