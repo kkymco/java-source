@@ -23,4 +23,124 @@
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, 
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * ===========================(LICENSE END)=============================
+ *
+ * @file     sph_bmw.h
+ * @author   Thomas Pornin <thomas.pornin@cryptolog.com>
+ */
+
+#ifndef SPH_BMW_H__
+#define SPH_BMW_H__
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+
+#include <stddef.h>
+#include "sph_types.h"
+
+/**
+ * Output size (in bits) for BMW-224.
+ */
+#define SPH_SIZE_bmw224   224
+
+/**
+ * Output size (in bits) for BMW-256.
+ */
+#define SPH_SIZE_bmw256   256
+
+#if SPH_64
+
+/**
+ * Output size (in bits) for BMW-384.
+ */
+#define SPH_SIZE_bmw384   384
+
+/**
+ * Output size (in bits) for BMW-512.
+ */
+#define SPH_SIZE_bmw512   512
+
+#endif
+
+/**
+ * This structure is a context for BMW-224 and BMW-256 computations:
+ * it contains the intermediate values and some data from the last
+ * entered block. Once a BMW computation has been performed, the
+ * context can be reused for another computation.
+ *
+ * The contents of this structure are private. A running BMW
+ * computation can be cloned by copying the context (e.g. with a simple
+ * <code>memcpy()</code>).
+ */
+typedef struct {
+#ifndef DOXYGEN_IGNORE
+	unsigned char buf[64];    /* first field, for alignment */
+	size_t ptr;
+	sph_u32 H[16];
+#if SPH_64
+	sph_u64 bit_count;
+#else
+	sph_u32 bit_count_high, bit_count_low;
+#endif
+#endif
+} sph_bmw_small_context;
+
+/**
+ * This structure is a context for BMW-224 computations. It is
+ * identical to the common <code>sph_bmw_small_context</code>.
+ */
+typedef sph_bmw_small_context sph_bmw224_context;
+
+/**
+ * This structure is a context for BMW-256 computations. It is
+ * identical to the common <code>sph_bmw_small_context</code>.
+ */
+typedef sph_bmw_small_context sph_bmw256_context;
+
+#if SPH_64
+
+/**
+ * This structure is a context for BMW-384 and BMW-512 computations:
+ * it contains the intermediate values and some data from the last
+ * entered block. Once a BMW computation has been performed, the
+ * context can be reused for another computation.
+ *
+ * The contents of this structure are private. A running BMW
+ * computation can be cloned by copying the context (e.g. with a simple
+ * <code>memcpy()</code>).
+ */
+typedef struct {
+#ifndef DOXYGEN_IGNORE
+	unsigned char buf[128];    /* first field, for alignment */
+	size_t ptr;
+	sph_u64 H[16];
+	sph_u64 bit_count;
+#endif
+} sph_bmw_big_context;
+
+/**
+ * This structure is a context for BMW-384 computations. It is
+ * identical to the common <code>sph_bmw_small_context</code>.
+ */
+typedef sph_bmw_big_context sph_bmw384_context;
+
+/**
+ * This structure is a context for BMW-512 computations. It is
+ * identical to the common <code>sph_bmw_small_context</code>.
+ */
+typedef sph_bmw_big_context sph_bmw512_context;
+
+#endif
+
+/**
+ * Initialize a BMW-224 context. This process performs no memory allocation.
+ *
+ * @param cc   the BMW-224 context (pointer to a
+ *             <code>sph_bmw224_context</code>)
+ */
+void sph_bmw224_init(voi
