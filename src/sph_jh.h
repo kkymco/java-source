@@ -1,7 +1,8 @@
-/* $Id: sph_echo.h 216 2010-06-08 09:46:57Z tp $ */
+
+/* $Id: sph_jh.h 216 2010-06-08 09:46:57Z tp $ */
 /**
- * ECHO interface. ECHO is a family of functions which differ by
- * their output size; this implementation defines ECHO for output
+ * JH interface. JH is a family of functions which differ by
+ * their output size; this implementation defines JH for output
  * sizes 224, 256, 384 and 512 bits.
  *
  * ==========================(LICENSE BEGIN)============================
@@ -29,12 +30,12 @@
  *
  * ===========================(LICENSE END)=============================
  *
- * @file     sph_echo.h
+ * @file     sph_jh.h
  * @author   Thomas Pornin <thomas.pornin@cryptolog.com>
  */
 
-#ifndef SPH_ECHO_H__
-#define SPH_ECHO_H__
+#ifndef SPH_JH_H__
+#define SPH_JH_H__
 
 #ifdef __cplusplus
 extern "C"{
@@ -44,123 +45,101 @@ extern "C"{
 #include "sph_types.h"
 
 /**
- * Output size (in bits) for ECHO-224.
+ * Output size (in bits) for JH-224.
  */
-#define SPH_SIZE_echo224   224
+#define SPH_SIZE_jh224   224
 
 /**
- * Output size (in bits) for ECHO-256.
+ * Output size (in bits) for JH-256.
  */
-#define SPH_SIZE_echo256   256
+#define SPH_SIZE_jh256   256
 
 /**
- * Output size (in bits) for ECHO-384.
+ * Output size (in bits) for JH-384.
  */
-#define SPH_SIZE_echo384   384
+#define SPH_SIZE_jh384   384
 
 /**
- * Output size (in bits) for ECHO-512.
+ * Output size (in bits) for JH-512.
  */
-#define SPH_SIZE_echo512   512
+#define SPH_SIZE_jh512   512
 
 /**
- * This structure is a context for ECHO computations: it contains the
+ * This structure is a context for JH computations: it contains the
  * intermediate values and some data from the last entered block. Once
- * an ECHO computation has been performed, the context can be reused for
- * another computation. This specific structure is used for ECHO-224
- * and ECHO-256.
+ * a JH computation has been performed, the context can be reused for
+ * another computation.
  *
- * The contents of this structure are private. A running ECHO computation
+ * The contents of this structure are private. A running JH computation
  * can be cloned by copying the context (e.g. with a simple
  * <code>memcpy()</code>).
  */
 typedef struct {
 #ifndef DOXYGEN_IGNORE
-	unsigned char buf[192];    /* first field, for alignment */
+	unsigned char buf[64];    /* first field, for alignment */
 	size_t ptr;
 	union {
-		sph_u32 Vs[4][4];
 #if SPH_64
-		sph_u64 Vb[4][2];
+		sph_u64 wide[16];
 #endif
-	} u;
-	sph_u32 C0, C1, C2, C3;
-#endif
-} sph_echo_small_context;
-
-/**
- * This structure is a context for ECHO computations: it contains the
- * intermediate values and some data from the last entered block. Once
- * an ECHO computation has been performed, the context can be reused for
- * another computation. This specific structure is used for ECHO-384
- * and ECHO-512.
- *
- * The contents of this structure are private. A running ECHO computation
- * can be cloned by copying the context (e.g. with a simple
- * <code>memcpy()</code>).
- */
-typedef struct {
-#ifndef DOXYGEN_IGNORE
-	unsigned char buf[128];    /* first field, for alignment */
-	size_t ptr;
-	union {
-		sph_u32 Vs[8][4];
+		sph_u32 narrow[32];
+	} H;
 #if SPH_64
-		sph_u64 Vb[8][2];
+	sph_u64 block_count;
+#else
+	sph_u32 block_count_high, block_count_low;
 #endif
-	} u;
-	sph_u32 C0, C1, C2, C3;
 #endif
-} sph_echo_big_context;
+} sph_jh_context;
 
 /**
- * Type for a ECHO-224 context (identical to the common "small" context).
+ * Type for a JH-224 context (identical to the common context).
  */
-typedef sph_echo_small_context sph_echo224_context;
+typedef sph_jh_context sph_jh224_context;
 
 /**
- * Type for a ECHO-256 context (identical to the common "small" context).
+ * Type for a JH-256 context (identical to the common context).
  */
-typedef sph_echo_small_context sph_echo256_context;
+typedef sph_jh_context sph_jh256_context;
 
 /**
- * Type for a ECHO-384 context (identical to the common "big" context).
+ * Type for a JH-384 context (identical to the common context).
  */
-typedef sph_echo_big_context sph_echo384_context;
+typedef sph_jh_context sph_jh384_context;
 
 /**
- * Type for a ECHO-512 context (identical to the common "big" context).
+ * Type for a JH-512 context (identical to the common context).
  */
-typedef sph_echo_big_context sph_echo512_context;
+typedef sph_jh_context sph_jh512_context;
 
 /**
- * Initialize an ECHO-224 context. This process performs no memory allocation.
+ * Initialize a JH-224 context. This process performs no memory allocation.
  *
- * @param cc   the ECHO-224 context (pointer to a
- *             <code>sph_echo224_context</code>)
+ * @param cc   the JH-224 context (pointer to a
+ *             <code>sph_jh224_context</code>)
  */
-void sph_echo224_init(void *cc);
+void sph_jh224_init(void *cc);
 
 /**
  * Process some data bytes. It is acceptable that <code>len</code> is zero
  * (in which case this function does nothing).
  *
- * @param cc     the ECHO-224 context
+ * @param cc     the JH-224 context
  * @param data   the input data
  * @param len    the input data length (in bytes)
  */
-void sph_echo224(void *cc, const void *data, size_t len);
+void sph_jh224(void *cc, const void *data, size_t len);
 
 /**
- * Terminate the current ECHO-224 computation and output the result into
+ * Terminate the current JH-224 computation and output the result into
  * the provided buffer. The destination buffer must be wide enough to
  * accomodate the result (28 bytes). The context is automatically
  * reinitialized.
  *
- * @param cc    the ECHO-224 context
+ * @param cc    the JH-224 context
  * @param dst   the destination buffer
  */
-void sph_echo224_close(void *cc, void *dst);
+void sph_jh224_close(void *cc, void *dst);
 
 /**
  * Add a few additional bits (0 to 7) to the current computation, then
@@ -170,42 +149,42 @@ void sph_echo224_close(void *cc, void *dst);
  * numbered 7 downto 8-n (this is the big-endian convention at the byte
  * level). The context is automatically reinitialized.
  *
- * @param cc    the ECHO-224 context
+ * @param cc    the JH-224 context
  * @param ub    the extra bits
  * @param n     the number of extra bits (0 to 7)
  * @param dst   the destination buffer
  */
-void sph_echo224_addbits_and_close(
+void sph_jh224_addbits_and_close(
 	void *cc, unsigned ub, unsigned n, void *dst);
 
 /**
- * Initialize an ECHO-256 context. This process performs no memory allocation.
+ * Initialize a JH-256 context. This process performs no memory allocation.
  *
- * @param cc   the ECHO-256 context (pointer to a
- *             <code>sph_echo256_context</code>)
+ * @param cc   the JH-256 context (pointer to a
+ *             <code>sph_jh256_context</code>)
  */
-void sph_echo256_init(void *cc);
+void sph_jh256_init(void *cc);
 
 /**
  * Process some data bytes. It is acceptable that <code>len</code> is zero
  * (in which case this function does nothing).
  *
- * @param cc     the ECHO-256 context
+ * @param cc     the JH-256 context
  * @param data   the input data
  * @param len    the input data length (in bytes)
  */
-void sph_echo256(void *cc, const void *data, size_t len);
+void sph_jh256(void *cc, const void *data, size_t len);
 
 /**
- * Terminate the current ECHO-256 computation and output the result into
+ * Terminate the current JH-256 computation and output the result into
  * the provided buffer. The destination buffer must be wide enough to
  * accomodate the result (32 bytes). The context is automatically
  * reinitialized.
  *
- * @param cc    the ECHO-256 context
+ * @param cc    the JH-256 context
  * @param dst   the destination buffer
  */
-void sph_echo256_close(void *cc, void *dst);
+void sph_jh256_close(void *cc, void *dst);
 
 /**
  * Add a few additional bits (0 to 7) to the current computation, then
@@ -215,42 +194,42 @@ void sph_echo256_close(void *cc, void *dst);
  * numbered 7 downto 8-n (this is the big-endian convention at the byte
  * level). The context is automatically reinitialized.
  *
- * @param cc    the ECHO-256 context
+ * @param cc    the JH-256 context
  * @param ub    the extra bits
  * @param n     the number of extra bits (0 to 7)
  * @param dst   the destination buffer
  */
-void sph_echo256_addbits_and_close(
+void sph_jh256_addbits_and_close(
 	void *cc, unsigned ub, unsigned n, void *dst);
 
 /**
- * Initialize an ECHO-384 context. This process performs no memory allocation.
+ * Initialize a JH-384 context. This process performs no memory allocation.
  *
- * @param cc   the ECHO-384 context (pointer to a
- *             <code>sph_echo384_context</code>)
+ * @param cc   the JH-384 context (pointer to a
+ *             <code>sph_jh384_context</code>)
  */
-void sph_echo384_init(void *cc);
+void sph_jh384_init(void *cc);
 
 /**
  * Process some data bytes. It is acceptable that <code>len</code> is zero
  * (in which case this function does nothing).
  *
- * @param cc     the ECHO-384 context
+ * @param cc     the JH-384 context
  * @param data   the input data
  * @param len    the input data length (in bytes)
  */
-void sph_echo384(void *cc, const void *data, size_t len);
+void sph_jh384(void *cc, const void *data, size_t len);
 
 /**
- * Terminate the current ECHO-384 computation and output the result into
+ * Terminate the current JH-384 computation and output the result into
  * the provided buffer. The destination buffer must be wide enough to
  * accomodate the result (48 bytes). The context is automatically
  * reinitialized.
  *
- * @param cc    the ECHO-384 context
+ * @param cc    the JH-384 context
  * @param dst   the destination buffer
  */
-void sph_echo384_close(void *cc, void *dst);
+void sph_jh384_close(void *cc, void *dst);
 
 /**
  * Add a few additional bits (0 to 7) to the current computation, then
@@ -260,42 +239,42 @@ void sph_echo384_close(void *cc, void *dst);
  * numbered 7 downto 8-n (this is the big-endian convention at the byte
  * level). The context is automatically reinitialized.
  *
- * @param cc    the ECHO-384 context
+ * @param cc    the JH-384 context
  * @param ub    the extra bits
  * @param n     the number of extra bits (0 to 7)
  * @param dst   the destination buffer
  */
-void sph_echo384_addbits_and_close(
+void sph_jh384_addbits_and_close(
 	void *cc, unsigned ub, unsigned n, void *dst);
 
 /**
- * Initialize an ECHO-512 context. This process performs no memory allocation.
+ * Initialize a JH-512 context. This process performs no memory allocation.
  *
- * @param cc   the ECHO-512 context (pointer to a
- *             <code>sph_echo512_context</code>)
+ * @param cc   the JH-512 context (pointer to a
+ *             <code>sph_jh512_context</code>)
  */
-void sph_echo512_init(void *cc);
+void sph_jh512_init(void *cc);
 
 /**
  * Process some data bytes. It is acceptable that <code>len</code> is zero
  * (in which case this function does nothing).
  *
- * @param cc     the ECHO-512 context
+ * @param cc     the JH-512 context
  * @param data   the input data
  * @param len    the input data length (in bytes)
  */
-void sph_echo512(void *cc, const void *data, size_t len);
+void sph_jh512(void *cc, const void *data, size_t len);
 
 /**
- * Terminate the current ECHO-512 computation and output the result into
+ * Terminate the current JH-512 computation and output the result into
  * the provided buffer. The destination buffer must be wide enough to
  * accomodate the result (64 bytes). The context is automatically
  * reinitialized.
  *
- * @param cc    the ECHO-512 context
+ * @param cc    the JH-512 context
  * @param dst   the destination buffer
  */
-void sph_echo512_close(void *cc, void *dst);
+void sph_jh512_close(void *cc, void *dst);
 
 /**
  * Add a few additional bits (0 to 7) to the current computation, then
@@ -305,14 +284,14 @@ void sph_echo512_close(void *cc, void *dst);
  * numbered 7 downto 8-n (this is the big-endian convention at the byte
  * level). The context is automatically reinitialized.
  *
- * @param cc    the ECHO-512 context
+ * @param cc    the JH-512 context
  * @param ub    the extra bits
  * @param n     the number of extra bits (0 to 7)
  * @param dst   the destination buffer
  */
-void sph_echo512_addbits_and_close(
+void sph_jh512_addbits_and_close(
 	void *cc, unsigned ub, unsigned n, void *dst);
-	
+
 #ifdef __cplusplus
 }
 #endif

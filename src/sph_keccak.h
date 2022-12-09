@@ -1,8 +1,9 @@
-/* $Id: sph_echo.h 216 2010-06-08 09:46:57Z tp $ */
+
+/* $Id: sph_keccak.h 216 2010-06-08 09:46:57Z tp $ */
 /**
- * ECHO interface. ECHO is a family of functions which differ by
- * their output size; this implementation defines ECHO for output
- * sizes 224, 256, 384 and 512 bits.
+ * Keccak interface. This is the interface for Keccak with the
+ * recommended parameters for SHA-3, with output lengths 224, 256,
+ * 384 and 512 bits.
  *
  * ==========================(LICENSE BEGIN)============================
  *
@@ -29,12 +30,12 @@
  *
  * ===========================(LICENSE END)=============================
  *
- * @file     sph_echo.h
+ * @file     sph_keccak.h
  * @author   Thomas Pornin <thomas.pornin@cryptolog.com>
  */
 
-#ifndef SPH_ECHO_H__
-#define SPH_ECHO_H__
+#ifndef SPH_KECCAK_H__
+#define SPH_KECCAK_H__
 
 #ifdef __cplusplus
 extern "C"{
@@ -44,123 +45,96 @@ extern "C"{
 #include "sph_types.h"
 
 /**
- * Output size (in bits) for ECHO-224.
+ * Output size (in bits) for Keccak-224.
  */
-#define SPH_SIZE_echo224   224
+#define SPH_SIZE_keccak224   224
 
 /**
- * Output size (in bits) for ECHO-256.
+ * Output size (in bits) for Keccak-256.
  */
-#define SPH_SIZE_echo256   256
+#define SPH_SIZE_keccak256   256
 
 /**
- * Output size (in bits) for ECHO-384.
+ * Output size (in bits) for Keccak-384.
  */
-#define SPH_SIZE_echo384   384
+#define SPH_SIZE_keccak384   384
 
 /**
- * Output size (in bits) for ECHO-512.
+ * Output size (in bits) for Keccak-512.
  */
-#define SPH_SIZE_echo512   512
+#define SPH_SIZE_keccak512   512
 
 /**
- * This structure is a context for ECHO computations: it contains the
- * intermediate values and some data from the last entered block. Once
- * an ECHO computation has been performed, the context can be reused for
- * another computation. This specific structure is used for ECHO-224
- * and ECHO-256.
+ * This structure is a context for Keccak computations: it contains the
+ * intermediate values and some data from the last entered block. Once a
+ * Keccak computation has been performed, the context can be reused for
+ * another computation.
  *
- * The contents of this structure are private. A running ECHO computation
+ * The contents of this structure are private. A running Keccak computation
  * can be cloned by copying the context (e.g. with a simple
  * <code>memcpy()</code>).
  */
 typedef struct {
 #ifndef DOXYGEN_IGNORE
-	unsigned char buf[192];    /* first field, for alignment */
-	size_t ptr;
+	unsigned char buf[144];    /* first field, for alignment */
+	size_t ptr, lim;
 	union {
-		sph_u32 Vs[4][4];
 #if SPH_64
-		sph_u64 Vb[4][2];
+		sph_u64 wide[25];
 #endif
+		sph_u32 narrow[50];
 	} u;
-	sph_u32 C0, C1, C2, C3;
 #endif
-} sph_echo_small_context;
+} sph_keccak_context;
 
 /**
- * This structure is a context for ECHO computations: it contains the
- * intermediate values and some data from the last entered block. Once
- * an ECHO computation has been performed, the context can be reused for
- * another computation. This specific structure is used for ECHO-384
- * and ECHO-512.
+ * Type for a Keccak-224 context (identical to the common context).
+ */
+typedef sph_keccak_context sph_keccak224_context;
+
+/**
+ * Type for a Keccak-256 context (identical to the common context).
+ */
+typedef sph_keccak_context sph_keccak256_context;
+
+/**
+ * Type for a Keccak-384 context (identical to the common context).
+ */
+typedef sph_keccak_context sph_keccak384_context;
+
+/**
+ * Type for a Keccak-512 context (identical to the common context).
+ */
+typedef sph_keccak_context sph_keccak512_context;
+
+/**
+ * Initialize a Keccak-224 context. This process performs no memory allocation.
  *
- * The contents of this structure are private. A running ECHO computation
- * can be cloned by copying the context (e.g. with a simple
- * <code>memcpy()</code>).
+ * @param cc   the Keccak-224 context (pointer to a
+ *             <code>sph_keccak224_context</code>)
  */
-typedef struct {
-#ifndef DOXYGEN_IGNORE
-	unsigned char buf[128];    /* first field, for alignment */
-	size_t ptr;
-	union {
-		sph_u32 Vs[8][4];
-#if SPH_64
-		sph_u64 Vb[8][2];
-#endif
-	} u;
-	sph_u32 C0, C1, C2, C3;
-#endif
-} sph_echo_big_context;
-
-/**
- * Type for a ECHO-224 context (identical to the common "small" context).
- */
-typedef sph_echo_small_context sph_echo224_context;
-
-/**
- * Type for a ECHO-256 context (identical to the common "small" context).
- */
-typedef sph_echo_small_context sph_echo256_context;
-
-/**
- * Type for a ECHO-384 context (identical to the common "big" context).
- */
-typedef sph_echo_big_context sph_echo384_context;
-
-/**
- * Type for a ECHO-512 context (identical to the common "big" context).
- */
-typedef sph_echo_big_context sph_echo512_context;
-
-/**
- * Initialize an ECHO-224 context. This process performs no memory allocation.
- *
- * @param cc   the ECHO-224 context (pointer to a
- *             <code>sph_echo224_context</code>)
- */
-void sph_echo224_init(void *cc);
+void sph_keccak224_init(void *cc);
 
 /**
  * Process some data bytes. It is acceptable that <code>len</code> is zero
  * (in which case this function does nothing).
  *
- * @param cc     the ECHO-224 context
+ * @param cc     the Keccak-224 context
  * @param data   the input data
  * @param len    the input data length (in bytes)
  */
-void sph_echo224(void *cc, const void *data, size_t len);
+void sph_keccak224(void *cc, const void *data, size_t len);
 
 /**
- * Terminate the current ECHO-224 computation and output the result into
+ * Terminate the current Keccak-224 computation and output the result into
  * the provided buffer. The destination buffer must be wide enough to
  * accomodate the result (28 bytes). The context is automatically
  * reinitialized.
  *
- * @param cc    the ECHO-224 context
+ * @param cc    the Keccak-224 context
  * @param dst   the destination buffer
  */
-void sph_echo224_close(void *cc, void *dst);
+void sph_keccak224_close(void *cc, void *dst);
 
 /**
  * Add a few additional bits (0 to 7) to the current computation, then
@@ -170,42 +144,42 @@ void sph_echo224_close(void *cc, void *dst);
  * numbered 7 downto 8-n (this is the big-endian convention at the byte
  * level). The context is automatically reinitialized.
  *
- * @param cc    the ECHO-224 context
+ * @param cc    the Keccak-224 context
  * @param ub    the extra bits
  * @param n     the number of extra bits (0 to 7)
  * @param dst   the destination buffer
  */
-void sph_echo224_addbits_and_close(
+void sph_keccak224_addbits_and_close(
 	void *cc, unsigned ub, unsigned n, void *dst);
 
 /**
- * Initialize an ECHO-256 context. This process performs no memory allocation.
+ * Initialize a Keccak-256 context. This process performs no memory allocation.
  *
- * @param cc   the ECHO-256 context (pointer to a
- *             <code>sph_echo256_context</code>)
+ * @param cc   the Keccak-256 context (pointer to a
+ *             <code>sph_keccak256_context</code>)
  */
-void sph_echo256_init(void *cc);
+void sph_keccak256_init(void *cc);
 
 /**
  * Process some data bytes. It is acceptable that <code>len</code> is zero
  * (in which case this function does nothing).
  *
- * @param cc     the ECHO-256 context
+ * @param cc     the Keccak-256 context
  * @param data   the input data
  * @param len    the input data length (in bytes)
  */
-void sph_echo256(void *cc, const void *data, size_t len);
+void sph_keccak256(void *cc, const void *data, size_t len);
 
 /**
- * Terminate the current ECHO-256 computation and output the result into
+ * Terminate the current Keccak-256 computation and output the result into
  * the provided buffer. The destination buffer must be wide enough to
  * accomodate the result (32 bytes). The context is automatically
  * reinitialized.
  *
- * @param cc    the ECHO-256 context
+ * @param cc    the Keccak-256 context
  * @param dst   the destination buffer
  */
-void sph_echo256_close(void *cc, void *dst);
+void sph_keccak256_close(void *cc, void *dst);
 
 /**
  * Add a few additional bits (0 to 7) to the current computation, then
@@ -215,42 +189,42 @@ void sph_echo256_close(void *cc, void *dst);
  * numbered 7 downto 8-n (this is the big-endian convention at the byte
  * level). The context is automatically reinitialized.
  *
- * @param cc    the ECHO-256 context
+ * @param cc    the Keccak-256 context
  * @param ub    the extra bits
  * @param n     the number of extra bits (0 to 7)
  * @param dst   the destination buffer
  */
-void sph_echo256_addbits_and_close(
+void sph_keccak256_addbits_and_close(
 	void *cc, unsigned ub, unsigned n, void *dst);
 
 /**
- * Initialize an ECHO-384 context. This process performs no memory allocation.
+ * Initialize a Keccak-384 context. This process performs no memory allocation.
  *
- * @param cc   the ECHO-384 context (pointer to a
- *             <code>sph_echo384_context</code>)
+ * @param cc   the Keccak-384 context (pointer to a
+ *             <code>sph_keccak384_context</code>)
  */
-void sph_echo384_init(void *cc);
+void sph_keccak384_init(void *cc);
 
 /**
  * Process some data bytes. It is acceptable that <code>len</code> is zero
  * (in which case this function does nothing).
  *
- * @param cc     the ECHO-384 context
+ * @param cc     the Keccak-384 context
  * @param data   the input data
  * @param len    the input data length (in bytes)
  */
-void sph_echo384(void *cc, const void *data, size_t len);
+void sph_keccak384(void *cc, const void *data, size_t len);
 
 /**
- * Terminate the current ECHO-384 computation and output the result into
+ * Terminate the current Keccak-384 computation and output the result into
  * the provided buffer. The destination buffer must be wide enough to
  * accomodate the result (48 bytes). The context is automatically
  * reinitialized.
  *
- * @param cc    the ECHO-384 context
+ * @param cc    the Keccak-384 context
  * @param dst   the destination buffer
  */
-void sph_echo384_close(void *cc, void *dst);
+void sph_keccak384_close(void *cc, void *dst);
 
 /**
  * Add a few additional bits (0 to 7) to the current computation, then
@@ -260,42 +234,42 @@ void sph_echo384_close(void *cc, void *dst);
  * numbered 7 downto 8-n (this is the big-endian convention at the byte
  * level). The context is automatically reinitialized.
  *
- * @param cc    the ECHO-384 context
+ * @param cc    the Keccak-384 context
  * @param ub    the extra bits
  * @param n     the number of extra bits (0 to 7)
  * @param dst   the destination buffer
  */
-void sph_echo384_addbits_and_close(
+void sph_keccak384_addbits_and_close(
 	void *cc, unsigned ub, unsigned n, void *dst);
 
 /**
- * Initialize an ECHO-512 context. This process performs no memory allocation.
+ * Initialize a Keccak-512 context. This process performs no memory allocation.
  *
- * @param cc   the ECHO-512 context (pointer to a
- *             <code>sph_echo512_context</code>)
+ * @param cc   the Keccak-512 context (pointer to a
+ *             <code>sph_keccak512_context</code>)
  */
-void sph_echo512_init(void *cc);
+void sph_keccak512_init(void *cc);
 
 /**
  * Process some data bytes. It is acceptable that <code>len</code> is zero
  * (in which case this function does nothing).
  *
- * @param cc     the ECHO-512 context
+ * @param cc     the Keccak-512 context
  * @param data   the input data
  * @param len    the input data length (in bytes)
  */
-void sph_echo512(void *cc, const void *data, size_t len);
+void sph_keccak512(void *cc, const void *data, size_t len);
 
 /**
- * Terminate the current ECHO-512 computation and output the result into
+ * Terminate the current Keccak-512 computation and output the result into
  * the provided buffer. The destination buffer must be wide enough to
  * accomodate the result (64 bytes). The context is automatically
  * reinitialized.
  *
- * @param cc    the ECHO-512 context
+ * @param cc    the Keccak-512 context
  * @param dst   the destination buffer
  */
-void sph_echo512_close(void *cc, void *dst);
+void sph_keccak512_close(void *cc, void *dst);
 
 /**
  * Add a few additional bits (0 to 7) to the current computation, then
@@ -305,14 +279,14 @@ void sph_echo512_close(void *cc, void *dst);
  * numbered 7 downto 8-n (this is the big-endian convention at the byte
  * level). The context is automatically reinitialized.
  *
- * @param cc    the ECHO-512 context
+ * @param cc    the Keccak-512 context
  * @param ub    the extra bits
  * @param n     the number of extra bits (0 to 7)
  * @param dst   the destination buffer
  */
-void sph_echo512_addbits_and_close(
+void sph_keccak512_addbits_and_close(
 	void *cc, unsigned ub, unsigned n, void *dst);
-	
+
 #ifdef __cplusplus
 }
 #endif
