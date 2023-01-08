@@ -100,4 +100,26 @@ BOOST_AUTO_TEST_CASE(bignum_setint64)
         num.setulong(0);
         BOOST_CHECK(num.ToString() == "0");
         mysetint64(num, n);
-  
+        BOOST_CHECK(num.ToString() == "-5");
+    }
+    {
+        n = std::numeric_limits<int64>::min();
+        CBigNum num(n);
+        BOOST_CHECK(num.ToString() == "-9223372036854775808");
+        num.setulong(0);
+        BOOST_CHECK(num.ToString() == "0");
+        mysetint64(num, n);
+        BOOST_CHECK(num.ToString() == "-9223372036854775808");
+    }
+    {
+        n = std::numeric_limits<int64>::max();
+        CBigNum num(n);
+        BOOST_CHECK(num.ToString() == "9223372036854775807");
+        num.setulong(0);
+        BOOST_CHECK(num.ToString() == "0");
+        mysetint64(num, n);
+        BOOST_CHECK(num.ToString() == "9223372036854775807");
+    }
+}
+
+BOOST_AUTO_TEST_SUITE_END()
