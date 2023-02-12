@@ -116,4 +116,32 @@ BOOST_AUTO_TEST_CASE(key_test1)
         BOOST_CHECK(!key1C.Verify(hashMsg, sign2C));
 
         BOOST_CHECK(!key2C.Verify(hashMsg, sign1));
-        BO
+        BOOST_CHECK( key2C.Verify(hashMsg, sign2));
+        BOOST_CHECK(!key2C.Verify(hashMsg, sign1C));
+        BOOST_CHECK( key2C.Verify(hashMsg, sign2C));
+
+        // compact signatures (with key recovery)
+
+        vector<unsigned char> csign1, csign2, csign1C, csign2C;
+
+        BOOST_CHECK(key1.SignCompact (hashMsg, csign1));
+        BOOST_CHECK(key2.SignCompact (hashMsg, csign2));
+        BOOST_CHECK(key1C.SignCompact(hashMsg, csign1C));
+        BOOST_CHECK(key2C.SignCompact(hashMsg, csign2C));
+
+        CKey rkey1, rkey2, rkey1C, rkey2C;
+
+        BOOST_CHECK(rkey1.SetCompactSignature (hashMsg, csign1));
+        BOOST_CHECK(rkey2.SetCompactSignature (hashMsg, csign2));
+        BOOST_CHECK(rkey1C.SetCompactSignature(hashMsg, csign1C));
+        BOOST_CHECK(rkey2C.SetCompactSignature(hashMsg, csign2C));
+
+
+        BOOST_CHECK(rkey1.GetPubKey()  == key1.GetPubKey());
+        BOOST_CHECK(rkey2.GetPubKey()  == key2.GetPubKey());
+        BOOST_CHECK(rkey1C.GetPubKey() == key1C.GetPubKey());
+        BOOST_CHECK(rkey2C.GetPubKey() == key2C.GetPubKey());
+    }
+}
+
+BOOST_AUTO_TEST_SUITE_END()
