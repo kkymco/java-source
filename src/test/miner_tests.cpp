@@ -113,4 +113,108 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         tx.vout[0].nValue -= 10000000;
         hash = tx.GetHash();
         mempool.addUnchecked(hash, tx);
-        tx
+        tx.vin[0].prevout.hash = hash;
+    }
+    BOOST_CHECK(pblock = CreateNewBlock(reservekey));
+    delete pblock;
+    mempool.clear();
+
+    // orphan in mempool
+    hash = tx.GetHash();
+    mempool.addUnchecked(hash, tx);
+    BOOST_CHECK(pblock = CreateNewBlock(reservekey));
+    delete pblock;
+    mempool.clear();
+
+    // child with higher priority than parent
+    tx.vin[0].scriptSig = CScript() << OP_1;
+    tx.vin[0].prevout.hash = txFirst[1]->GetHash();
+    tx.vout[0].nValue = 4900000000LL;
+    hash = tx.GetHash();
+    mempool.addUnchecked(hash, tx);
+    tx.vin[0].prevout.hash = hash;
+    tx.vin.resize(2);
+    tx.vin[1].scriptSig = CScript() << OP_1;
+    tx.vin[1].prevout.hash = txFirst[0]->GetHash();
+    tx.vin[1].prevout.n = 0;
+    tx.vout[0].nValue = 5900000000LL;
+    hash = tx.GetHash();
+    mempool.addUnchecked(hash, tx);
+    BOOST_CHECK(pblock = CreateNewBlock(reservekey));
+    delete pblock;
+    mempool.clear();
+
+    // coinbase in mempool
+    tx.vin.resize(1);
+    tx.vin[0].prevout.SetNull();
+    tx.vin[0].scriptSig = CScript() << OP_0 << OP_1;
+    tx.vout[0].nValue = 0;
+    hash = tx.GetHash();
+    mempool.addUnchecked(hash, tx);
+    BOOST_CHECK(pblock = CreateNewBlock(reservekey));
+    delete pblock;
+    mempool.clear();
+
+    // invalid (pre-p2sh) txn in mempool
+    tx.vin[0].prevout.hash = txFirst[0]->GetHash();
+    tx.vin[0].prevout.n = 0;
+    tx.vin[0].scriptSig = CScript() << OP_1;
+    tx.vout[0].nValue = 4900000000LL;
+    script = CScript() << OP_0;
+    tx.vout[0].scriptPubKey.SetDestination(script.GetID());
+    hash = tx.GetHash();
+    mempool.addUnchecked(hash, tx);
+    tx.vin[0].prevout.hash = hash;
+    tx.vin[0].scriptSig = CScript() << (std::vector<unsigned char>)script;
+    tx.vout[0].nValue -= 1000000;
+    hash = tx.GetHash();
+    mempool.addUnchecked(hash,tx);
+    BOOST_CHECK(pblock = CreateNewBlock(reservekey));
+    delete pblock;
+    mempool.clear();
+
+    // double spend txn pair in mempool
+    tx.vin[0].prevout.hash = txFirst[0]->GetHash();
+    tx.vin[0].scriptSig = CScript() << OP_1;
+    tx.vout[0].nValue = 4900000000LL;
+    tx.vout[0].scriptPubKey = CScript() << OP_1;
+    hash = tx.GetHash();
+    mempool.addUnchecked(hash, tx);
+    tx.vout[0].scriptPubKey = CScript() << OP_2;
+    hash = tx.GetHash();
+    mempool.addUnchecked(hash, tx);
+    BOOST_CHECK(pblock = CreateNewBlock(reservekey));
+    delete pblock;
+    mempool.clear();
+
+    // subsidy changing
+    int nHeight = pindexBest->nHeight;
+    pindexBest->nHeight = 209999;
+    BOOST_CHECK(pblock = CreateNewBlock(reservekey));
+    delete pblock;
+    pindexBest->nHeight = 210000;
+    BOOST_CHECK(pblock = CreateNewBlock(reservekey));
+    delete pblock;
+    pindexBest->nHeight = nHeight;
+}
+
+BOOST_AUTO_TEST_CASE(sha256transform_equality)
+{
+    unsigned int pSHA256InitState[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
+
+
+    // unsigned char pstate[32];
+    unsigned char pinput[64];
+
+    int i;
+
+    for (i = 0; i < 32; i++) {
+        pinput[i] = i;
+        pinput[i+32] = 0;
+    }
+
+    uint256 hash;
+
+    SHA256Transform(&hash, pinput, pSHA256InitState);
+
+    BOOST
