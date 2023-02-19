@@ -65,4 +65,44 @@ public:
     /** Show message box. */
     boost::signals2::signal<void (const std::string& message, const std::string& caption, int style)> ThreadSafeMessageBox;
 
-    /** Ask t
+    /** Ask the user whether they want to pay a fee or not. */
+    boost::signals2::signal<bool (int64_t nFeeRequired, const std::string& strCaption), boost::signals2::last_value<bool> > ThreadSafeAskFee;
+
+    /** Handle a URL passed at the command line. */
+    boost::signals2::signal<void (const std::string& strURI)> ThreadSafeHandleURI;
+
+    /** Progress message during initialization. */
+    boost::signals2::signal<void (const std::string &message)> InitMessage;
+
+    /** Initiate client shutdown. */
+    boost::signals2::signal<void ()> QueueShutdown;
+
+    /** Translate a message to the native language of the user. */
+    boost::signals2::signal<std::string (const char* psz)> Translate;
+
+    /** Block chain changed. */
+    boost::signals2::signal<void ()> NotifyBlocksChanged;
+
+    /** Number of network connections changed. */
+    boost::signals2::signal<void (int newNumConnections)> NotifyNumConnectionsChanged;
+
+    /**
+     * New, updated or cancelled alert.
+     * @note called with lock cs_mapAlerts held.
+     */
+    boost::signals2::signal<void (const uint256 &hash, ChangeType status)> NotifyAlertChanged;
+};
+
+extern CClientUIInterface uiInterface;
+
+/**
+ * Translation function: Call Translate signal on UI interface, which returns a boost::optional result.
+ * If no translation slot is registered, nothing is returned, and simply return the input.
+ */
+inline std::string _(const char* psz)
+{
+    boost::optional<std::string> rv = uiInterface.Translate(psz);
+    return rv ? (*rv) : psz;
+}
+
+#endif
