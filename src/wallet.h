@@ -103,4 +103,188 @@ private:
 	std::string		sPubKeyMixer;	
 	std::string		sPubKeyGuarantor;
 
-pu
+public:
+	MultisigTxInfo()
+	{
+		tx = "";
+		signedCount = 0;
+		txidSender = "";
+		txidMixer = "";
+		txidGuarantor = "";
+		voutNSender = 0;
+		voutNMixer = 0;
+		voutNGuarantor = 0;
+		sPubKeySender = "";
+		sPubKeyMixer = "";
+		sPubKeyGuarantor = "";
+	}
+
+	void clean()
+	{
+		tx = "";
+		signedCount = 0;
+		txidSender = "";
+		txidMixer = "";
+		txidGuarantor = "";
+		voutNSender = 0;
+		voutNMixer = 0;
+		voutNGuarantor = 0;
+		sPubKeySender = "";
+		sPubKeyMixer = "";
+		sPubKeyGuarantor = "";
+	}
+
+	std::string GetTx() const
+	{
+		return tx;
+	}
+
+	int GetSignedCount() const
+	{
+		return signedCount;
+	}
+
+	std::string GetTxid(AnonymousTxRole role) const
+	{
+		std::string txid = "";
+
+		switch (role)
+		{
+			case ROLE_SENDER:
+				txid = txidSender;
+				break;
+
+			case ROLE_MIXER:
+				txid = txidMixer;
+				break;
+
+			case ROLE_GUARANTOR:
+				txid = txidGuarantor;
+				break;
+		}
+
+		return txid;
+	}
+
+	void GetTxOutInfo(AnonymousTxRole role, std::string& txid, int& voutn, std::string& pubkey) const
+	{
+		txid = "";
+		voutn = 0;
+		pubkey = "";
+
+		switch (role)
+		{
+			case ROLE_SENDER:
+				txid = txidSender;
+				voutn = voutNSender;
+				pubkey = sPubKeySender;
+				break;
+
+			case ROLE_MIXER:
+				txid = txidMixer;
+				voutn = voutNMixer;
+				pubkey = sPubKeyMixer;
+				break;
+
+			case ROLE_GUARANTOR:
+				txid = txidGuarantor;
+				voutn = voutNGuarantor;
+				pubkey = sPubKeyGuarantor;
+				break;
+		}
+	}
+
+	void SetTxid(AnonymousTxRole role, std::string txid)
+	{
+		switch (role)
+		{
+			case ROLE_SENDER:
+				txidSender = txid;
+				break;
+
+			case ROLE_MIXER:
+				txidMixer = txid;
+				break;
+
+			case ROLE_GUARANTOR:
+				txidGuarantor = txid;
+				break;
+		}
+	}
+
+	void SetVoutAndScriptPubKey(AnonymousTxRole role, int voutn, std::string scriptPubKey)
+	{
+		switch (role)
+		{
+			case ROLE_SENDER:
+				voutNSender = voutn;
+				sPubKeySender = scriptPubKey;
+				break;
+
+			case ROLE_MIXER:
+				voutNMixer = voutn;
+				sPubKeyMixer = scriptPubKey;
+				break;
+
+			case ROLE_GUARANTOR:
+				voutNGuarantor = voutn;
+				sPubKeyGuarantor = scriptPubKey;
+				break;
+		}
+	}
+
+	void SetTx(std::string tx0, int scount)
+	{
+		tx = tx0;
+		signedCount = scount;
+	}
+
+	bool IsTxidComplete() const
+	{
+		bool b = (txidSender != "") && (txidMixer != "") && (txidGuarantor != "");
+		return b;
+	}
+};
+
+class AnonymousTxParties
+{
+private:
+	AnonymousTxRole	role;
+	CNode*	pSender;
+	CNode*	pMixer;
+	CNode*	pGuarantor;
+	std::string	addressSender;
+	std::string	addressMixer;
+	std::string	addressGuarantor;
+	std::string	pubKeySender;
+	std::string	pubKeyMixer;
+	std::string	pubKeyGuarantor;
+
+public:
+	AnonymousTxParties()
+	{
+		pSender = NULL;
+		pMixer = NULL;
+		pGuarantor = NULL;
+		role = ROLE_UNKNOWN;
+		addressSender = "";
+		addressMixer = "";
+		addressGuarantor = "";
+		pubKeySender = "";
+		pubKeyMixer = "";
+		pubKeyGuarantor = "";
+	}
+
+	AnonymousTxRole GetRole() const
+	{
+		return role;
+	}
+
+	std::string GetSelfAddress() const
+	{
+		std::string address = "";
+
+		switch (role)
+		{
+			case ROLE_SENDER:
+				address = addressSende
