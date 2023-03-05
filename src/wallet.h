@@ -481,4 +481,166 @@ public:
 
 	bool IsNull() const
 	{
-		return (status == ATX_STATU
+		return (status == ATX_STATUS_NONE);
+	}
+
+	std::pair<std::string, int64_t> GetValue(int i)
+	{
+		return vecSendInfo.at(i);
+	}
+
+	int64_t GetLastActivityTime() const
+	{
+		return lastActivityTime;
+	}
+
+	const CCoinControl*	GetCoinControl() const
+	{
+		return pCoinControl;
+	}
+
+	AnonymousTxRole GetRole() const
+	{
+		return pParties->GetRole();
+	}
+
+	std::string GetSelfAddress() const
+	{
+		return pParties->GetSelfAddress();
+	}
+
+	int GetSize() const
+	{
+		return size;
+	}
+
+	std::string GetTx() const
+	{
+		return pMultiSigDistributionTx->GetTx();
+	}
+
+	std::vector< std::pair<std::string, int64_t> > GetSendInfo() const
+	{
+		return vecSendInfo;
+	}
+
+	std::string GetAddress(AnonymousTxRole role) const
+	{
+		return pParties->GetAddress(role);
+	}
+
+	std::string GetSelfPubKey() const
+	{
+		return pParties->GetSelfPubKey();
+	}
+
+	std::string GetAnonymousId() const
+	{
+		return anonymousId;
+	}
+
+	AnonymousTxStatus GetAtxStatus() const
+	{
+		return status;
+	}
+
+	CNode* GetNode(AnonymousTxRole role) const
+	{
+		return pParties->GetNode(role);
+	}
+
+	std::string GetNodeIpAddress(AnonymousTxRole role) const;
+
+	std::vector<std::string> GetAllPubKeys() const
+	{
+		return pParties->GetAllPubKeys();
+	}
+
+	std::string GetMultiSigAddress() const
+	{
+		return multiSigAddress;
+	}
+
+	std::string GetRedeemScript() const
+	{
+		return redeemScript;
+	}
+
+	std::string GetTxid(AnonymousTxRole role) const
+	{
+		return pMultiSigDistributionTx->GetTxid(role);
+	}
+
+	int GetSignedCount() const
+	{
+		return pMultiSigDistributionTx->GetSignedCount();
+	}
+
+	void GetMultisigTxOutInfo(AnonymousTxRole role, std::string& txid, int& voutn, std::string& pubkey) const
+	{
+		pMultiSigDistributionTx->GetTxOutInfo(role, txid, voutn, pubkey);
+	}
+
+	std::string GetCommittedMsTx() const
+	{
+		return committedMsTx;
+	}
+
+	void SetLastActivityTime()
+	{
+		lastActivityTime = GetTime();
+	}
+
+	void SetAnonymousId(std::string aId)
+	{
+		lastActivityTime = GetTime();
+		anonymousId = aId;
+
+		if(status == ATX_STATUS_NONE)
+			status = ATX_STATUS_RESERVE;
+	}
+
+	void SetSendTx(std::string tx)
+	{
+		sendTx = tx;
+	}
+
+	void SetNode(AnonymousTxRole role, CNode* pN)
+	{
+		pParties->SetNode(role, pN);
+	}
+
+	void SetCommittedMsTx(std::string tx)
+	{
+		lastActivityTime = GetTime();
+		committedMsTx = tx;
+		status = ATX_STATUS_COMPLETE;
+	}
+
+	void SetAddressAndPubKey(AnonymousTxRole role, std::string address, std::string key)
+	{
+		lastActivityTime = GetTime();
+		pParties->SetAddressAndPubKey(role, address, key);
+
+		if(pParties->IsPubKeyComplete())
+			status = ATX_STATUS_PUBKEY;
+	}
+
+	void SetTxid(AnonymousTxRole role, std::string txid)
+	{
+		lastActivityTime = GetTime();
+		pMultiSigDistributionTx->SetTxid(role, txid);
+
+		if(pMultiSigDistributionTx->IsTxidComplete())
+			status = ATX_STATUS_MSDEPO;
+	}
+
+	void SetVoutAndScriptPubKey(AnonymousTxRole role, int vout, std::string pubkey)
+	{
+		pMultiSigDistributionTx->SetVoutAndScriptPubKey(role, vout, pubkey);
+	}
+
+	void SetMultiSigAddress(std::string multiSigAddress0, std::string redeemScript0)
+	{
+		lastActivityTime = GetTime();
+		m
