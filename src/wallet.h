@@ -287,4 +287,198 @@ public:
 		switch (role)
 		{
 			case ROLE_SENDER:
-				address = addressSende
+				address = addressSender;
+				break;
+
+			case ROLE_MIXER:
+				address = addressMixer;
+				break;
+
+			case ROLE_GUARANTOR:
+				address = addressGuarantor;
+				break;
+		}
+
+		return address;
+	}
+
+	std::string GetAddress(AnonymousTxRole role0) const
+	{
+		std::string address = "";
+
+		switch (role0)
+		{
+			case ROLE_SENDER:
+				address = addressSender;
+				break;
+
+			case ROLE_MIXER:
+				address = addressMixer;
+				break;
+
+			case ROLE_GUARANTOR:
+				address = addressGuarantor;
+				break;
+		}
+
+		return address;
+	}
+
+	std::string GetSelfPubKey() const
+	{
+		std::string pubKey = "";
+
+		switch (role)
+		{
+			case ROLE_SENDER:
+				pubKey = pubKeySender;
+				break;
+
+			case ROLE_MIXER:
+				pubKey = pubKeyMixer;
+				break;
+
+			case ROLE_GUARANTOR:
+				pubKey = pubKeyGuarantor;
+				break;
+		}
+
+		return pubKey;
+	}
+
+	CNode* GetNode(AnonymousTxRole role0) const
+	{
+		CNode* pN = NULL;
+		switch (role0)
+		{
+			case ROLE_SENDER:
+				pN = pSender;
+				break;
+
+			case ROLE_MIXER:
+				pN = pMixer;
+				break;
+
+			case ROLE_GUARANTOR:
+				pN = pGuarantor;
+				break;
+		}
+
+		return pN;
+	}
+
+	std::vector<std::string> GetAllPubKeys() const
+	{
+		std::vector<std::string> vec;
+		vec.push_back(pubKeySender);
+		vec.push_back(pubKeyMixer);
+		vec.push_back(pubKeyGuarantor);
+		return vec;
+	}
+
+	void SetRole(AnonymousTxRole r)
+	{
+		role = r;
+	}
+
+	void SetNode(AnonymousTxRole role0, CNode* pN)
+	{
+		switch (role0)
+		{
+			case ROLE_SENDER:
+				pSender = pN;
+				break;
+
+			case ROLE_MIXER:
+				pMixer = pN;
+				break;
+
+			case ROLE_GUARANTOR:
+				pGuarantor = pN;
+				break;
+		}
+	}
+
+	void SetAddressAndPubKey(AnonymousTxRole role0, std::string addr, std::string key)
+	{
+		switch (role0)
+		{
+			case ROLE_SENDER:
+				addressSender = addr;
+				pubKeySender = key;
+				break;
+
+			case ROLE_MIXER:
+				addressMixer = addr;
+				pubKeyMixer = key;
+				break;
+
+			case ROLE_GUARANTOR:
+				addressGuarantor = addr;
+				pubKeyGuarantor = key;
+				break;
+		}
+	}
+
+	bool IsPubKeyComplete() const
+	{
+		bool b = (pubKeySender != "") && (pubKeyMixer != "") && (pubKeyGuarantor != "");
+		return b;
+	}
+
+	void clean()
+	{
+		pSender = NULL;
+		pMixer = NULL;
+		pGuarantor = NULL;
+		role = ROLE_UNKNOWN;
+		addressSender = "";
+		addressMixer = "";
+		addressGuarantor = "";
+		pubKeySender = "";
+		pubKeyMixer = "";
+		pubKeyGuarantor = "";
+	}
+};
+
+
+class CAnonymousTxInfo
+{
+public:
+	CAnonymousTxInfo()
+	{
+		status = ATX_STATUS_NONE;
+		anonymousId = "";
+		pParties = new AnonymousTxParties();
+		lastActivityTime = GetTime();
+		size = 0;
+		pCoinControl = NULL;
+		multiSigAddress = "";
+		redeemScript = "";
+		sendTx = "";
+		committedMsTx = "";
+		pMultiSigDistributionTx = new MultisigTxInfo();
+	}
+
+	virtual void clean(bool clearLog)
+	{
+		pParties->clean();
+		size = 0;
+		lastActivityTime = GetTime();
+		status = ATX_STATUS_NONE;
+		anonymousId = "";
+		pCoinControl = NULL;
+		multiSigAddress = "";
+		redeemScript = "";
+		sendTx = "";
+		committedMsTx = "";
+
+		pMultiSigDistributionTx->clean();
+
+		if(clearLog)
+			logs.clear();
+	}
+
+	bool IsNull() const
+	{
+		return (status == ATX_STATU
