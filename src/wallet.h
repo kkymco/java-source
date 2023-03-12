@@ -736,4 +736,80 @@ public:
     mutable CCriticalSection cs_wallet;
     mutable CCriticalSection cs_servicelist;
 
-    bool f
+    bool fFileBacked;
+    std::string strWalletFile, strDonationsFile;
+
+    std::set<int64_t> setKeyPool;
+
+    std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
+
+
+    typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
+    MasterKeyMap mapMasterKeys;
+    unsigned int nMasterKeyMaxID;
+
+    CWallet()
+    {
+        nWalletVersion = FEATURE_BASE;
+        nWalletMaxVersion = FEATURE_BASE;
+        fFileBacked = false;
+        nMasterKeyMaxID = 0;
+        pwalletdbEncryption = NULL;
+        nOrderPosNext = 0;
+		pCurrentAnonymousTxInfo = new CAnonymousTxInfo();
+		selfAddress = "";
+		mapAnonymousServices.clear();
+    }
+    CWallet(std::string strWalletFileIn)
+    {
+        nWalletVersion = FEATURE_BASE;
+        nWalletMaxVersion = FEATURE_BASE;
+        strWalletFile = strWalletFileIn;
+        fFileBacked = true;
+        nMasterKeyMaxID = 0;
+        pwalletdbEncryption = NULL;
+        nOrderPosNext = 0;
+		pCurrentAnonymousTxInfo = new CAnonymousTxInfo();
+		selfAddress = "";
+		mapAnonymousServices.clear();
+    }
+
+	~CWallet()
+	{
+		delete pCurrentAnonymousTxInfo;
+    }
+
+    std::map<uint256, CWalletTx> mapWallet;
+    int64_t nOrderPosNext;
+    std::map<uint256, int> mapRequestCount;
+
+    std::map<CTxDestination, std::string> mapAddressBook;
+	std::map<std::string, std::string> mapAnonymousServices;
+
+    CPubKey vchDefaultKey;
+    int64_t nTimeFirstKey;
+
+    // check whether we are allowed to upgrade (or already support) to the named feature
+    bool CanSupportFeature(enum WalletFeature wf) { return nWalletMaxVersion >= wf; }
+
+    void AvailableCoinsMinConf(std::vector<COutput>& vCoins, int nConf) const;
+    void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl=NULL) const;
+    bool SelectCoinsMinConf(int64_t nTargetValue, unsigned int nSpendTime, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const;
+    // keystore implementation
+    // Generate a new key
+    CPubKey GenerateNewKey();
+    // Adds a key to the store, and saves it to disk.
+    bool AddKey(const CKey& key);
+    // Adds a key to the store, without saving it to disk (used by LoadWallet)
+    bool LoadKey(const CKey& key) { return CCryptoKeyStore::AddKey(key); }
+    // Load metadata (used by LoadWallet)
+    bool LoadKeyMetadata(const CPubKey &pubkey, const CKeyMetadata &metadata);
+
+    bool LoadMinVersion(int nVersion) { nWalletVersion = nVersion; nWalletMaxVersion = std::max(nWalletMaxVersion, nVersion); return true; }
+
+    // Adds an encrypted key to the store, and saves it to disk.
+    bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
+    // Adds an encrypted key to the store, without saving it to disk (used by LoadWallet)
+    bool LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
+    bool AddCScript(const CScript& redeemScript);
+    bool LoadCScript(const CScript& redeemScript) { return CCryptoKeyStore::AddCScr
