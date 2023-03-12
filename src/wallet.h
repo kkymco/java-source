@@ -643,4 +643,97 @@ public:
 	void SetMultiSigAddress(std::string multiSigAddress0, std::string redeemScript0)
 	{
 		lastActivityTime = GetTime();
-		m
+		multiSigAddress = multiSigAddress0;
+		redeemScript = redeemScript0;
+		status = ATX_STATUS_MSADDR;
+	}
+
+	void SetTx(std::string tx, int sc)
+	{
+		lastActivityTime = GetTime();
+
+		if(sc == 0 && status < ATX_STATUS_MSTXR0)
+		{
+			status = ATX_STATUS_MSTXR0;
+			pMultiSigDistributionTx->SetTx(tx, sc);
+		}
+		else if(sc == 1 && status < ATX_STATUS_MSTXR1)
+		{
+			status = ATX_STATUS_MSTXR1;
+			pMultiSigDistributionTx->SetTx(tx, sc);
+		}
+		else if(sc == 2 && status < ATX_STATUS_MSTXRC)
+		{
+			status = ATX_STATUS_MSTXRC;
+			pMultiSigDistributionTx->SetTx(tx, sc);
+		}
+	}
+
+	void SetNewData(std::string anonymousId0, CNode* pMixerNode, CNode* pGuarantorNode)
+	{
+		lastActivityTime = GetTime();
+		anonymousId = anonymousId0;
+		pParties->SetNode(ROLE_MIXER, pMixerNode);
+		pParties->SetNode(ROLE_GUARANTOR, pGuarantorNode);
+	}
+
+	bool SetInitialData(AnonymousTxRole role, std::vector< std::pair<std::string, int64_t> > vecSendInfo, const CCoinControl* pCoinControl,
+		CNode* pSendNode, CNode* pMixerNode, CNode* pGuarantorNode, CWallet* pWallet);
+
+	bool CanReset() const;
+	int64_t GetTotalRequiredCoinsToSend(AnonymousTxRole role = ROLE_UNKNOWN);
+
+	bool CheckDepositTxes(CWallet* pWallet);
+	bool CheckSendTx(CWallet* pWallet);
+	bool IsCurrentTxInProcess() const;
+	void AddToLog(std::string text);
+	std::string GetLastAnonymousTxLog();
+
+private:
+	bool CheckDeposit(AnonymousTxRole role, CWallet* pWallet);
+	int64_t GetDepositedAmount(CTransaction tx);
+
+	AnonymousTxStatus			status;		
+	std::string					anonymousId;
+	AnonymousTxParties*			pParties;
+	int64_t						lastActivityTime;
+	int							size;
+	const CCoinControl*			pCoinControl;
+	std::string					multiSigAddress;
+	std::string					redeemScript;
+	std::string					sendTx;
+	MultisigTxInfo*				pMultiSigDistributionTx;
+	std::string					committedMsTx;
+
+	std::vector< std::pair<std::string, int64_t> > vecSendInfo;
+	std::vector<std::string>	logs;
+};
+
+
+/** A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
+ * and provides the ability to create new transactions.
+ */
+class CWallet : public CCryptoKeyStore
+{
+private:
+    bool SelectCoinsSimple(int64_t nTargetValue, unsigned int nSpendTime, int nMinConf, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const;
+    bool SelectCoins(int64_t nTargetValue, unsigned int nSpendTime, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet, const CCoinControl *coinControl=NULL) const;
+
+    CWalletDB *pwalletdbEncryption;
+
+    // the current wallet version: clients below this version are not able to load the wallet
+    int nWalletVersion;
+
+    // the maximum wallet format version: memory-only variable that specifies to what version this wallet may be upgraded
+    int nWalletMaxVersion;
+
+	// current anonymous send info (only allow one for now, for one sender)
+	std::string selfAddress;
+	CAnonymousTxInfo* pCurrentAnonymousTxInfo;
+
+
+public:
+    mutable CCriticalSection cs_wallet;
+    mutable CCriticalSection cs_servicelist;
+
+    bool f
