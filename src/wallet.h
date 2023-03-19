@@ -1031,4 +1031,129 @@ class CReserveKey
 {
 protected:
     CWallet* pwallet;
-    int64_t 
+    int64_t nIndex;
+    CPubKey vchPubKey;
+public:
+    CReserveKey(CWallet* pwalletIn)
+    {
+        nIndex = -1;
+        pwallet = pwalletIn;
+    }
+
+    ~CReserveKey()
+    {
+        if (!fShutdown)
+            ReturnKey();
+    }
+
+    void ReturnKey();
+    bool GetReservedKey(CPubKey &pubkey);
+    CPubKey GetReservedKey();
+    void KeepKey();
+};
+
+
+typedef std::map<std::string, std::string> mapValue_t;
+
+
+static void ReadOrderPos(int64_t& nOrderPos, mapValue_t& mapValue)
+{
+    if (!mapValue.count("n"))
+    {
+        nOrderPos = -1; // TODO: calculate elsewhere
+        return;
+    }
+    nOrderPos = atoi64(mapValue["n"].c_str());
+}
+
+
+static void WriteOrderPos(const int64_t& nOrderPos, mapValue_t& mapValue)
+{
+    if (nOrderPos == -1)
+        return;
+    mapValue["n"] = i64tostr(nOrderPos);
+}
+
+
+/** A transaction with a bunch of additional info that only the owner cares about.
+ * It includes any unrecorded transactions needed to link it back to the block chain.
+ */
+class CWalletTx : public CMerkleTx
+{
+private:
+    const CWallet* pwallet;
+
+public:
+    std::vector<CMerkleTx> vtxPrev;
+    mapValue_t mapValue;
+    std::vector<std::pair<std::string, std::string> > vOrderForm;
+    unsigned int fTimeReceivedIsTxTime;
+    unsigned int nTimeReceived;  // time received by this node
+    unsigned int nTimeSmart;
+    char fFromMe;
+    std::string strFromAccount;
+    std::vector<char> vfSpent; // which outputs are already spent
+    int64_t nOrderPos;  // position in ordered transaction list
+
+    // memory only
+    mutable bool fDebitCached;
+    mutable bool fCreditCached;
+    mutable bool fImmatureCreditCached;
+    mutable bool fAvailableCreditCached;
+    mutable bool fChangeCached;
+    mutable int64_t nDebitCached;
+    mutable int64_t nCreditCached;
+    mutable int64_t nImmatureCreditCached;
+    mutable int64_t nAvailableCreditCached;
+    mutable int64_t nChangeCached;
+
+    CWalletTx()
+    {
+        Init(NULL);
+    }
+
+    CWalletTx(const CWallet* pwalletIn)
+    {
+        Init(pwalletIn);
+    }
+
+    CWalletTx(const CWallet* pwalletIn, const CMerkleTx& txIn) : CMerkleTx(txIn)
+    {
+        Init(pwalletIn);
+    }
+
+    CWalletTx(const CWallet* pwalletIn, const CTransaction& txIn) : CMerkleTx(txIn)
+    {
+        Init(pwalletIn);
+    }
+
+    void Init(const CWallet* pwalletIn)
+    {
+        pwallet = pwalletIn;
+        vtxPrev.clear();
+        mapValue.clear();
+        vOrderForm.clear();
+        fTimeReceivedIsTxTime = false;
+        nTimeReceived = 0;
+        nTimeSmart = 0;
+        fFromMe = false;
+        strFromAccount.clear();
+        vfSpent.clear();
+        fDebitCached = false;
+        fCreditCached = false;
+        fImmatureCreditCached = false;
+        fAvailableCreditCached = false;
+        fChangeCached = false;
+        nDebitCached = 0;
+        nCreditCached = 0;
+        nImmatureCreditCached = 0;
+        nAvailableCreditCached = 0;
+        nChangeCached = 0;
+        nOrderPos = -1;
+    }
+
+    IMPLEMENT_SERIALIZE
+    (
+        CWalletTx* pthis = const_cast<CWalletTx*>(this);
+        if (fRead)
+            pthis->Init
