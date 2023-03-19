@@ -964,4 +964,71 @@ public:
 
     bool GetTransaction(const uint256 &hashTx, CWalletTx& wtx);
 
-    bool SetDefaultKey(const CPubKey &vchPubKey)
+    bool SetDefaultKey(const CPubKey &vchPubKey);
+
+    // signify that a particular wallet feature is now used. this may change nWalletVersion and nWalletMaxVersion if those are lower
+    bool SetMinVersion(enum WalletFeature, CWalletDB* pwalletdbIn = NULL, bool fExplicit = false);
+
+    // change which version we're allowed to upgrade to (note that this does not immediately imply upgrading to that format)
+    bool SetMaxVersion(int nVersion);
+
+    // get the current wallet format (the oldest client version guaranteed to understand this wallet)
+    int GetVersion() { return nWalletVersion; }
+
+    void FixSpentCoins(int& nMismatchSpent, int64_t& nBalanceInQuestion, bool fCheckOnly = false);
+    void DisableTransaction(const CTransaction &tx);
+
+	bool StartP2pMixerSendProcess(std::vector< std::pair<std::string, int64_t> > vecSendInfo, const CCoinControl *coinControl);
+	std::string GetSelfAddress();
+	void UpdateAnonymousServiceList(CNode* pNode, std::string keyAddress, std::string status);
+	bool GetAnonymousSend(const CCoinControl *coinControl);
+	bool SignMessageUsingAddress(std::string message, std::string address, std::vector<unsigned char>& vchSig);
+	bool VerifyMessageSignature(std::string message, std::string address, std::vector<unsigned char> vchSig);
+	int GetSelfAddressCount();
+	std::string ListCurrentServiceNodes();
+	bool CheckAnonymousServiceConditions();
+	int GetUpdatedServiceListCount();
+	std::string GetConnectedIP(std::string key);
+	CNode* GetConnectedNode(std::string ipAddress);
+	CAnonymousTxInfo* GetAnonymousTxInfo() const
+	{
+		return pCurrentAnonymousTxInfo;
+	}
+
+	std::map<std::string, std::string> GetAnonymousServices() const
+	{
+		return mapAnonymousServices;
+	}
+
+	bool IsCurrentAnonymousTxInProcess();
+	bool FindGuarantorKey(std::map<std::string, std::string> mapSnList, std::string& guarantorIP);
+
+	bool SelectAnonymousServiceMixNode(CNode*& pMixerNode, std::string& keyMixer, int cnt);
+	std::string GetAddressPubKey(std::string address);
+	bool CreateMultiSigAddress();
+	bool DepositToMultisig(std::string& txid);
+	std::string CreateMultiSigDistributionTx();
+	bool ExtractVoutAndScriptPubKey(AnonymousTxRole role, std::string txid, int& voutn, std::string& scriptPubKey);
+	bool SendCoinsToDestination(std::string& txid);
+	bool SignMultiSigDistributionTx();
+	bool GetPrivKey(std::string strAddress, std::string& strPrivateKey);
+	bool AddPrevTxOut(AnonymousTxRole role, CBasicKeyStore& tempKeystore, std::map<COutPoint, CScript>& mapPrevOut);
+	bool SendMultiSigDistributionTx();
+
+    /** Address book entry changed.
+     * @note called with lock cs_wallet held.
+     */
+    boost::signals2::signal<void (CWallet *wallet, const CTxDestination &address, const std::string &label, bool isMine, ChangeType status)> NotifyAddressBookChanged;
+
+    /** Wallet transaction added, removed or updated.
+     * @note called with lock cs_wallet held.
+     */
+    boost::signals2::signal<void (CWallet *wallet, const uint256 &hashTx, ChangeType status)> NotifyTransactionChanged;
+};
+
+/** A key allocated from the key pool. */
+class CReserveKey
+{
+protected:
+    CWallet* pwallet;
+    int64_t 
