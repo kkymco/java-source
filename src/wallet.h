@@ -1363,4 +1363,140 @@ public:
             return false;
 
         // If no confirmation but it's from us, we can still
-        // consider it
+        // consider it confirmed if all dependencies are confirmed
+        std::map<uint256, const CMerkleTx*> mapPrev;
+        std::vector<const CMerkleTx*> vWorkQueue;
+        vWorkQueue.reserve(vtxPrev.size()+1);
+        vWorkQueue.push_back(this);
+        for (unsigned int i = 0; i < vWorkQueue.size(); i++)
+        {
+            const CMerkleTx* ptx = vWorkQueue[i];
+
+            if (!ptx->IsFinal())
+                return false;
+            int nPDepth = ptx->GetDepthInMainChain();
+            if (nPDepth >= 1)
+                continue;
+            if (nPDepth < 0)
+                return false;
+            if (!pwallet->IsFromMe(*ptx))
+                return false;
+
+            if (mapPrev.empty())
+            {
+                BOOST_FOREACH(const CMerkleTx& tx, vtxPrev)
+                    mapPrev[tx.GetHash()] = &tx;
+            }
+
+            BOOST_FOREACH(const CTxIn& txin, ptx->vin)
+            {
+                if (!mapPrev.count(txin.prevout.hash))
+                    return false;
+                vWorkQueue.push_back(mapPrev[txin.prevout.hash]);
+            }
+        }
+
+        return true;
+    }
+
+    bool WriteToDisk();
+
+    int64_t GetTxTime() const;
+    int GetRequestCount() const;
+
+    void AddSupportingTransactions(CTxDB& txdb);
+    void AddSupportingTransactions();
+
+    bool AcceptWalletTransaction(CTxDB& txdb, bool fCheckInputs=true);
+    bool AcceptWalletTransaction();
+
+    void RelayWalletTransaction(CTxDB& txdb);
+    void RelayWalletTransaction();
+};
+
+
+
+
+class COutput
+{
+public:
+    const CWalletTx *tx;
+    int i;
+    int nDepth;
+
+    COutput(const CWalletTx *txIn, int iIn, int nDepthIn)
+    {
+        tx = txIn; i = iIn; nDepth = nDepthIn;
+    }
+
+    std::string ToString() const
+    {
+        return strprintf("COutput(%s, %d, %d) [%s]", tx->GetHash().ToString().c_str(), i, nDepth, FormatMoney(tx->vout[i].nValue).c_str());
+    }
+
+    void print() const
+    {
+        printf("%s\n", ToString().c_str());
+    }
+};
+
+
+
+
+/** Private key that includes an expiration date in case it never gets used. */
+class CWalletKey
+{
+public:
+    CPrivKey vchPrivKey;
+    int64_t nTimeCreated;
+    int64_t nTimeExpires;
+    std::string strComment;
+    //// todo: add something to note what created it (user, getnewaddress, change)
+    ////   maybe should have a map<string, string> property map
+
+    CWalletKey(int64_t nExpires=0)
+    {
+        nTimeCreated = (nExpires ? GetTime() : 0);
+        nTimeExpires = nExpires;
+    }
+
+    IMPLEMENT_SERIALIZE
+    (
+        if (!(nType & SER_GETHASH))
+            READWRITE(nVersion);
+        READWRITE(vchPrivKey);
+        READWRITE(nTimeCreated);
+        READWRITE(nTimeExpires);
+        READWRITE(strComment);
+    )
+};
+
+
+
+
+
+
+/** Account information.
+ * Stored in wallet with key "acc"+string account name.
+ */
+class CAccount
+{
+public:
+    CPubKey vchPubKey;
+
+    CAccount()
+    {
+        SetNull();
+    }
+
+    void SetNull()
+    {
+        vchPubKey = CPubKey();
+    }
+
+    IMPLEMENT_SERIALIZE
+    (
+        if (!(nType & SER_GETHASH))
+            READWRITE(nVersion);
+        READWRITE(vchPubKey);
+ 
